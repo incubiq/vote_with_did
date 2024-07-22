@@ -6,6 +6,8 @@ Current voting apps in the Cardano ecosystem lack Decentralized Identity. By sto
 
 Using Atala Prism on Cardano, we will offer an open-source SDK and an App to deliver secure and anonymous voting across the whole Cardano eco-system, replacing private legacy voting apps.
 
+This project is planned to start in August 2024, and be delivered by end July 2025.
+
 ## Links to initial proposal 
 
  - Catalyst F12 proposal : https://cardano.ideascale.com/c/idea/119903
