@@ -1,0 +1,33 @@
+
+========================================================================================
+  M1 - Digital Identity Wallet Browser Extension
+========================================================================================
+
+OUTPUTS
+
+This Milestone is about the delivery of Digital Identity Wallet in the form of a (Chrome/Brave) Browser Extension. Those outputs will be available in the Github repo:
+ - A working browser extension which can act as a Digital Identity Wallet
+ - The wallet can show DIDs and VCs
+ - Video recording of the working browser extension
+
+ACCEPTANCE CRITERIA
+ - A DID can be displayed in the browser based wallet
+ - VCs can also be displayed 
+ - It works on Chrome / Brave
+
+note1: issuance of DIDs and VCs is done in a later milestone
+note2: for the purpose of testing the wallet, during this milestone, DIDs and VCs will be issued via Postman
+
+EVIDENCE OF COMPLETION
+
+ - GitHub (https://github.com/incubiq/vote_with_did) is updated with all M2 output deliveries (code and video report)
+ - A Digital Identity wallet can be created for a user
+ - The Digital Identity wallet can show the user's DID, 
+ - The Digital Identity wallet can show the user's VCs (the list of VCs, not necessarily their entire content)
+ - Video recording of all progress (links in the readme of the github repo)
+
+========================================================================================
+  Tasks done during this milestone [Nov/Dec 2024]
+========================================================================================
+
+  

@@ -19,19 +19,20 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
  M1 (30 October 2024)
  
-   - Video of Identus proof of capability: https://youtu.be/4DyPuZr_3PA  
-  - Postman test scripts for Identus: 
-  - Postman test scripts for our Digital Identity Cloud Agent: 
-  - API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
-  - detailed specs / requirements: 
-    * system overview: 
-    * roles:
-    * component Digital Identity Wallet: 
-    * component backend: 
-    * component dApp:
-    * component : webApp: 
-  - research dApp vs webApp: 
   - Explanation video of M1 tasks: 
+  - Video of Identus proof of capability: https://youtu.be/4DyPuZr_3PA  
+  - Postman test scripts for Identus: https://github.com/incubiq/vote_with_did/blob/main/postman/atPrism.postman_collection.json
+  - Postman test scripts for our Digital Identity Cloud Agent: https://github.com/incubiq/vote_with_did/blob/main/postman/Identity%20Node.postman_collection.json
+  - API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
+  - research dApp vs webApp: https://github.com/incubiq/vote_with_did/blob/main/research/app%20vs%20dapp.txt 
+  - detailed specs / requirements: 
+    * specs overview: https://github.com/incubiq/vote_with_did/blob/main/specs/voting%20with%20DID.pdf 
+    * system overview: https://github.com/incubiq/vote_with_did/blob/main/specs/overview.txt
+    * roles: https://github.com/incubiq/vote_with_did/blob/main/specs/roles.txt 
+    * component Digital Identity Wallet: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20digital%20identity%20wallet.txt
+    * component backend: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20backend.txt
+    * component dApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20dapp.txt
+    * component : webApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20webapp.txt
   
 
 ## Support

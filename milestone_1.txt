@@ -44,17 +44,24 @@ GitHub (https://github.com/incubiq/vote_with_did) is updated with those output d
   Tasks done during this milestone [Sept/Oct 2024]
 ========================================================================================
 
-  - Video of Identus proof of capability: https://www.youtube.com/watch?v=4DyPuZr_3PA&feature=youtu.be
-  - Postman test scripts for Identus: 
-  - Postman test scripts for our Digital Identity Cloud Agent: 
-  - API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
-  - detailed specs / requirements: 
-    * system overview: 
-    * roles:
-    * component Digital Identity Wallet: 
-    * component backend: 
-    * component dApp:
-    * component : webApp: 
-  - research dApp vs webApp: 
+  - worked on Identus specs, tests, and integration
+    * Postman test scripts for Identus: https://github.com/incubiq/vote_with_did/blob/main/postman/atPrism.postman_collection.json
+    * Video of Identus proof of capability: https://www.youtube.com/watch?v=4DyPuZr_3PA&feature=youtu.be
+    * Postman test scripts for our Digital Identity Cloud Agent: https://github.com/incubiq/vote_with_did/blob/main/postman/Identity%20Node.postman_collection.json
+    * API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
+
+  - worked on research: 
+    * dApp vs webApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20webapp.txt
+    * Anonymous voting
+
+  - worked on detailed specs / requirements: 
+    * specs overview: https://github.com/incubiq/vote_with_did/blob/main/specs/voting%20with%20DID.pdf
+    * system overview: https://github.com/incubiq/vote_with_did/blob/main/specs/_minimal%20version.txt
+    * roles: https://github.com/incubiq/vote_with_did/blob/main/specs/roles.txt
+    * component Digital Identity Wallet: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20digital%20identity%20wallet.txt
+    * component backend: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20backend.txt
+    * component dApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20dapp.txt
+    * component : webApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20webapp.txt
+  
   - Explanation video of M1 tasks: 
   

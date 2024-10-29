@@ -59,7 +59,24 @@ Efficiency
 Alternative Approaches Considered
 ===============================
 
-1. Ring Signatures
+1. Identus with Anon Creds + Anon DIDs
+-------------------------------
+
+Pros:
++ Simplest implementation
++ No need for ZK proofs
+
+Cons:
+- Not currently operational
+- Delayed integration with Midnight (end 2025) + likely added complexity 
+
+Why Discarded:
+- No certainty of getting a workable solution in a reasonable time
+- No clarity on complexity of the final solution when available
+- The delay is for testnet, what about mainnet?
+
+
+2. Ring Signatures
 -------------------------------
 
 Pros:
@@ -78,7 +95,7 @@ Why Discarded:
 - Difficulty handling variable voting power
 
 
-2. Mixer-Based Approach (Like Tornado Cash)
+3. Mixer-Based Approach (Like Tornado Cash)
 -------------------------------
 
 Pros:
@@ -97,7 +114,7 @@ Why Discarded:
 - Overcomplicated for voting use case
 
 
-3. Homomorphic Encryption
+4. Homomorphic Encryption
 -------------------------------
 
 Pros:
@@ -116,7 +133,7 @@ Why Discarded:
 - Complexity of implementation
 
 
-4. Blind Signatures
+5. Blind Signatures
 -------------------------------
 
 Pros:
