@@ -19,16 +19,21 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
  M1 (30 October 2024)
  
-  - Explanation video of M1 tasks: 
-  - Video of Identus proof of capability: https://youtu.be/4DyPuZr_3PA  
-  - Postman test scripts for Identus: https://github.com/incubiq/vote_with_did/blob/main/postman/atPrism.postman_collection.json
-  - Postman test scripts for our Digital Identity Cloud Agent: https://github.com/incubiq/vote_with_did/blob/main/postman/Identity%20Node.postman_collection.json
-  - API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
-  - research dApp vs webApp: https://github.com/incubiq/vote_with_did/blob/main/research/app%20vs%20dapp.txt 
-  - detailed specs / requirements: 
-    * specs overview: https://github.com/incubiq/vote_with_did/blob/main/specs/voting%20with%20DID.pdf 
-    * system overview: https://github.com/incubiq/vote_with_did/blob/main/specs/overview.txt
-    * roles: https://github.com/incubiq/vote_with_did/blob/main/specs/roles.txt 
+
+  - Identus specs, tests, and integration
+    * Postman test scripts for Identus: https://github.com/incubiq/vote_with_did/blob/main/postman/atPrism.postman_collection.json
+    * Video of Identus proof of capability: https://www.youtube.com/watch?v=4DyPuZr_3PA&feature=youtu.be
+    * Postman test scripts for our Digital Identity Cloud Agent: https://github.com/incubiq/vote_with_did/blob/main/postman/Identity%20Node.postman_collection.json
+    * API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
+
+  - Research work: 
+    * dApp vs webApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20webapp.txt
+    * Anonymous voting: https://github.com/incubiq/vote_with_did/blob/main/research/anonymous%20voting.txt
+
+  - Detailed specs / requirements: 
+    * specs overview: https://github.com/incubiq/vote_with_did/blob/main/specs/voting%20with%20DID.pdf
+    * system overview: https://github.com/incubiq/vote_with_did/blob/main/specs/_minimal%20version.txt
+    * roles: https://github.com/incubiq/vote_with_did/blob/main/specs/roles.txt
     * component Digital Identity Wallet: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20digital%20identity%20wallet.txt
     * component backend: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20backend.txt
     * component dApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20dapp.txt
