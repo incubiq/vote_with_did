@@ -43,4 +43,4 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
 ## Support
 
-If you are interested in this project and would like to learn more, help on testing, or give some input on requirements, you are welcome to send email to eric [at] incubiq [dot] com with title [One Crypto Pass].
+If you are interested in this project and would like to learn more, help on testing, or give some input on requirements, you are welcome to send email to eric [at] incubiq [dot] com with title [Vote with DID].
