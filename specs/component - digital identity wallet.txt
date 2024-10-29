@@ -1,0 +1,68 @@
+===============================
+   DID Wallet (Browser Extension) Requirements
+===============================
+
+Functional Requirements
+-------------------------------
+
+Identity Management
+
+ - Secure storage and management of user DIDs
+ - Integration with Identus for DID resolution and verification
+ - Seamless user authentication and authorization
+
+Credential Handling
+
+ - Storage and management of Verifiable Credentials (VCs)
+ - Issuance of VCs by the Identus service
+ - Presentation of VCs for voting eligibility verification
+
+Wallet Interactions
+
+ - Intuitive user interface for wallet access and management
+ - Secure unlocking of the wallet using (v2 - biometrics) or passwords
+ - Ability to backup and restore the wallet securely
+
+WebApp Integration
+
+ - Seamless integration with the WebApp for authentication flows
+ - Secure communication protocols (e.g., WebAuthn, DIDAuth)
+ - Handling of authorization requests from the WebApp
+
+Transparency Support
+
+ - Ability to view and verify Merkle roots published by the Transparency Service
+ - Integration with the Voting dApp for commitment and proof validation
+
+Non-Functional Requirements
+-------------------------------
+
+Security
+
+ - Strong encryption and key management for DID and credential storage
+ - Protection against common browser extension vulnerabilities
+ - Secure communication protocols and data transmission
+
+Usability
+
+ - Intuitive and user-friendly wallet interface
+ - Clear instructions and error messages for wallet interactions
+ - Support for Chrome / Brave browser 
+
+Performance
+
+ - Fast wallet unlocking and authorization (< 3 seconds)
+ - Responsive UI interactions with minimal latency
+
+Reliability
+
+ - Robust error handling and graceful degradation
+ - Persistent storage of wallet data and VCs
+ - Automatic updates and version compatibility
+
+Privacy
+
+ - Minimal collection and storage of user data
+ - Respect for user privacy and control over personal information
+ - Compliance with relevant data protection regulations (e.g., GDPR)
+ 

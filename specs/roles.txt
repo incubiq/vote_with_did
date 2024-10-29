@@ -1,0 +1,74 @@
+
+Roles and Responsibilities
+=================================
+
+1. Admin Role
+-----------------------
+Functional Requirements
+
+ - Admin authenticate with a (cardano) wallet (sign message) 
+ - Configure voting system parameters
+ - Manage DID integration settings
+ - Monitor system health and security
+ - Manage user roles and permissions (onboard designers, minimal validation workflow)
+ - Handle voter registration and verification
+ - Approve ballots to enable voting
+ - (nice to have) Generate system reports and audit logs
+
+Non-functional Requirements
+
+ - (nice to have) Audit trail of admin actions
+ - (nice to have) 2FA authentication 
+ - Response time < 2 seconds for admin operations
+
+2. Designer Role
+-----------------------
+Functional Requirements
+
+ - Create and configure ballot templates
+ - Set voting period parameters
+ - Define voting rules and validation criteria
+ - Configure result display options
+ - Set-up voter eligibility criteria
+
+Non-functional Requirements
+
+ - Intuitive ballot design interface
+ - Preview functionality for ballot layouts
+ - (nice to have) Version control for ballot designs
+ - Maximum ballot creation time < 5 minutes
+
+3. Voter Role
+-----------------------
+Functional Requirements
+
+ - Register/authenticate using DID
+ - View available ballots
+ - Cast votes securely
+ - Verify vote submission / Receive voting confirmation
+ - (nice to have) View personal voting history
+
+Non-functional Requirements
+
+ - Maximum authentication time < 30 seconds
+ - Voting process completion < 2 minutes
+ - Mobile-responsive interface
+ - (nice to have) Offline vote preparation capability
+ - (nice to have) Support for accessibility standards (WCAG 2.1)
+
+4. Viewer Role
+-----------------------
+Functional Requirements
+
+ - View election results in real-time (if ballot was set for real-time view ; otherwise view at end of voting deadline)
+ - Access historical voting data
+ - View voting statistics
+ - (nice to have) Generate basic reports
+ - (nice to have) Export results in standard formats
+
+Non-functional Requirements
+
+ - Real-time result updates (< 5 sec delay)
+ - Support for concurrent viewers (min 100)
+ - (nice to have) Data export in multiple formats (CSV, PDF, JSON)
+

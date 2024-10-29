@@ -1,0 +1,313 @@
+===============================
+   Cloud Backend Requirements
+===============================
+
+1. Pre-registration Module
+===============================
+
+Functional Requirements
+-------------------------------
+ - Process voter registration requests
+ - Interface with Identus for VC issuance
+ - Validate voter eligibility
+ - Manage registration periods
+ - Track registration status
+
+Technical Requirements
+-------------------------------
+APIs:
+- POST /register
+- GET /registration-status/{voterId}
+- PUT /update-registration
+- DELETE /cancel-registration
+
+Data Model:
+- Registration requests
+- Eligibility criteria
+- Registration status
+- Voter metadata
+
+Integration Points:
+- Identus API for VC issuance
+- DID Wallet for credential delivery
+- Database for registration records
+
+Non-functional Requirements
+-------------------------------
+ - Registration processing time < 5 seconds
+ - Support for bulk registrations
+ - Audit logging of all registration actions
+ - Rate limiting for registration requests
+ - Error handling and retry mechanisms
+
+
+2. Identity Module
+===============================
+
+Functional Requirements
+-------------------------------
+ - Verify DIDs with Identus
+ - Validate VCs for voting
+ - Manage identity sessions
+ - Handle authentication flows
+ - Track credential status
+
+Technical Requirements
+-------------------------------
+APIs:
+ - see all documented APIs here: https://incubiq.gitbook.io/opensourceais/identity-agent-lib
+
+Integration Requirements:
+-------------------------------
+- Identus entity / wallet / DID / VC issuance
+- Proof validation protocols
+
+Security Requirements:
+-------------------------------
+- Secure credential storage (shifted to Identus)
+- Privacy protection
+- Access control
+- (v2) Audit logging
+
+Non-functional Requirements
+-------------------------------
+ - Authentication response time < 2 seconds
+ - High availability (99.9%)
+ - Secure communication channels
+ - (v2) Privacy compliance (GDPR, etc.)
+ - (v2) Scalable session management
+
+
+3. Ballot Management Module
+===============================
+
+Functional Requirements
+-------------------------------
+ - Create and manage ballots
+ - Set ballot parameters
+ - Control ballot lifecycle
+ - Manage voting periods
+ - Handle ballot templates
+
+Technical Requirements
+-------------------------------
+APIs:
+- POST /ballots
+- GET /ballots/{ballotId}
+- PUT /ballots/{ballotId}
+- DELETE /ballots/{ballotId}
+- GET /ballot-templates
+
+Data Model:
+- Ballot configuration
+- Voting options
+- Time periods
+- Access controls
+- Results format
+
+Integration Points:
+- Template system
+- Access control system
+- Notification service
+
+Non-functional Requirements
+-------------------------------
+ - Ballot creation time < 3 seconds
+ - Support for multiple ballot types
+ - Version control for ballots
+ - Backup and recovery
+ - Audit trail of changes
+
+
+4. Vote Processing Module
+===============================
+
+Functional Requirements
+-------------------------------
+ - Process incoming votes
+ - Generate vote commitments
+ - Manage voting sessions
+ - Track voting status
+ - Handle vote encryption
+
+Technical Requirements
+-------------------------------
+APIs:
+- POST /votes
+- GET /vote-status/{voteId}
+- POST /vote-commitment
+- GET /voting-session/{sessionId}
+
+Processing Pipeline:
+1. Vote validation
+2. Encryption
+3. Commitment generation
+4. Status tracking
+5. Proof generation
+
+Integration Points:
+- ZK Proof generation service
+- Commitment service
+- Encryption service
+
+Non-functional Requirements
+-------------------------------
+ - Vote processing time < 3 seconds
+ - High throughput capacity
+ - Fault tolerance
+ - Data integrity
+ - Privacy protection
+
+
+5. Results Aggregation Module
+===============================
+
+Functional Requirements
+-------------------------------
+ - Aggregate vote results
+ - Generate statistics
+ - Prepare result proofs
+ - Manage result publication
+ - Handle partial results
+
+Technical Requirements
+-------------------------------
+APIs:
+- GET /results/{ballotId}
+- GET /statistics/{ballotId}
+- POST /publish-results
+- GET /result-proofs/{ballotId}
+
+Data Model:
+- Vote counts
+- Statistics
+- Proof data
+- Publication status
+
+Integration Points:
+- dApp for result publication
+- Proof verification service
+- Analytics engine
+
+Non-functional Requirements
+-------------------------------
+ - Real-time result updates
+ - Accuracy verification
+ - Scalable computation
+ - Backup mechanisms
+ - Audit capabilities
+
+
+(v2) 6. Audit & Logging Module
+===============================
+
+Functional Requirements
+-------------------------------
+ - Track all system actions
+ - Generate audit trails
+ - Manage system logs
+ - Provide verification data
+ - Support compliance reporting
+
+Technical Requirements
+-------------------------------
+APIs:
+- GET /audit-trail/{entityId}
+- GET /system-logs
+- GET /verification-data
+- POST /export-logs
+
+Logging Requirements:
+- Action timestamps
+- User identification
+- Action details
+- System states
+- Error conditions
+
+Integration Points:
+- Log management system
+- Monitoring tools
+- Compliance systems
+
+Non-functional Requirements
+-------------------------------
+ - Real-time logging
+ - Secure log storage
+ - Log integrity
+ - Search capabilities
+ - Retention policies
+
+
+7. System Administration Module
+===============================
+
+Functional Requirements
+-------------------------------
+ - Manage system configuration
+ - Handle user administration
+ - Control access rights
+ - Monitor system health
+
+Technical Requirements
+-------------------------------
+APIs:
+- PUT /system-config
+- POST /user-management
+- GET /system-health
+- POST /deployment
+
+Management Features:
+- Configuration management
+- User administration
+- Health monitoring
+- Deployment control
+- Backup management
+
+Integration Points:
+- Monitoring systems
+- Authentication services
+- Backup services
+
+Non-functional Requirements
+-------------------------------
+ - Admin response time < 2 seconds
+ - Role-based access control
+ - Audit logging
+ - Secure administration
+ - Disaster recovery
+
+
+Cross-Cutting Concerns
+===============================
+
+Security Requirements
+-------------------------------
+ - End-to-end encryption
+ - Access control
+ - Data protection
+ - Secure communication
+ - Intrusion detection
+
+Performance Requirements
+-------------------------------
+ - Response time < 3 seconds
+ - High availability (99.9%)
+ - Scalability
+ - Load balancing
+ - Caching strategy
+
+Integration Requirements
+-------------------------------
+ - API gateway
+ - Service discovery
+ - Load balancing
+ - Circuit breakers
+ - Rate limiting
+
+Monitoring Requirements
+-------------------------------
+ - System metrics
+ - Performance monitoring
+ - Error tracking
+ - Usage analytics
+ - Health checks

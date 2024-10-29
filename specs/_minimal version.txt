@@ -1,0 +1,292 @@
+Digital Identity Voting Application Requirements Specification
+
+
+System Architecture (overview)
+=================================
+
+Separation of Concerns
+----------------------------------------------
+
+ - WebApp for user interface
+ - Cloud Backend for core operations
+ - DID Wallet as authentication layer
+ - Identus for identity management
+ - A Cardano dApp for transparency (+ use of Cardano for DID storage)
+
+Role Definition
+----------------------------------------------
+
+ - Admin: ballot approval and registration management
+ - Designer: ballot creation and configuration
+ - Voter: voting operations
+ - Viewer: results and proofs access
+
+Data Flow
+----------------------------------------------
+
+ - Authentication flow through DID wallet
+ - Backend orchestration of services
+ - Database for non-blockchain data
+ - Separation of voting dApp from main application
+
+
+System Architecture (modules)
+=================================
+
+1. Digital Identity Wallet (DIDW)
+----------------------------------------------
+
+Functional Requirements
+
+ - Browser extension implementation
+ - Sign message authentication for wallet access
+ - Secure storage of DIDs
+ - Storage and management of Verifiable Credentials (VCs) via Identus
+ - Integration with Identus SDK
+ - Credential presentation capability
+ 
+Non-functional Requirements
+
+ - Cold wallet backup/restore functionality
+ - Maximum wallet unlock time < 3 seconds
+ - Encrypted local storage
+ - Chrome / Brave compatibility at first
+
+2. WebApp for user interface
+----------------------------------------------
+
+3. Cloud Backend for core operations
+----------------------------------------------
+
+3.1. Identity System
+
+Functional Requirements
+
+ - creation of a user's Identitus Entity and wallet
+ - Integration with Identus for DID and VC issuance
+ - (nice to have) Revocation capability for invalid VCs
+
+Non-functional Requirements
+
+ - VC issuance time < 1 minute
+ - Audit trail of all VC issuances
+ - (nice to have) Rate limiting for VC requests
+
+
+3.2 Admin System
+
+Functional Requirements
+
+ - Admin authenticate with a (cardano) wallet (sign message) 
+ - Configure voting system parameters
+ - Manage DID integration settings
+ - Monitor system health and security
+ - Manage user roles and permissions (onboard designers, minimal validation workflow)
+ - Handle voter registration and verification
+ - Approve ballots to enable voting
+ - (nice to have) Generate system reports and audit logs
+
+Non-functional Requirements
+
+ - (nice to have) Audit trail of admin actions
+ - (nice to have) 2FA authentication 
+ - Response time < 2 seconds for admin operations
+
+
+3.3. Pre-registration System
+
+Functional Requirements
+
+ - Verification of voter eligibility
+ - VC template creation with following attributes:
+    * Voter identification (DID)
+    * Voting power allocation
+    * Validity period
+    * Eligible ballot identifiers
+    * Custom attributes for special voting rights
+ - Automated VC issuance workflow
+
+Non-functional Requirements
+
+ - (nice to have) Support for batch pre-registration
+
+
+3.4. Ballot management system 
+
+Functional Requirements
+
+ - Create and configure ballot templates
+ - Set voting period parameters
+ - Define voting rules and validation criteria
+ - Configure result display options
+ - Set-up voter eligibility criteria
+
+Non-functional Requirements
+
+ - Intuitive ballot design interface
+ - Preview functionality for ballot layouts
+ - (nice to have) Version control for ballot designs
+ - Maximum ballot creation time < 5 minutes
+
+
+3.5 Voting System
+
+Functional Requirements
+
+ - Register/authenticate using wallet
+ - View available ballots
+ - Cast votes securely
+ - Verify vote submission / Receive voting confirmation
+ - (nice to have) View personal voting history
+
+Non-functional Requirements
+
+ - Maximum authentication time < 30 seconds
+ - Voting process completion < 2 minutes
+ - Mobile-responsive interface
+ - (nice to have) Offline vote preparation capability
+ - (nice to have) Support for accessibility standards (WCAG 2.1)
+
+Authentication / voting rights Flow
+
+ - User unlocks DID Wallet via sign message
+ - DID Wallet connects to voting dApp
+ - User presents relevant VC for ballot access
+ - System verifies VC validity and voting rights
+ - User granted access to eligible ballots
+
+Vote Privacy Implementation
+
+ - Implementation of Zero-Knowledge Merkle Tree (similar to Tornado Cash)
+    * Generation of zero-knowledge proofs for votes
+    * Merkle tree construction for vote commitments
+    * Vote nullifier generation to prevent double voting    
+    * Anonymous vote verification system
+
+ - Alternative (not fully researched yet)    
+    * Ring signature implementation for group anonymity
+    * Vote mixing protocol
+
+
+3.6 Result verification System
+
+Functional Requirements
+
+ - View election results in real-time (if ballot was set for real-time view ; otherwise view at end of voting deadline)
+ - Access historical voting data
+ - View voting statistics
+ - (nice to have) Generate basic reports
+ - (nice to have) Export results in standard formats
+
+Non-functional Requirements
+
+ - Real-time result updates (< 5 sec delay)
+ - Support for concurrent viewers (min 100)
+ - (nice to have) Data export in multiple formats (CSV, PDF, JSON)
+
+
+4. Identus for identity management
+----------------------------------------------
+
+Non-functional Requirements
+ - Hosted solution 
+ - Testnet 
+
+
+5. Cardano dApp for transparency (+ DID storage)
+----------------------------------------------
+
+Functional Requirements
+- Nullifier tracking to prevent double voting
+- Publishing vote commitments for public verification
+- Merkle root publication
+- Public vote verification
+- Transparency proofs
+
+Transparency Layer
+   [Cloud Backend] <-> [Transparency Service] <-> [Voting dApp]
+   - Merkle root publication
+   - Vote commitment verification
+   - Public audit trail
+
+Result Publication Flow
+   [Cloud Backend] -> [Result Aggregator] -> [Voting dApp] -> [Cardano Blockchain]
+   - Anonymous result publication
+   - Public verification
+   - Immutable record
+
+Verification Components
+   [WebApp] <-> [Verification Service] <-> [Voting dApp]
+   - Proof verification
+   - Result validation
+   - Public accessibility
+
+
+Other requirements
+=================================
+
+Critical paths 
+----------------------------------------------
+
+1. Vote Submission Path
+Voter -> WebApp -> Cloud Backend -> Voting dApp -> Cardano
+- Identity verification (DID Wallet)
+- Vote encryption (Cloud Backend)
+- Commitment publication (Voting dApp)
+
+2. Result Verification Path
+Viewer -> WebApp -> Cloud Backend -> Voting dApp -> Cardano
+- Proof verification
+- Result validation
+- Public accessibility
+
+3. Audit Trail Path
+Admin/Viewer -> WebApp -> Cloud Backend -> Voting dApp -> Cardano
+- Operation logging
+- Proof generation
+- Public verification
+
+
+Database
+----------------------------------------------
+1. Ballot metadata
+   - Configuration
+   - Status
+   - Results cache
+   
+2. Vote data
+   - Encrypted votes
+   - ZK proofs
+   - Commitment mappings
+   
+3. Audit data
+   - Operation logs
+   - Merkle tree states
+   - Verification proofs
+
+
+Security 
+----------------------------------------------
+ - Encryption Service
+ -  Audit Service
+ - ZK Proof Generation
+
+
+Privacy Measures
+----------------------------------------------
+
+ - Zero-knowledge proofs for vote privacy
+ - Merkle tree implementation for vote anonymity
+ - Separation of identity from voting records
+ - Encrypted communication channels
+ - Private metadata management
+
+
+Additional Technical Requirements
+----------------------------------------------
+
+ - Real-time vote confirmation
+ - Transaction monitoring system
+ - Vote receipt generation (privacy-preserving)
+ - System recovery procedures
+ - VC status monitoring

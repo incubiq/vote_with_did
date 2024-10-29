@@ -1,0 +1,73 @@
+===============================
+   WebApp Requirements
+===============================
+
+Functional Requirements
+-------------------------------
+
+User Interface
+
+ - Provide intuitive and user-friendly interfaces for all user roles (Voter, Admin, Designer, Viewer)
+ - Allow users to authenticate with the DID Wallet
+ - Display available ballots and voting options for eligible voters
+ - Enable voters to cast their votes securely
+ - Allow administrators to manage ballot creation and configurations
+ - Present election results and verification proofs to viewers
+
+Ballot Management
+
+ - Integrate with the Cloud Backend to fetch available ballots
+ - Display ballot details, including title, description, and voting period
+ - Provide interfaces for administrators to create, update, and publish ballots
+ - Ensure ballot configurations are appropriately applied
+
+Voting Operations
+
+ - Facilitate the voting process for eligible voters
+ - Integrate with the DID Wallet for authentication and credential verification
+ - Securely transmit voter selections to the Cloud Backend
+ - Provide real-time feedback on vote submission status
+
+Results Visualization
+
+ - Fetch and display election results from the Voting dApp
+ - Present the results in an easy-to-understand format
+ - Allow viewers to verify the results using provided proofs
+ - Enable drilling down into detailed voting statistics and analytics
+
+Transparency Integration
+
+ - Integrate with the Transparency Service to fetch and display Merkle roots
+ - Allow viewers to verify vote commitments and audit trails
+ - Provide clear explanations and guidance on the verification process
+
+
+Non-Functional Requirements
+-------------------------------
+
+Usability
+
+ - Intuitive and responsive user interfaces across desktop and mobile devices
+ - (nice to have) Accessibility compliance (WCAG 2.1) to accommodate users with disabilities
+ - (nice to have) Clear and concise instructions and error messages
+
+Performance
+
+ - Fast page load times (< 3 seconds) for all user interactions
+ - Smooth user experience with minimal latency (< 1 second) for common actions
+
+Security
+
+ - Strict input validation and output encoding to prevent common web vulnerabilities
+ - Secure communication channels (TLS/HTTPS) for all user interactions
+ - Integration with the DID Wallet for strong authentication
+
+Availability
+
+ - High uptime (> 99.9%) to ensure reliable access to the voting system
+ - (nice to have) Graceful degradation and offline functionality for critical user actions
+
+Scalability
+
+ - (nice to have) Ability to handle increasing user traffic and ballot volumes without performance degradation
+ - Seamless integration with the Cloud Backend and Transparency Service

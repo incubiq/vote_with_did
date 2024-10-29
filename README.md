@@ -15,9 +15,24 @@ This project is planned to start in August 2024, and be delivered by end July 20
  - Project progression : https://milestones.projectcatalyst.io/projects/1200194
 
 
-## Links to videos
+## Milestones
 
- - todo...
+ M1 (30 October 2024)
+ 
+   - Video of Identus proof of capability: https://youtu.be/4DyPuZr_3PA  
+  - Postman test scripts for Identus: 
+  - Postman test scripts for our Digital Identity Cloud Agent: 
+  - API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
+  - detailed specs / requirements: 
+    * system overview: 
+    * roles:
+    * component Digital Identity Wallet: 
+    * component backend: 
+    * component dApp:
+    * component : webApp: 
+  - research dApp vs webApp: 
+  - Explanation video of M1 tasks: 
+  
 
 ## Support
 

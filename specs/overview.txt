@@ -1,0 +1,35 @@
+System Overview
+=================================
+A secure web-based voting application that leverages Digital Identity (DID) for authentication and ensures transparent, verifiable voting processes while maintaining voter privacy.
+
+Core Features
+=================================
+ - Digital identity (DID) integration for voter authentication
+ - Ballot creation and management
+ - Secure vote casting and storage
+ - Real-time results viewing with privacy protection
+ - Audit trail and verification capabilities
+
+Security Requirements
+=================================
+ - End-to-end encryption for all transactions
+ - DID-based authentication and authorization
+ - Prevention of double voting
+ - Immutable vote records
+ - Privacy preservation of voter identity
+ - Protection against common web vulnerabilities
+ - Security audit / penetration testing
+
+Technical Requirements
+=================================
+ - High availability (99.9% uptime)
+ - Scalable architecture
+ - Multi-browser compatibility (however initially only Chrome / Brave for DID wallet browser ext)
+ - Compliance with data protection regulations
+
+Performance Requirements
+=================================
+ - Page load time < 3 seconds
+ - Vote transaction time < 5 seconds ?
+ - Support for peak voting periods
+ - Maximum concurrent users: 1000 ?

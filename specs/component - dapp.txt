@@ -1,0 +1,170 @@
+===============================
+   Voting dApp Requirements
+===============================
+
+Functional Requirements
+-------------------------------
+
+Vote Commitment Publishing
+ - Publish vote commitments to Cardano blockchain
+ - Generate and verify commitment hashes
+ - Link commitments to specific ballots
+ - Maintain commitment-vote mappings
+ - Store nullifier hashes to prevent double voting
+
+Merkle Tree Management
+ - Generate and update Merkle trees for vote commitments
+ - Publish Merkle roots to the blockchain
+ - Generate inclusion proofs for vote verification
+ - Update Merkle trees as new votes are added
+ - Maintain historical Merkle roots for audit purposes
+
+Result Publication
+ - Publish aggregated voting results to blockchain
+ - Ensure result immutability and transparency
+ - Link results to specific ballot identifiers
+ - Support various result formats (totals, percentages)
+ - Generate result verification proofs
+
+Public Verification
+ - Verify vote inclusion in Merkle trees
+ - Validate vote commitments against published roots
+ - Verify result calculations
+ - Provide proof verification interfaces
+ - Support public auditability of voting process
+
+Smart Contract Functionality
+ - Minimal set of smart contracts for:
+   * Vote commitment storage
+   * Merkle root updates
+   * Result publication
+   * Proof verification
+
+Integration Points
+ - Interface with Cloud Backend for:
+   * Receiving vote commitments
+   * Sending verification proofs
+   * Updating Merkle roots
+
+ - Interface with Transparency Service for:
+   * Audit trail publication
+   * Proof generation
+   * Result verification
+
+Non-Functional Requirements
+-------------------------------
+
+Performance
+ - Optimized gas usage for all blockchain operations
+ - Efficient proof generation and verification
+ - Fast transaction confirmation times
+ - Scalable to handle high voting volumes
+ - Efficient batch processing of commitments
+
+Security
+ - Immutable vote records
+ - Tamper-evident design
+ - Prevention of double voting
+ - Secure smart contract implementation
+ - Protection against common blockchain vulnerabilities
+
+Transparency
+ - Public verifiability of all operations
+ - Clear audit trail of voting process
+ - Accessible proof verification
+ - Transparent result calculation
+ - Public access to all verification tools
+
+Reliability
+ - Robust error handling
+ - Transaction retry mechanisms
+ - Blockchain reorganization handling
+ - Network partition tolerance
+ - Data consistency guarantees
+
+Scalability
+ - Support for large-scale elections
+ - Efficient handling of concurrent votes
+ - Batch processing capabilities
+ - Optimized storage usage
+ - Performance under peak loads
+
+
+Smart Contract Design Requirements
+-------------------------------
+
+VoteCommitment Contract
+
+ - Key Functions:
+   * submitCommitment(bytes32 commitment, bytes32 nullifier)
+   * verifyCommitment(bytes32 commitment)
+   * checkNullifier(bytes32 nullifier)
+
+ - State Management:
+   * Commitment storage
+   * Nullifier tracking
+   * Ballot mapping
+
+MerkleRoot Contract
+
+ - Key Functions:
+   * updateMerkleRoot(bytes32 newRoot)
+   * verifyInclusion(bytes32 commitment, bytes32[] proof)
+   * getMerkleRoot(uint256 ballotId)
+
+ - State Management:
+   * Root history
+   * Ballot association
+   * Proof verification
+
+ResultPublication Contract
+
+ - Key Functions:
+   * publishResults(uint256 ballotId, bytes results)
+   * verifyResults(uint256 ballotId)
+   * getResults(uint256 ballotId)
+
+ - State Management:
+   * Result storage
+   * Verification data
+   * Access control
+
+
+Integration Requirements
+-------------------------------
+
+Cloud Backend Integration
+
+ - Required Endpoints:
+   * /submitCommitment
+   * /verifyProof
+   * /updateMerkleRoot
+   * /publishResults
+
+ - Data Formats:
+   * JSON for API communication
+   * Binary for proofs and commitments
+
+Transparency Service Integration
+
+ - Required Features:
+   * Real-time root updates
+   * Proof generation
+   * Audit trail publication
+   * Result verification
+
+Monitoring Requirements
+
+ - Blockchain Monitoring
+   * Transaction status tracking
+   * Gas usage optimization
+   * Network status monitoring
+   * Contract state monitoring
+   * Error detection and reporting
+
+ - Performance Monitoring
+   * Proof generation times
+   * Verification speeds
+   * Transaction confirmation times
+   * Resource usage metrics
+   * System throughput
