@@ -19,10 +19,11 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
  M1 (30 October 2024)
  
+  - 27 minutes explanation video of M1 tasks: https://youtu.be/jJQJONH4pY8
 
   - Identus specs, tests, and integration
     * Postman test scripts for Identus: https://github.com/incubiq/vote_with_did/blob/main/postman/atPrism.postman_collection.json
-    * Video of Identus proof of capability: https://www.youtube.com/watch?v=4DyPuZr_3PA&feature=youtu.be
+    * 30 minutes video of Identus proof of capability: https://www.youtube.com/watch?v=4DyPuZr_3PA&feature=youtu.be
     * Postman test scripts for our Digital Identity Cloud Agent: https://github.com/incubiq/vote_with_did/blob/main/postman/Identity%20Node.postman_collection.json
     * API doc of our Digital Identity Cloud Agent: https://incubiq.gitbook.io/opensourceais/identity-agent-lib 
 
@@ -42,4 +43,4 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
 ## Support
 
-If you are interested in this project and would like to learn more, help on testing, or give some input on requirements, you are welcome to send email to eric [at] incubiq [dot] com with title [One Crypto Pass].
+If you are interested in this project and would like to learn more, help on testing, or give some input on requirements, you are welcome to send email to eric [at] incubiq [dot] com with title [Vote with DID].
