@@ -5,11 +5,21 @@
 Functional Requirements
 -------------------------------
 
+Authentication
+
+ - Ability to sign-message for authenticating the wallet owner
+ - A browser extension implementation for ease of authentication
+
+Integration with Identus
+
+ - Integrates into a Multi-tenant Identus Cloud Agent on Mainnet
+ - Ability to add entities to the Trust Registry (for issuance and verification)
+
 Identity Management
 
  - Secure storage and management of user DIDs
  - Integration with Identus for DID resolution and verification
- - Seamless user authentication and authorization
+ - Ability to issue multiple DIDs for one user
 
 Credential Handling
 
@@ -20,19 +30,20 @@ Credential Handling
 Wallet Interactions
 
  - Intuitive user interface for wallet access and management
- - Secure unlocking of the wallet using (v2 - biometrics) or passwords
- - Ability to backup and restore the wallet securely
+ - Secure unlocking of the wallet using (v2 - biometrics) or (v1 - passwords)
+ - Ability to backup and restore the wallet seed phrase securely
 
 WebApp Integration
 
  - Seamless integration with the WebApp for authentication flows
- - Secure communication protocols (e.g., WebAuthn, DIDAuth)
+ - Secure communication protocols (oAuth2, DIDAuth?)
  - Handling of authorization requests from the WebApp
 
-Transparency Support
+(optional) Transparency Support
 
  - Ability to view and verify Merkle roots published by the Transparency Service
  - Integration with the Voting dApp for commitment and proof validation
+
 
 Non-Functional Requirements
 -------------------------------
@@ -57,7 +68,7 @@ Performance
 Reliability
 
  - Robust error handling and graceful degradation
- - Persistent storage of wallet data and VCs
+ - Persistent storage of wallet data and VCs (likely via Identus)
  - Automatic updates and version compatibility
 
 Privacy
