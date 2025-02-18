@@ -2,7 +2,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
+import { getIdentusApiKey } from '../utils/encrypt';
+import { srv_getDid, srv_getCredsOffers } from "../utils/identity";
 import BottomNav from '../components/BottomNav';
+import DIDPanel from '../components/DIDs';
+import VCPanel from '../components/VCs';
+
 import styles from '../styles/Onboarding.module.css';
 
 const WalletDashboard = () => {
@@ -13,6 +18,25 @@ const WalletDashboard = () => {
   React.useEffect(() => {
     if (state.status !== 'ready' || !state.wallet) {
       navigate('/');
+    }
+    else {
+      // load the DIDs
+      let _apikey=getIdentusApiKey(state.wallet);
+      srv_getDid(_apikey)
+        .then(data=> {
+          actions.identusDiDSet(data.data);
+        })
+        .catch(err => {
+          console.log("Could not access DID from wallet");
+        })
+
+      srv_getCredsOffers(_apikey)
+        .then(data=> {
+          actions.identusVCSet(data.data);
+        })
+        .catch(err => {
+          console.log("Could not access VC offers from wallet");
+        })
     }
   }, [state.status, state.wallet]);
 
@@ -27,41 +51,14 @@ const WalletDashboard = () => {
         <div className={styles.onboardingContainer}>
 
         {/* DIDs Section */}
-        <section className={styles.section}>
-          <h2>Decentralized Identifiers (DIDs)</h2>
-          {state.dids.length === 0 ? (
-            <p>No DIDs found in your wallet</p>
-          ) : (
-            <ul className={styles.list}>
-              {state.dids.map((did, index) => (
-                <li key={index} className={styles.listItem}>
-                  {/* Customize based on your DID structure */}
-                  <span className={styles.didId}>{did.id}</span>
-                  <span className={styles.didMethod}>{did.method}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <DIDPanel 
+          aItem={state? state.dids: []}
+        />
 
-        {/* VCs Section */}
-        <section className={styles.section}>
-          <h2>Verifiable Credentials (VCs)</h2>
-          {state.vcs.length === 0 ? (
-            <p>No Verifiable Credentials found in your wallet</p>
-          ) : (
-            <ul className={styles.list}>
-              {state.vcs.map((vc, index) => (
-                <li key={index} className={styles.listItem}>
-                  {/* Customize based on your VC structure */}
-                  <h3>{vc.type}</h3>
-                  <p>Issuer: {vc.issuer}</p>
-                  <p>Issued Date: {new Date(vc.issuanceDate).toLocaleDateString()}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <VCPanel 
+          aItem={state? state.vcs: []}
+        />
+
       </div>
       <BottomNav />
     </div>

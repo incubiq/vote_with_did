@@ -2,6 +2,11 @@
 
 const SALT = new Uint8Array([119, 193, 229, 8, 191, 197, 62, 137, 198, 10, 108, 20]); // Fixed salt for PBKDF2
 
+export const getIdentusApiKey = (wallet) => {
+  // todo : generate an API key from private key + salt
+  return "BOB_api_key_secret";
+}
+
 // Derive an encryption key from the PIN
 export const async_deriveKeyFromPin = async (pin) => {
   const encoder = new TextEncoder();

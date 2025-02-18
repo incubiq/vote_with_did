@@ -32,12 +32,16 @@ const srv_getRoute = async(route, _token) => {
       headers: {'Content-Type': 'application/json'},
     }
 
-    // for localhost:3000 (debug) we do this
-    if(_token===null || _token===undefined) {
-//      _token = _userToken;
-    }
-    if(isPrivate && _token) {
-      _query.headers["Authorization"]="Bearer " + (_token? _token : "")
+    if(_token) {
+      if(_token.token) {
+        _query.headers["Authorization"]="Bearer " + _token.token;
+      }
+      else {
+        if(_token.apikey) {
+          _query.headers["apikey"]= _token.apikey;
+        }
+
+      }
     }
 
     const response = await fetch(route, _query);

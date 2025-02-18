@@ -4,14 +4,21 @@ import { storage } from '../utils/storage';
 
 // Initial state
 const initialState = {
+// wallet
   pin: null,      // the pin for accessing wallet without requiring re-enter full passphrase
-  status: 'idle', // idle, creating, loading, ready, error
   wallet: null,    // wallet object when created/loaded
+
+// Identity
   identus: null,   // the identus info about this user / wallet 
   dids: [],        // array of DIDs
   vcs: [],         // array of VCs
+
+// vote
   ballots: [],      
   votes: [],        
+
+// status & error mgt
+  status: 'idle', // idle, creating, loading, ready, error
   error: null,     // any error messages,
   recoveryPhrase: null
 };
@@ -21,15 +28,13 @@ export const ACTIONS = {
   PIN_SET: 'PIN_SET',
   START_WALLET_CREATION: 'START_WALLET_CREATION',
   WALLET_CREATED: 'WALLET_CREATED',
-  IDENTUS_CREATED: 'IDENTUS_CREATED',
   START_WALLET_LOADING: 'START_WALLET_LOADING',
   WALLET_LOADED: 'WALLET_LOADED',
   IDENTUS_LOADED: 'IDENTUS_LOADED',
-  IDENTUS_UPDATED: 'IDENTUS_UPDATED',
-  SET_ERROR: 'SET_ERROR',
-  CLEAR_ERROR: 'CLEAR_ERROR',
   SET_DIDS: 'SET_DIDS',
   SET_VCS: 'SET_VCS',
+  SET_ERROR: 'SET_ERROR',
+  CLEAR_ERROR: 'CLEAR_ERROR',
   CLEAR_RECOVERY_PHRASE: 'CLEAR_RECOVERY_PHRASE',
   RESET_WALLET: 'RESET_WALLET',
 };
@@ -61,15 +66,7 @@ function walletReducer(state, action) {
         error: null,
       };
 
-    case ACTIONS.IDENTUS_CREATED:
-      return {
-        ...state,
-        status: 'identus_ready',
-        identus: action.payload.identus,
-        error: null,
-      };
-
-      case ACTIONS.START_WALLET_LOADING:
+    case ACTIONS.START_WALLET_LOADING:
       return {
         ...state,
         status: 'loading',
@@ -89,17 +86,6 @@ function walletReducer(state, action) {
         ...state,
         status: 'identus_ready',
         identus: action.payload.identus,
-        dids: action.payload.dids || [],
-        vcs: action.payload.vcs || [],
-        error: null
-      };
-
-    case ACTIONS.IDENTUS_UPDATED:
-      return {
-        ...state,
-        status: 'identus_ready',
-        dids: action.payload.dids || [],
-        vcs: action.payload.vcs || [],
         error: null
       };
 
@@ -222,13 +208,6 @@ export function WalletProvider({ children }) {
       }
     },
 
-    identusCreated: (identus) => {
-      dispatch({ 
-        type: ACTIONS.IDENTUS_CREATED, 
-        payload: { identus } 
-      });
-    },
-
     startWalletLoading: () => {
       dispatch({ type: ACTIONS.START_WALLET_LOADING });
     },
@@ -240,17 +219,24 @@ export function WalletProvider({ children }) {
       });
     },
 
-    identusLoaded: (identus, dids = [], vcs = []) => {
+    identusLoaded: (identus) => {
       dispatch({ 
         type: ACTIONS.IDENTUS_LOADED, 
-        payload: { identus, dids, vcs } 
+        payload: { identus } 
       });
     },
 
-    identusUpdated: ( dids = [], vcs = []) => {
+    identusDiDSet: ( dids = []) => {
       dispatch({ 
-        type: ACTIONS.IDENTUS_UPDATED, 
-        payload: { dids, vcs } 
+        type: ACTIONS.SET_DIDS, 
+        payload: { dids } 
+      });
+    },
+
+    identusVCSet: ( vcs = []) => {
+      dispatch({ 
+        type: ACTIONS.SET_VCS, 
+        payload: { vcs } 
       });
     },
 
