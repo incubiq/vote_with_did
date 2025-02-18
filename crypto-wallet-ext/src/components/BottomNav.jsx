@@ -18,16 +18,16 @@ const BottomNav = () => {
         Dashboard
       </button>
       <button 
-        className={`${styles.navButton} ${isActive('/dids') ? styles.active : ''}`}
-        onClick={() => navigate('/dids')}
+        className={`${styles.navButton} ${isActive('/votes') ? styles.active : ''}`}
+        onClick={() => navigate('/votes')}
       >
-        DIDs
+        Votes
       </button>
       <button 
         className={`${styles.navButton} ${isActive('/vcs') ? styles.active : ''}`}
         onClick={() => navigate('/vcs')}
       >
-        VCs
+        Credentials
       </button>
       <button 
         className={`${styles.navButton} ${isActive('/settings') ? styles.active : ''}`}

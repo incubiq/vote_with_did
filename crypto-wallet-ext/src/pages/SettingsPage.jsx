@@ -17,8 +17,8 @@ const SettingsPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.onboardingContainer}>
         <h1 className={styles.title}>Settings</h1>
+        <div className={styles.onboardingContainer}>
         <div className={styles.section}>
           <button 
             className={styles.optionButton}

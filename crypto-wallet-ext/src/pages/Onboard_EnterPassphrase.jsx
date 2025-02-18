@@ -85,6 +85,8 @@ const EnterPassphrase = () => {
           private: dataWallet.data.private,
         };
       
+        actions.walletCreated(userWallet);
+        
         // Simulate loading DIDs and VCs
         const dids = []; // Will come from your wallet library
         const vcs = [];  // Will come from your wallet library

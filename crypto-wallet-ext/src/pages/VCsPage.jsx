@@ -9,8 +9,8 @@ const VCsPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.onboardingContainer}>
-        <h1 className={styles.title}>Your Verifiable Credentials</h1>
+        <h1 className={styles.title}>Your Credentials</h1>
+        <div className={styles.onboardingContainer}>
         <div className={styles.section}>
           {state.vcs.length === 0 ? (
             <p>No Verifiable Credentials found in your wallet</p>

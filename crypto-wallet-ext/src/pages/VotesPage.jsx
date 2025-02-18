@@ -1,25 +1,25 @@
-// src/pages/DIDsPage.jsx
+// src/pages/VotesPage.jsx
 import React from 'react';
 import { useWallet } from '../state/WalletContext';
 import BottomNav from '../components/BottomNav';
 import styles from '../styles/Onboarding.module.css';
 
-const DIDsPage = () => {
+const VotesPage = () => {
   const { state } = useWallet();
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.onboardingContainer}>
-        <h1 className={styles.title}>Your DIDs</h1>
+        <h1 className={styles.title}>Your Votes</h1>
+        <div className={styles.onboardingContainer}>
         <div className={styles.section}>
-          {state.dids.length === 0 ? (
-            <p>No DIDs found in your wallet</p>
+          {state.ballots.length === 0 ? (
+            <p>No ballot found</p>
           ) : (
             <ul className={styles.list}>
-              {state.dids.map((did, index) => (
+              {state.ballots.map((did, index) => (
                 <li key={index} className={styles.listItem}>
-                  <span className={styles.didId}>{did.id}</span>
-                  <span className={styles.didMethod}>{did.method}</span>
+                  <span className={styles.property}>prop</span>
+                  <span className={styles.value}>val</span>
                 </li>
               ))}
             </ul>
@@ -31,4 +31,4 @@ const DIDsPage = () => {
   );
 };
 
-export default DIDsPage;
+export default VotesPage;

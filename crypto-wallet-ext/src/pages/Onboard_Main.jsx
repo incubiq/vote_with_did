@@ -20,10 +20,13 @@ const Onboarding = () => {
 
   return (
     <div className={styles.onboardingContainer}>
-      <h1 className={styles.title}>Digital Identity Wallet</h1>
+      <h1 className={styles.title}>The Anonymous Voting App</h1>
       <p className={styles.description}>
-        Secure and manage your digital identity with our wallet. Choose an option to get started:
+      Access Anonymous Voting via Digital Identity with our wallet. 
       </p>
+      <i className={styles.description}>
+      Choose an option to get started:
+      </i>
       
       <div className={styles.buttonGroup}>
         <button 

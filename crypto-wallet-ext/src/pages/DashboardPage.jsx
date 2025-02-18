@@ -22,11 +22,9 @@ const WalletDashboard = () => {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.onboardingContainer}>
-        <div className={styles.header}>
-          <h1 className={styles.title}>Digital Identity Wallet</h1>
-        </div>
+        <h1 className={styles.title}>Digital Identity Wallet</h1>
 
+        <div className={styles.onboardingContainer}>
 
         {/* DIDs Section */}
         <section className={styles.section}>

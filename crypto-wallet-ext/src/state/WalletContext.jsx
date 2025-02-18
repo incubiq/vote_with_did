@@ -10,6 +10,8 @@ const initialState = {
   identus: null,   // the identus info about this user / wallet 
   dids: [],        // array of DIDs
   vcs: [],         // array of VCs
+  ballots: [],      
+  votes: [],        
   error: null,     // any error messages,
   recoveryPhrase: null
 };
