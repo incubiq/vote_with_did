@@ -7,10 +7,11 @@ import BottomNav from '../components/BottomNav';
 import styles from '../styles/Onboarding.module.css';
 
 const SettingsPage = () => {
-  const { actions } = useWallet();
+  const { state, actions } = useWallet();
   const navigate = useNavigate();
 
   const handleLogout = () => {
+    actions.resetWallet();
     navigate('/');
   };
 
@@ -28,10 +29,12 @@ const SettingsPage = () => {
         </div>
 
         {/* Wallet pubkey Section */}
+        {state.wallet?
         <section className={styles.section}>
           <span className="">Public Key: </span>
           <span className="">{state.wallet.address}</span>
         </section>
+        :""}
 
       </div>
       <BottomNav />

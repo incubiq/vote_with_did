@@ -1,5 +1,5 @@
 // src/pages/Onboard_Main.jsx
-import React from "react";
+import React, { useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { useWallet } from '../state/WalletContext';
 
@@ -10,9 +10,13 @@ const Onboarding = () => {
   
   const navigate = useNavigate();
 
-  if(state.wallet && state.wallet.address) {
-    navigate("/dashboard");
-  }
+    
+  useEffect(() => {
+    if(state.wallet && state.wallet.address) {
+      navigate("/dashboard");
+    }
+  }, [state]);
+
 
   return (
     <div className={styles.onboardingContainer}>

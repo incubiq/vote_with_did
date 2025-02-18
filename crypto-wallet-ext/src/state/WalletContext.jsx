@@ -159,7 +159,7 @@ export function WalletProvider({ children }) {
           payload: { pin: _pin }
         });
       
-        const storedState = await storage.loadWallet();
+        const storedState = await storage.async_loadWallet();
         if (storedState && storedState.wallet) {
 
           dispatch({
@@ -269,7 +269,7 @@ export function WalletProvider({ children }) {
 
     resetWallet: async() => {
       try{
-        await storage.clearWallet();
+        await storage.async_clearWallet();
         dispatch({ type: ACTIONS.RESET_WALLET });
       } catch (error) {
         console.error('Failed to clear wallet :', error);

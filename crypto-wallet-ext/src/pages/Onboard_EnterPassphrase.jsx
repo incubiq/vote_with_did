@@ -66,11 +66,11 @@ const EnterPassphrase = () => {
       setShowPinDialog(true);
     }
     else {
-      loadWallet();
+      loadMyWallet();
     }
   }
 
-  const loadWallet = async () => {
+  const loadMyWallet = async () => {
       try {
         actions.startWalletLoading();
         let dataWallet=await srv_getWalletInfo(passphrase);
@@ -102,7 +102,8 @@ const EnterPassphrase = () => {
 
   const handlePinSubmit = async (pin) => {
       actions.setPin(pin);
-      actions.startWalletLoading();
+      setShowPinDialog(false);
+      loadMyWallet()
   };
 
   const handleChange = (e) => {

@@ -78,7 +78,7 @@ export const storage = {
   },
 
   // Load state from extension storage
-  async loadWallet() {
+  async async_loadWallet() {
     try {
       const storedPin  = await this.async_loadPin();
       if(!storedPin) {
@@ -97,7 +97,7 @@ export const storage = {
 
       // Decrypt wallet data if it exists
       const walletState = await decryptData(wallet, iv, key);
-      return walletState;
+      return {wallet: walletState};
 
     } catch (error) {
       console.error('Load state error:', error);
@@ -106,9 +106,9 @@ export const storage = {
   },
 
   // Clear all stored state
-  async clearWallet() {
+  async async_clearWallet() {
     try {
-      removeStorage(STORAGE_KEY);
+      removeStorage(STORAGE_WALLET);
       return true;
     } catch (error) {
       return false;

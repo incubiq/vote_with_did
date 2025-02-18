@@ -16,11 +16,6 @@ const WalletDashboard = () => {
     }
   }, [state.status, state.wallet]);
 
-  const handleLogout = () => {
-    actions.resetWallet();
-    navigate('/');
-  };
-
   if (state.status !== 'ready' || !state.wallet) {
     return null; // Will redirect via useEffect
   }
@@ -30,12 +25,6 @@ const WalletDashboard = () => {
       <div className={styles.onboardingContainer}>
         <div className={styles.header}>
           <h1 className={styles.title}>Digital Identity Wallet</h1>
-          <button 
-            className={styles.optionButton}
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
         </div>
 
 
