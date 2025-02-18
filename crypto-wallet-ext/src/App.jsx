@@ -5,7 +5,11 @@ import { WalletProvider } from './state/WalletContext';
 import Onboarding from "./pages/Onboard_Main";
 import EnterPassphrase from "./pages/Onboard_EnterPassphrase";
 import GeneratePassphrase from "./pages/Onboard_GeneratePassphrase";
-import WalletDashboard from "./pages/Wallet_dashboard";
+import WalletDashboard from "./pages/DashboardPage";
+import DIDsPage from "./pages/DIDsPage";
+import VCsPage from "./pages/VCsPage";
+import SettingsPage from "./pages/SettingsPage";
+
 import './styles/base.css';
 
 function App() {
@@ -18,6 +22,9 @@ function App() {
           <Route path="/enter-passphrase" element={<EnterPassphrase />} />
           <Route path="/generate-passphrase" element={<GeneratePassphrase />} />
           <Route path="/dashboard" element={<WalletDashboard />} />
+          <Route path="/dids" element={<DIDsPage />} />
+          <Route path="/vcs" element={<VCsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </Router>
     </WalletProvider>

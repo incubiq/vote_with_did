@@ -4,8 +4,10 @@ import { storage } from '../utils/storage';
 
 // Initial state
 const initialState = {
+  pin: null,      // the pin for accessing wallet without requiring re-enter full passphrase
   status: 'idle', // idle, creating, loading, ready, error
   wallet: null,    // wallet object when created/loaded
+  identus: null,   // the identus info about this user / wallet 
   dids: [],        // array of DIDs
   vcs: [],         // array of VCs
   error: null,     // any error messages,
@@ -14,20 +16,33 @@ const initialState = {
 
 // Action types
 export const ACTIONS = {
+  PIN_SET: 'PIN_SET',
   START_WALLET_CREATION: 'START_WALLET_CREATION',
   WALLET_CREATED: 'WALLET_CREATED',
+  IDENTUS_CREATED: 'IDENTUS_CREATED',
   START_WALLET_LOADING: 'START_WALLET_LOADING',
   WALLET_LOADED: 'WALLET_LOADED',
+  IDENTUS_LOADED: 'IDENTUS_LOADED',
+  IDENTUS_UPDATED: 'IDENTUS_UPDATED',
   SET_ERROR: 'SET_ERROR',
   CLEAR_ERROR: 'CLEAR_ERROR',
   SET_DIDS: 'SET_DIDS',
   SET_VCS: 'SET_VCS',
   CLEAR_RECOVERY_PHRASE: 'CLEAR_RECOVERY_PHRASE',
-  RESET_STATE: 'RESET_STATE',
+  RESET_WALLET: 'RESET_WALLET',
 };
 
 function walletReducer(state, action) {
   switch (action.type) {
+
+    case ACTIONS.PIN_SET:
+      return {
+        ...state,
+        status: 'pin set',
+        error: null,
+        pin: action.payload.pin,
+      };
+
     case ACTIONS.START_WALLET_CREATION:
       return {
         ...state,
@@ -44,7 +59,15 @@ function walletReducer(state, action) {
         error: null,
       };
 
-    case ACTIONS.START_WALLET_LOADING:
+    case ACTIONS.IDENTUS_CREATED:
+      return {
+        ...state,
+        status: 'identus_ready',
+        identus: action.payload.identus,
+        error: null,
+      };
+
+      case ACTIONS.START_WALLET_LOADING:
       return {
         ...state,
         status: 'loading',
@@ -56,6 +79,23 @@ function walletReducer(state, action) {
         ...state,
         status: 'ready',
         wallet: action.payload.wallet,
+        error: null
+      };
+
+    case ACTIONS.IDENTUS_LOADED:
+      return {
+        ...state,
+        status: 'identus_ready',
+        identus: action.payload.identus,
+        dids: action.payload.dids || [],
+        vcs: action.payload.vcs || [],
+        error: null
+      };
+
+    case ACTIONS.IDENTUS_UPDATED:
+      return {
+        ...state,
+        status: 'identus_ready',
         dids: action.payload.dids || [],
         vcs: action.payload.vcs || [],
         error: null
@@ -92,7 +132,7 @@ function walletReducer(state, action) {
         recoveryPhrase: null,
       };
   
-    case ACTIONS.RESET_STATE:
+    case ACTIONS.RESET_WALLET:
       return initialState;
 
     default:
@@ -107,8 +147,55 @@ const WalletContext = createContext(null);
 
 export function WalletProvider({ children }) {
   const [state, dispatch] = useReducer(walletReducer, initialState);
+ 
+  // Load stored state on mount
+  useEffect(() => {
+    const loadStoredState = async () => {
+      try {
+
+        const _pin = await storage.async_loadPin()
+        dispatch({
+          type: ACTIONS.PIN_SET,
+          payload: { pin: _pin }
+        });
+      
+        const storedState = await storage.loadWallet();
+        if (storedState && storedState.wallet) {
+
+          dispatch({
+            type: ACTIONS.WALLET_LOADED,
+            payload: { wallet: storedState.wallet }
+          });
+        }
+
+        if (storedState && storedState.identus) {
+
+          dispatch({
+            type: ACTIONS.IDENTUS_LOADED,
+            payload: { identus: storedState.identus }
+          });
+
+          // now check on DIDs / VCs live
+          // TODO
+        }
+
+      } catch (error) {
+        console.error('Failed to load stored state:', error);
+      }
+    };
+
+    loadStoredState();
+  }, []);
 
   const actions = {
+    setPin: async(pin) => {
+      await storage.async_savePin(pin);
+      dispatch({ 
+        type: ACTIONS.PIN_SET, 
+        payload: { pin } 
+      });
+    },
+
     startWalletCreation: (recoveryPhrase) => {
       dispatch({ 
         type: ACTIONS.START_WALLET_CREATION, 
@@ -116,10 +203,27 @@ export function WalletProvider({ children }) {
       });
     },
 
-    walletCreated: (wallet) => {
+    walletCreated: async (wallet) => {
+      try {
+        await storage.saveWallet({ wallet });
+        dispatch({ 
+          type: ACTIONS.WALLET_CREATED, 
+          payload: { wallet } 
+        });
+      }
+      catch (error) {
+        console.error('Failed to save wallet:', error);
+        dispatch({
+          type: ACTIONS.SET_ERROR,
+          payload: { error: 'Failed to save wallet' }
+        });
+      }
+    },
+
+    identusCreated: (identus) => {
       dispatch({ 
-        type: ACTIONS.WALLET_CREATED, 
-        payload: { wallet } 
+        type: ACTIONS.IDENTUS_CREATED, 
+        payload: { identus } 
       });
     },
 
@@ -127,10 +231,24 @@ export function WalletProvider({ children }) {
       dispatch({ type: ACTIONS.START_WALLET_LOADING });
     },
 
-    walletLoaded: (wallet, dids = [], vcs = []) => {
+    walletLoaded: (wallet) => {
       dispatch({ 
         type: ACTIONS.WALLET_LOADED, 
-        payload: { wallet, dids, vcs } 
+        payload: { wallet } 
+      });
+    },
+
+    identusLoaded: (identus, dids = [], vcs = []) => {
+      dispatch({ 
+        type: ACTIONS.IDENTUS_LOADED, 
+        payload: { identus, dids, vcs } 
+      });
+    },
+
+    identusUpdated: ( dids = [], vcs = []) => {
+      dispatch({ 
+        type: ACTIONS.IDENTUS_UPDATED, 
+        payload: { dids, vcs } 
       });
     },
 
@@ -149,8 +267,13 @@ export function WalletProvider({ children }) {
       dispatch({ type: ACTIONS.CLEAR_RECOVERY_PHRASE });
     },
 
-    resetState: () => {
-      dispatch({ type: ACTIONS.RESET_STATE });
+    resetWallet: async() => {
+      try{
+        await storage.clearWallet();
+        dispatch({ type: ACTIONS.RESET_WALLET });
+      } catch (error) {
+        console.error('Failed to clear wallet :', error);
+      }      
     }
   };
 

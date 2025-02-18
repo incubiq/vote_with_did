@@ -2,18 +2,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateMnemonic } from "../utils/bip39";
+import { srv_getWalletInfo } from "../utils/identity";
+import PinDialog from '../components/PinDialog';
 import { useWallet } from '../state/WalletContext';
+
 import styles from '../styles/Onboarding.module.css';
+import styleM from '../styles/Base.module.css';
 
 const EnterPassphrase = () => {
   const [passphrase, setPassphrase] = useState("");
+  const [showPinDialog, setShowPinDialog] = useState(false);
   const [localError, setLocalError] = useState("");
   const navigate = useNavigate();
   const { state, actions } = useWallet();
 
-  // Clear any existing state when component mounts
   useEffect(() => {
-    actions.resetState();
   }, []);
 
   // Watch for state errors
@@ -24,6 +27,13 @@ const EnterPassphrase = () => {
     }
   }, [state.error]);
 
+  // Watch for wallet loaded
+  useEffect(() => {
+    if (state.wallet && state.wallet.address) {
+      navigate('/dashboard');
+    }
+  }, [state.wallet]);
+  
   const validateInput = () => {
     if (!passphrase.trim()) {
       setLocalError("Please enter your recovery phrase");
@@ -50,27 +60,49 @@ const EnterPassphrase = () => {
     if (!validateInput()) {
       return;
     }
-
-    try {
-      actions.startWalletLoading();
-      
-      // TODO: Replace this with your actual wallet loading logic
-      
-      // const wallet = await yourWalletLibrary.load(passphrase);
-      const wallet = { address: "dummy_address" }; // Placeholder
-      
-      // Simulate loading DIDs and VCs
-      const dids = []; // Will come from your wallet library
-      const vcs = [];  // Will come from your wallet library
-      
-      actions.walletLoaded(wallet, dids, vcs);
-      
-      navigate('/dashboard');
-      console.log("Wallet loaded successfully");
-      
-    } catch (error) {
-      actions.setError(error.message || "Failed to load wallet");
+ 
+    // Show PIN dialog for verification
+    if(state.pin==null) {
+      setShowPinDialog(true);
     }
+    else {
+      loadWallet();
+    }
+  }
+
+  const loadWallet = async () => {
+      try {
+        actions.startWalletLoading();
+        let dataWallet=await srv_getWalletInfo(passphrase);
+        if(!dataWallet || ! dataWallet.data) {
+          actions.setError('Could not load Wallet');
+          return;
+        }
+  
+        const userWallet = {
+          address: dataWallet.data.addr,
+          seed: dataWallet.data.seed,
+          private: dataWallet.data.private,
+        };
+      
+        // Simulate loading DIDs and VCs
+        const dids = []; // Will come from your wallet library
+        const vcs = [];  // Will come from your wallet library
+        
+        actions.walletLoaded(userWallet, dids, vcs);
+        
+        navigate('/dashboard');
+        console.log("Wallet loaded successfully");
+        
+      } catch (error) {
+        actions.setError(error.message || "Failed to load wallet");
+      }
+    }
+    
+
+  const handlePinSubmit = async (pin) => {
+      actions.setPin(pin);
+      actions.startWalletLoading();
   };
 
   const handleChange = (e) => {
@@ -79,14 +111,13 @@ const EnterPassphrase = () => {
   };
 
   const handleBack = () => {
-    actions.resetState();
     navigate('/');
   };
 
   return (
     <div className={styles.pageContainer}>
       <button 
-        className={styles.backButton}
+        className={styleM.backButton}
         onClick={handleBack}
       >
         ← Back
@@ -126,6 +157,14 @@ const EnterPassphrase = () => {
           </p>
         )}
       </div>
+
+      {showPinDialog && (
+        <PinDialog
+          isSetup={true}
+          onSubmit={handlePinSubmit}
+          onClose={() => {setShowPinDialog(false)}}
+        />
+      )}
     </div>
   );
 };

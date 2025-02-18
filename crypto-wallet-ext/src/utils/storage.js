@@ -1,86 +1,47 @@
 // src/utils/storage.js
 
-// Encryption key management
-const getEncryptionKey = async () => {
-  // In a real implementation, this would be more sophisticated
-  // For now, we'll use a simple key derivation
-  const key = await crypto.subtle.generateKey(
-    {
-      name: 'AES-GCM',
-      length: 256
-    },
-    true,
-    ['encrypt', 'decrypt']
-  );
-  return key;
-};
+import { async_deriveKeyFromPin, encryptData, decryptData } from '../utils/encrypt';
 
-// Encrypt data
-const encryptData = async (data) => {
-  try {
-    const key = await getEncryptionKey();
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encodedData = new TextEncoder().encode(JSON.stringify(data));
+const STORAGE_IDENTITY = 'VwD_IDENTITY';
+const STORAGE_WALLET = 'VwD_WALLET';
+const STORAGE_PIN = "VwD_PIN"
 
-    const encryptedData = await crypto.subtle.encrypt(
-      {
-        name: 'AES-GCM',
-        iv
-      },
-      key,
-      encodedData
-    );
-
-    return {
-      encrypted: Array.from(new Uint8Array(encryptedData)),
-      iv: Array.from(iv)
-    };
-  } catch (error) {
-    console.error('Encryption error:', error);
-    throw new Error('Failed to encrypt data');
-  }
-};
-
-const saveToStorage = (entry, value) => {
+const saveToStorage = (entry, _obj) => {
   if(entry!=null) {
-    localStorage.setItem(entry, value);
+    localStorage.setItem(entry, JSON.stringify(_obj));
   }
 }
 
 const loadFromStorage = (entry) => {
   let _ret=localStorage.getItem(entry);  
-  return _ret;
+  return JSON.parse(_ret);
 }
 
 const removeStorage = (entry) => {
   localStorage.removeItem(entry);
 }
 
-// Decrypt data
-const decryptData = async (encryptedData, iv) => {
-  try {
-    const key = await getEncryptionKey();
-    const decrypted = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: new Uint8Array(iv)
-      },
-      key,
-      new Uint8Array(encryptedData)
-    );
-
-    return JSON.parse(new TextDecoder().decode(decrypted));
-  } catch (error) {
-    console.error('Decryption error:', error);
-    throw new Error('Failed to decrypt data');
-  }
-};
 
 // Storage interface
 export const storage = {
+
+/*
+ *      WALLET
+ */
+
   // Save state to extension storage
-  async saveState(state) {
+  async saveWallet(state) {
     try {
+
+      // one iv / key per saved session
+      let objPin = await this.async_loadPin();
+      if(!objPin) {
+        throw new Error('No PIN');
+      }
+
+      const key = await async_deriveKeyFromPin(objPin.pin);
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+  
       // Filter out sensitive data that shouldn't be persisted
       const stateToSave = {
         ...state,
@@ -89,23 +50,26 @@ export const storage = {
 
       // Encrypt wallet data if it exists
       if (state.wallet) {
-        const encryptedWallet = await encryptData(state.wallet);
-        stateToSave.wallet = encryptedWallet;
+        const encryptedWallet = await encryptData(state.wallet, iv, key);
+        stateToSave.wallet = Array.from(new Uint8Array(encryptedWallet));
       }
 
       // Encrypt DIDs and VCs
-      if (state.dids.length > 0) {
-        const encryptedDids = await encryptData(state.dids);
-        stateToSave.dids = encryptedDids;
+      if (state.dids && state.dids.length > 0) {
+        const encryptedDids = await encryptData(state.dids. iv, key);
+        stateToSave.dids = Array.from(new Uint8Array(encryptedDids));
       }
 
-      if (state.vcs.length > 0) {
-        const encryptedVcs = await encryptData(state.vcs);
-        stateToSave.vcs = encryptedVcs;
+      if (state.vcs && state.vcs.length > 0) {
+        const encryptedVcs = await encryptData(state.vcs, iv, key);
+        stateToSave.vcs = Array.from(new Uint8Array(encryptedVcs));
       }
 
       // Save to extension storage
-      saveToStorage("walletState", stateToSave);
+      stateToSave.iv=Array.from(iv);
+      stateToSave.created_at= new Date(new Date().toUTCString());
+      saveToStorage(STORAGE_WALLET, stateToSave);
+
       return true;
     } catch (error) {
       console.error('Save state error:', error);
@@ -114,32 +78,27 @@ export const storage = {
   },
 
   // Load state from extension storage
-  async loadState() {
+  async loadWallet() {
     try {
-      const walletState  = loadFromStorage('walletState');
-      
-      if (!walletState) {
+      const storedPin  = await this.async_loadPin();
+      if(!storedPin) {
+        return;
+      }
+      const key = await async_deriveKeyFromPin(storedPin.pin)
+
+      const storedWallet  = loadFromStorage(STORAGE_WALLET);
+      if(!storedWallet) {
+        return;
+      }
+      const { wallet, iv } = storedWallet; 
+      if (!wallet || !iv) {
         return null;
       }
 
       // Decrypt wallet data if it exists
-      if (walletState.wallet) {
-        const { encrypted, iv } = walletState.wallet;
-        walletState.wallet = await decryptData(encrypted, iv);
-      }
-
-      // Decrypt DIDs and VCs
-      if (walletState.dids) {
-        const { encrypted, iv } = walletState.dids;
-        walletState.dids = await decryptData(encrypted, iv);
-      }
-
-      if (walletState.vcs) {
-        const { encrypted, iv } = walletState.vcs;
-        walletState.vcs = await decryptData(encrypted, iv);
-      }
-
+      const walletState = await decryptData(wallet, iv, key);
       return walletState;
+
     } catch (error) {
       console.error('Load state error:', error);
       throw new Error('Failed to load wallet state');
@@ -147,12 +106,67 @@ export const storage = {
   },
 
   // Clear all stored state
-  async clearState() {
+  async clearWallet() {
     try {
-      removeStorage('walletState');
+      removeStorage(STORAGE_KEY);
       return true;
     } catch (error) {
       return false;
     }
-  }
+  },
+
+/*
+ *      IDENTITY (DIDs  VCs)
+ */
+
+
+/*
+ *      PIN
+ */
+
+  _isMoreThan5DaysAgo(date) {
+    const fiveDaysInMs = 5 * 24 * 60 * 60 * 1000; // 5 days in milliseconds
+    const now = new Date();
+    return (now - date) > fiveDaysInMs;
+  },
+
+  async async_savePin(_pin) {
+    try {
+      saveToStorage(STORAGE_PIN, {
+        pin: _pin,
+        lastChecked_at: new Date(new Date().toUTCString())
+      });
+      return true;
+    }
+    catch(err) {
+      return false;
+    }
+  },
+
+  async async_loadPin() {
+    try {
+      const objPin= loadFromStorage(STORAGE_PIN);
+      if(objPin.lastChecked_at) {
+        const _oldDate=new Date(objPin.lastChecked_at);
+        if(this._isMoreThan5DaysAgo(_oldDate)) {
+          // force a recheck
+          // TODO
+        }
+      }
+      return objPin? objPin.pin: null;
+    }
+    catch(err) {
+      return null;
+    }
+  },
+
+  async async_clearPin(_pin) {
+    try {
+      removeStorage(STORAGE_PIN);
+      return true;
+    } catch (error) {
+      return false;
+    }    
+  },
+
 };

@@ -51,26 +51,6 @@
   margin: 0 auto;
 }
 
-.backButton {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  padding: 0.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--text-color);
-  font-size: 1rem;
-}
-
-.backButton:hover {
-  opacity: 0.8;
-  background-color: #f0f0f0;
-}
-
 .header {
   display: flex;
   justify-content: space-between;

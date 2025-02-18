@@ -1,0 +1,43 @@
+/* src/styles/BottomNav.module.css */
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  z-index: 1000;
+}
+
+.navButton {
+  flex: 1;
+  height: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #666;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+}
+
+.navButton:hover {
+  background-color: #f5f5f5;
+}
+
+.active {
+  color: var(--primary-color);
+  border-top: 2px solid var(--primary-color);
+}
+
+/* Adjust main content to account for bottom nav */
+:global(.pageContainer) {
+  padding-bottom: 60px;
+}

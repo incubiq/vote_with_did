@@ -2,12 +2,18 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateMnemonic } from "../utils/bip39";
+import { srv_getWalletInfo } from "../utils/identity";
+import PinDialog from '../components/PinDialog';
 import { useWallet } from '../state/WalletContext';
+import { storage } from '../utils/storage';
+
 import styles from '../styles/Onboarding.module.css';
+import styleM from '../styles/Base.module.css';
 
 const GeneratePassphrase = () => {
   const [copied, setCopied] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
   const navigate = useNavigate();
   const { state, actions } = useWallet();
 
@@ -27,30 +33,47 @@ const GeneratePassphrase = () => {
     }
   };
 
-  const handleSave = async () => {
+  const generateWallet = async () => {
+    try {
+      let dataWallet=await srv_getWalletInfo(state.recoveryPhrase);
+      if(!dataWallet || ! dataWallet.data) {
+        actions.setError('Could not create Wallet');
+        return;
+      }
+      const userWallet = {
+        address: dataWallet.data.addr,
+        seed: dataWallet.data.seed,
+        private: dataWallet.data.private,
+      };
+    
+      actions.walletCreated(userWallet);
+      actions.clearRecoveryPhrase(); // Clear sensitive data
+      
+      // Navigate to wallet dashboard or next step
+      navigate('/dashboard');
+    } catch (error) {
+      actions.setError(error.message);
+    }
+  }
+  
+  const handleProceed = () => {
     if (!confirmed) {
       actions.setError('Please confirm that you have backed up your recovery phrase');
       return;
     }
 
-    try {
-      // TODO: Implement actual wallet creation with your library
-
-      // Simulating wallet creation for now
-      const dummyWallet = {
-        address: "dummy_address",
-        recoveryPhrase: state.recoveryPhrase
-      };
-    
-      actions.walletCreated(dummyWallet);
-      actions.clearRecoveryPhrase(); // Clear sensitive data
-      
-      // Navigate to wallet dashboard or next step
-      navigate('/dashboard');
-
-    } catch (error) {
-      actions.setError(error.message);
+    if(state.pin==null) {
+      setShowPinSetup(true);
     }
+    else {
+      generateWallet();
+    }
+  };
+
+
+  const handleSetPin = async (pin) => {
+      actions.setPin(pin);
+      generateWallet();
   };
 
   // Show any errors
@@ -65,9 +88,8 @@ const GeneratePassphrase = () => {
   return (
     <div className={styles.pageContainer}>
       <button 
-        className={styles.backButton}
+        className={styleM.backButton}
         onClick={() => {
-          actions.resetState(); // Clear any sensitive data
           navigate('/');
         }}
       >
@@ -123,7 +145,7 @@ const GeneratePassphrase = () => {
 
               <button 
                 className={styles.optionButton}
-                onClick={handleSave}
+                onClick={handleProceed}
                 disabled={!confirmed || state.status !== 'creating'}
               >
                 {state.status === 'creating' ? 'Creating Wallet...' : 'Create Wallet'}
@@ -132,6 +154,16 @@ const GeneratePassphrase = () => {
           </div>
         )}
       </div>
+
+      
+      {showPinSetup && (
+        <PinDialog
+          isSetup={true}
+          onSubmit={handleSetPin}
+          onClose={() => {setShowPinSetup(false)}}
+        />
+      )}
+
     </div>
   );
 };

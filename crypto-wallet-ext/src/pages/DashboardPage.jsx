@@ -2,6 +2,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
+import BottomNav from '../components/BottomNav';
 import styles from '../styles/Onboarding.module.css';
 
 const WalletDashboard = () => {
@@ -16,7 +17,7 @@ const WalletDashboard = () => {
   }, [state.status, state.wallet]);
 
   const handleLogout = () => {
-    actions.resetState();
+    actions.resetWallet();
     navigate('/');
   };
 
@@ -37,11 +38,6 @@ const WalletDashboard = () => {
           </button>
         </div>
 
-        {/* Wallet pubkey Section */}
-        <section className={styles.section}>
-          <span className="">Public Key: </span>
-          <span className="">{state.wallet.address}</span>
-        </section>
 
         {/* DIDs Section */}
         <section className={styles.section}>
@@ -80,6 +76,7 @@ const WalletDashboard = () => {
           )}
         </section>
       </div>
+      <BottomNav />
     </div>
   );
 };

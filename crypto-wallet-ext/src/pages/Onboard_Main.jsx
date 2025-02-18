@@ -1,10 +1,18 @@
 // src/pages/Onboard_Main.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useWallet } from '../state/WalletContext';
+
 import styles from '../styles/Onboarding.module.css';
 
 const Onboarding = () => {
+  const { state, actions } = useWallet();
+  
   const navigate = useNavigate();
+
+  if(state.wallet && state.wallet.address) {
+    navigate("/dashboard");
+  }
 
   return (
     <div className={styles.onboardingContainer}>
