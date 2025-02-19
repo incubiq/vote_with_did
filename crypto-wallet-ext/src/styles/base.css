@@ -27,6 +27,8 @@ body {
   height: 580px;
   margin: 0;
   overflow: hidden;
+  background-color: #fff;
+  color: #333;
 }
 
 a {
