@@ -1,6 +1,8 @@
 import React from 'react';
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+//import { BrowserRouter as Router } from "react-router-dom";
+//import { MemoryRouter as Router } from 'react-router-dom';
 import { WalletProvider } from './state/WalletContext';
 import Onboarding from "./pages/Onboard_Main";
 import EnterPassphrase from "./pages/Onboard_EnterPassphrase";
