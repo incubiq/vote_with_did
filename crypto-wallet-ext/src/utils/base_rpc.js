@@ -1,9 +1,21 @@
 let  rootAPI="https://identity.opensourceais.com"
 let _userToken=null;
 
+const isExtension = () => {
+  return typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id;
+}
+
 const isProd = () => {
+  if(isExtension()) {
+    // todo: change this later
+    return false
+  }
+
   const env = process.env.NODE_ENV
-  return !(env == "development");
+  if(!__IS_PROD__) {
+    return false;
+  }
+  return !(env == "development") ;
 }
 
 if (isProd()) {

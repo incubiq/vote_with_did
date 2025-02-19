@@ -3,7 +3,10 @@
     "name": "Voting App",
     "version": "1.0.0",
     "description": "A browser extension for managing Voting via digital identity and credentials.",
-    "permissions": ["storage"],
+    "permissions": ["storage", "activeTab"],
+    "host_permissions": [
+      "https://identity.opensourceais.com/*"
+    ],
     "action": {
       "default_popup": "index.html",
       "default_icon": {

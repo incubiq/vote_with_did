@@ -22,5 +22,8 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true
+  },
+  define: {
+    __IS_PROD__: JSON.stringify(!process.env.VITE_DEV)
   }
 });
