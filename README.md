@@ -39,7 +39,21 @@ This project is planned to start in August 2024, and be delivered by end July 20
     * component backend: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20backend.txt
     * component dApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20dapp.txt
     * component : webApp: https://github.com/incubiq/vote_with_did/blob/main/specs/component%20-%20webapp.txt
-  
+
+
+## How to build the app
+
+==> to run as a local app
+npm run dev
+
+==> to build the webapp (normally not required)
+npm run build
+
+==> to run as a browser ext
+npm run build:extension
+// then in chrome/brave, 1/ load unpacked (select /dist dir) tjhe first time ; or 2/ refresh the Ext ; then 3/ access the ext in browser
+// debug/dev all in webapp mode, then final test in browser ext mode
+
 
 ## Support
 
