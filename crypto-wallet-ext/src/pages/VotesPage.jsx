@@ -2,7 +2,7 @@
 import React from 'react';
 import { useWallet } from '../state/WalletContext';
 import BottomNav from '../components/BottomNav';
-import styles from '../styles/Onboarding.module.css';
+import styles from '../styles/Base.module.css';
 
 const VotesPage = () => {
   const { state } = useWallet();
@@ -10,7 +10,7 @@ const VotesPage = () => {
   return (
     <div className={styles.pageContainer}>
         <h1 className={styles.title}>Your Votes</h1>
-        <div className={styles.onboardingContainer}>
+        <div className={styles.container}>
         <div className={styles.section}>
           {state.ballots.length === 0 ? (
             <p>No ballot found</p>

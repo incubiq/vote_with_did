@@ -6,9 +6,8 @@ import { getIdentusApiKey } from '../utils/encrypt';
 import { srv_getDid, srv_getCredsOffers } from "../utils/identity";
 import BottomNav from '../components/BottomNav';
 import DIDPanel from '../components/DIDs';
-import VCPanel from '../components/VCs';
 
-import styles from '../styles/Onboarding.module.css';
+import styles from '../styles/Base.module.css';
 
 const WalletDashboard = () => {
   const { state, actions } = useWallet();
@@ -46,20 +45,12 @@ const WalletDashboard = () => {
 
   return (
     <div className={styles.pageContainer}>
-        <h1 className={styles.title}>Digital Identity Wallet</h1>
+        <h1 className={styles.title}>Digital Identities</h1>
 
-        <div className={styles.onboardingContainer}>
+          <DIDPanel 
+            aItem={state? state.dids: []}
+          />
 
-        {/* DIDs Section */}
-        <DIDPanel 
-          aItem={state? state.dids: []}
-        />
-
-        <VCPanel 
-          aItem={state? state.vcs: []}
-        />
-
-      </div>
       <BottomNav />
     </div>
   );

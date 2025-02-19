@@ -7,25 +7,26 @@ const VCPanel = (props) => {
 
   const renderProofOrOffer = (_proof, _index) => {
     return (
-      <li key={_index} className={styles.listItem}>
+      <li key={_index} className={styles.listCreds}>
         {_proof.protocolState=="CredentialReceived"? 
         <>
-          <h3 className={styles.pin}>{_proof.protocolState}</h3>
-          <p>Issued Date: {new Date(_proof.createdAt).toLocaleDateString()}</p>
-          <p>{_proof.claims.title? _proof.claims.title: "Uknown proof"}</p>
+          <p className={styles.date}>{new Date(_proof.createdAt).toLocaleDateString()}</p>
+          <img className={styles.credsImage} src="/images/creds.png" />
+          <div className={styles.pin_proof}>Proof Received</div>
+          <p className={styles.proof_content}>{_proof.claims.title? _proof.claims.title: "Uknown proof"}</p>
         </>
         : 
         <>
-          <h3 className={styles.pin_orange}>{_proof.protocolState}</h3>
-          <p>Issued Date: {new Date(_proof.createdAt).toLocaleDateString()}</p>
+          <p className={styles.date}>{new Date(_proof.createdAt).toLocaleDateString()}</p>
+          <div className={styles.pin_offer}>Offer pending</div>
+          <p className={styles.proof_content}>Awaiting Validation...</p>
         </>}
       </li>
     )
   }
 
   return (
-    <section className={styles.section}>
-       <h2>Credentials</h2>
+    <div>
       {props.aItem==null || props.aItem.length === 0 ? (
         <p>No Verifiable Credentials found in your wallet</p>
       ) : (
@@ -35,7 +36,7 @@ const VCPanel = (props) => {
           ))}
         </ul>
       )}
-    </section>
+    </div>
   )
 };
 

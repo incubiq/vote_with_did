@@ -1,11 +1,12 @@
 /* src/styles/Creds.module.css */
 .section {
   width: 100%;
-  margin: 2rem 0;
-  padding: 2rem 1rem 1rem 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
   background-color: #f8f9fa;
   border-radius: 8px;
   position: relative;
+  text-align: justify;
 }
 
 .section h2 {
@@ -18,15 +19,16 @@
   list-style: none;
   padding: 0 ;
   margin: 0;
+  text-align: center;
+  display: inline-flex;
 }
 
-.listItem {
-  padding: 1rem;
-  margin: 0.5rem 0;
-  background-color: white;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
+.listIDs {
+  width: 160px;
+  height: 160px;
+  background-color: transparent;
   position: relative;
+  margin: 12px;
 }
 
 .section h3 {
@@ -44,22 +46,87 @@
   margin-bottom: 0.5rem;
 }
 
-.pin {
+
+.idImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 160px;
+  height: 160px;
+}
+
+.insideImage {
+  position: absolute;
+  top: 85px;
+  left: 12px;  
+  font-size: 9px;
+  width: 136px;
+}
+
+.pin_id {
   font-family: verdana;
   display: inline-block;
   padding: 0.25rem 0.5rem;
-  background-color: var(--primary-color);
+  background-color: rgb(10, 10, 94);
   color: white;
   border-radius: 4px;
   font-size: 0.8rem;
 }
 
-.pin_orange {
+.listCreds {
+  width: 120px;
+  height: 160px;
+  background-color: transparent;
+  position: relative;
+  margin: 12px;
+  border: 1px solid #aaa;
+}
+
+.credsImage {
+  position: absolute;
+  top: 4px;
+  left: 2px;
+  width: 45px;
+  height: 45px;
+}
+
+
+.pin_proof {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   font-family: verdana;
   display: inline-block;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0;
+  background-color: rgb(83, 138, 0);
+  color: white;
+  width: 120px;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+.pin_offer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  font-family: verdana;
+  display: inline-block;
+  padding: 0.25rem 0;
   background-color: orange;
   color: white;
-  border-radius: 4px;
+  width: 120px;
+  text-align: center;
   font-size: 0.8rem;
+}
+
+.date {
+  font-size: 0.8rem;
+  text-align: end;
+  padding-right: 4px;
+}
+
+.proof_content {
+  font-family: verdana;
+  font-size: 0.8rem;
+  padding: 16px;
 }

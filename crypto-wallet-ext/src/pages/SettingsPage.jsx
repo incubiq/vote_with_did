@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
 import BottomNav from '../components/BottomNav';
 
-import styles from '../styles/Onboarding.module.css';
+import styles from '../styles/Base.module.css';
 import stylesC from '../styles/Creds.module.css';
 
 const SettingsPage = () => {
@@ -19,19 +19,17 @@ const SettingsPage = () => {
   return (
     <div className={styles.pageContainer}>
         <h1 className={styles.title}>Settings</h1>
-        <div className={styles.onboardingContainer}>
-        <div className={styles.section}>
-          <button 
-            className={styles.optionButton}
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-        </div>
+        <div className={styles.container}>
+        <button 
+          className={styles.optionButton}
+          onClick={handleLogout}
+        >
+          Logout
+        </button>
 
         {/* Wallet pubkey Section */}
         {state.wallet?
-        <section className={stylesC.section}>
+        <section className={styles.section}>
           <h3 className={stylesC.pin}>Public Key</h3>
           <span className={stylesC.didUrl}>{state.wallet.address}</span>
         </section>

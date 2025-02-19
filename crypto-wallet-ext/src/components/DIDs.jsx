@@ -7,17 +7,19 @@ const DIDPanel = (props) => {
   
   const renderDid = (_did, _index)=> {
     return (
-      <li key={_index} className={styles.listItem}>
+      <li key={_index} className={styles.listIDs}>
         {/* Customize based on your DID structure */}
-        <span className={styles.didUrl}>{_did.did}</span>
-        <span className={styles.pin}>{_did.status}</span>
+        <img className={styles.idImage} src="/images/id-badge.jpg" />
+        <div className={styles.insideImage}>
+          <span className={styles.didUrl}>{_did.did}</span>
+          <span className={styles.pin_id}>{_did.status}</span>
+        </div>
       </li>
     )
   }
 
   return (
-    <section className={styles.section}>
-      <h2>Digital Identities</h2>
+    <div>
       {props.aItem==null || props.aItem.length === 0 ? (
         <p>No DIDs found in your wallet</p>
       ) : (
@@ -27,7 +29,7 @@ const DIDPanel = (props) => {
           ))}
         </ul>
       )}
-    </section>
+    </div>
   )
 };
 
