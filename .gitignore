@@ -27,3 +27,4 @@ crypto-wallet-ext/node_modules
 crypto-wallet-ext/dist
 
 cloud-backend/node_modules
+cloud-backend/local_secret.json
