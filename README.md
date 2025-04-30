@@ -50,11 +50,12 @@ This project is planned to start in August 2024, and be delivered by end July 20
     * Worked on all APIs to connect to Identus, and hosted Identus (not part of the demo, not part of the srouce code delivered in M2, as it will be delivered during M3, but was necessary to ease the implementation of some features of M2)
 
   - How to test it
+   * cd crypto-wallet-ext
    * to run as a local app: npm run dev
    * to build the webapp (normally not required): npm run build
    * to run as a browser ext
     npm run build:extension
-    // then in chrome/brave, 1/ load unpacked (select /dist dir) tjhe first time ; or 2/ refresh the Ext ; then 3/ access the ext in browser
+    // then in chrome/brave, 1/ load unpacked (select /dist dir) the first time ; or 2/ refresh the Ext ; then 3/ access the ext in browser
     // debug/dev all in webapp mode, then final test in browser ext mode
 
     Note: To access DIDs and VCs, the browser extension app requires another backend running in the background, which I have not included in the code here as this is part of M3.
