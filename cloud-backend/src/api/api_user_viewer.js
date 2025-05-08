@@ -11,8 +11,8 @@ class api_user_viewer extends apiBase {
     constructor(objParam) {
         super(objParam); // need to call the parent constructor when inheriting
 
-        const classDBViewer = require('../dbaccess/db_viewer');
-        this.dbViewer=new classDBViewer({stdTTL: 864000});   // 10 day cache...
+//        const classDBViewer = require('../dbaccess/db_viewer');
+//        this.dbViewer=new classDBViewer({stdTTL: 864000});   // 10 day cache...
     }
 
 

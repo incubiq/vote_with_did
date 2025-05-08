@@ -32,6 +32,23 @@ router.get("/vcs", function(req, res, next) {
   );
 });
 
+
+/*
+ *      wallet access routes
+ */
+
+router.post("/wallet", function(req, res, next) {
+   routeUtils.apiPost(req, res, gConfig.app.apiVoter.async_ensureWalletType.bind(gConfig.app.apiVoter), {
+        did: req.user && req.user.did? req.user.did: null,
+        chain: req.body.chain? req.body.chain: null,
+        id: req.body.id? req.body.id: null,
+        name: req.body.name? req.body.name: null,
+        logo: req.body.logo? req.body.logo: null,
+        networkId: req.body.networkId? parseInt(req.body.networkId): 0,
+      });
+});
+
+
 /*
  *      voter routes
  */

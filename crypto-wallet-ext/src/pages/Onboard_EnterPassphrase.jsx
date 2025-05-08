@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateMnemonic } from "../utils/bip39";
-import { srv_getWalletInfo } from "../utils/identity";
+import { srv_getWalletInfo } from "../utils/rpc_identity";
 import PinDialog from '../components/PinDialog';
 import { useWallet } from '../state/WalletContext';
 

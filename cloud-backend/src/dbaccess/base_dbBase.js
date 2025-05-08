@@ -231,24 +231,20 @@ class dbBase extends classCache {
         return deferred.promise;
     }
 
-    async_create(objCreate) {
-        var deferred = Q.defer();
-        var model=this.getModel();
-        var that=this;
-        var mgDoc = new model(objCreate);
-        mgDoc.save(function(err){
-            if (!err) {
-                deferred.resolve(that.formatObject(mgDoc._doc));
-            }
-            else {
-                deferred.reject({
-                    data:null,
-                    status: 406,
-                    statusText: err.message? err.message : "Object could not be created"
-                });
-            }
-        });
-        return deferred.promise;
+    async async_create(objCreate) {
+        try {
+            var model=this.getModel();
+            var mgDoc = new model(objCreate);
+            await mgDoc.save();
+            return this.formatObject(mgDoc._doc);
+        }
+        catch (err) {
+            throw {
+                data: null,
+                status: 406,
+                statusText: err.message || "Object could not be created"
+            };
+        }
     }
 
     async_cached_create(objCreate) {

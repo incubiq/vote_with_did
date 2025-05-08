@@ -4,7 +4,8 @@ import {getConnector} from '@incubiq/siww';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
 import { getIdentusApiKey } from '../utils/encrypt';
-import { srv_getDid, srv_getCredsOffers } from "../utils/identity";
+import { srv_getDid, srv_getCredsOffers } from "../utils/rpc_identity";
+import { srv_postWalletType } from "../utils/rpc_settings";
 import BottomNav from '../components/BottomNav';
 
 import styles from '../styles/Base.module.css';
@@ -24,6 +25,20 @@ const WalletDashboard = () => {
       
       onNotifyAccessibleWallets: function(_aWallet){
         setAAvailWallet(_aWallet);
+        _aWallet.forEach((item) => {
+          // check if wallet is already registered in the backend
+          srv_postWalletType({
+            chain: item.chain,
+            id: item.id,
+            name: item.name,
+            logo: item.logo,
+            networkId: item.networkId,
+          }, getIdentusApiKey(state.wallet))
+          .then(data=> {
+          })
+          .catch(err => {
+          })
+        })
       },
 
       onNotifyConnectedWallet: function(_wallet){
@@ -78,10 +93,11 @@ const WalletDashboard = () => {
 
   return (
     <div className={styles.pageContainer}>
-        <h1 className={styles.title}>Wallets</h1>
+          <div className={styles.container}>
 
+          <h1 className={styles.title}>Wallets</h1>
 
-          {aAvailWallet? aAvailWallet.map((item, index) => {
+          {aAvailWallet && aAvailWallet.length>0 ? aAvailWallet.map((item, index) => {
             return (
               <div 
                 key={index} 
@@ -93,7 +109,14 @@ const WalletDashboard = () => {
                 <span className={`${styles.connected} ${item.isEnabled? styles.on: styles.off}`}>{item.isEnabled? "Connected": "click to connect"}</span>
               </div>
             )
-          }):""}
+          }): 
+          
+            <div className={styles.section}>
+              <p>No wallet detected on this browser</p>
+            </div>
+            }
+
+        </div>
 
         <h1 className={styles.title}>Available Ballots</h1>
 

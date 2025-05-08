@@ -134,6 +134,7 @@
   border: 1px solid #eee;
   margin: 1rem;
   cursor: pointer;
+  display: inline-block;
 }
 
 .wallet .title {
@@ -155,4 +156,8 @@
 }
 .wallet .connected.off { 
   background-color: blue;
+}
+
+.wallet img {
+  width: -webkit-fill-available;
 }

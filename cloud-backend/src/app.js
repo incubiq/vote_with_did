@@ -182,8 +182,8 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
         const routePrivateSuperAdminAPI = require('./routes/route_superadmin');
         const routePrivateAdmin = require('./routes/route_private_admin');
         const routePrivateDesigner = require('./routes/route_private_designer');
-//        const routePrivateVoter = require('./routes/route_private_voter');
-//        const routePublicViewer = require('./routes/route_public_viewer');
+        const routePrivateVoter = require('./routes/route_private_voter');
+        const routePublicViewer = require('./routes/route_public_viewer');
 
         // If we don't want to redirect on authentication error...
         const fnNoRedirect = function (req, res, next) {
@@ -203,8 +203,8 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
 
         app.use('/api/v1/private/admin', routePrivateAdmin);          // ballot admin
         app.use('/api/v1/private/designer', routePrivateDesigner);    // ballot designer
-        // app.use('/api/v1/private/voter', routePrivateVoter);          // ballot voter
-        // app.use('/api/v1/public/viewer', routePublicViewer);          // vote results viewer
+        app.use('/api/v1/private/voter', routePrivateVoter);          // ballot voter
+        app.use('/api/v1/public/viewer', routePublicViewer);          // vote results viewer
 
         // public API route
         app.use('/api/v1/public', routePublicAPI);
@@ -311,7 +311,7 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
             return objInit;
         }
         catch(err) {
-            consoleLog ("Could not init DB!")
+            srvUtil.consoleLog ("Could not init DB!")
             throw err;
         }
     }
@@ -320,7 +320,11 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
     function initializeAPIs(app) {
 
         const classBallot= require('./api/api_ballot');
-        app.apiballot=new classBallot();
+        app.apiBallot=new classBallot();
 
+        const classViewer= require('./api/api_user_viewer');
+        app.apiViewer=new classViewer();
 
+        const classVoter= require('./api/api_user_voter');
+        app.apiVoter=new classVoter();
     }

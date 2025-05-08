@@ -19,7 +19,7 @@ class dbBallot extends dbBase {
         return MBallot;
     }
 
-    async async_create(obj){
+    async async_createBallot(obj){
         // min requirement
         if(!obj || !obj.did_admin || !obj.name) {return null}
 
@@ -28,7 +28,7 @@ class dbBallot extends dbBase {
         return this.async_cached_create(obj);
     }
 
-    async async_update(objFind, objUpdate) {
+    async async_updateBallot(objFind, objUpdate) {
         objUpdate.updated_at=new Date(new Date().toUTCString());
 
         // todo : log history of changes 
@@ -36,7 +36,7 @@ class dbBallot extends dbBase {
         return this.async_cached_update(objFind, objUpdate);
     }
 
-    async async_find(objFind) {     
+    async async_findBallot(objFind) {     
         return this.async_cached_findOne(objFind);
     }
 

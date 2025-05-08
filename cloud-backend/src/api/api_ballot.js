@@ -34,7 +34,7 @@ class api_ballot extends apiBase {
                 }
             }
 
-            let objB=await this.dbBallot.async_create({
+            let objB=await this.dbBallot.async_createBallot({
                 did_amin: objParam.did,
                 name: objParam.name
             });
@@ -76,7 +76,7 @@ class api_ballot extends apiBase {
             });
             
             // upd
-            let objUpdB=await this.dbBallot.async_update({
+            let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid
             }, {
                 settings_admin: JSON.stringify(objUpdate)
@@ -100,7 +100,7 @@ class api_ballot extends apiBase {
 
             
             // upd
-            let objUpdB=await this.dbBallot.async_update({
+            let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid
             }, {
                 settings_designer: JSON.stringify(objUpdate)
@@ -126,7 +126,7 @@ class api_ballot extends apiBase {
             if(_aQ.findIndex(function (x) {return x===uid_question})==-1) {
                 _aQ.push(uid_question);
             }
-            let objUpdB=await this.dbBallot.async_update({
+            let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid
             }, {
                 aQuestion: _aQ
@@ -153,7 +153,7 @@ class api_ballot extends apiBase {
             if(i!=-1) {
                 _aQ.splice(i, 1);
             }
-            let objUpdB=await this.dbBallot.async_update({
+            let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid
             }, {
                 aQuestion: _aQ
@@ -176,7 +176,7 @@ class api_ballot extends apiBase {
                 }
             }
 
-            let objBallot=await this.dbBallot.async_find({
+            let objBallot=await this.dbBallot.async_findBallot({
                 uid: objParam.uid
             });
 
@@ -248,7 +248,7 @@ class api_ballot extends apiBase {
                 did: objParam.did
             });
 
-            let objUpdB=await this.dbBallot.async_update({
+            let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: dataBallot.data.uid
             }, {
                 prepublished_at: new Date(new Date().toUTCString()),
@@ -271,7 +271,7 @@ class api_ballot extends apiBase {
                 did: objParam.did
             });
 
-            let objUpdB=await this.dbBallot.async_update({
+            let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: dataBallot.data.uid
             }, {
                 published_at: new Date(new Date().toUTCString()),
