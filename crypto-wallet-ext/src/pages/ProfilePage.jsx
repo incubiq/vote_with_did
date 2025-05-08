@@ -1,13 +1,14 @@
-// src/pages/SettingsPage.jsx
+// src/pages/ProfilePage.jsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
 import BottomNav from '../components/BottomNav';
+import DIDPanel from '../components/DIDs';
 
 import styles from '../styles/Base.module.css';
 import stylesC from '../styles/Creds.module.css';
 
-const SettingsPage = () => {
+const ProfilePage = () => {
   const { state, actions } = useWallet();
   const navigate = useNavigate();
 
@@ -18,7 +19,7 @@ const SettingsPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-        <h1 className={styles.title}>Settings</h1>
+        <h1 className={styles.title}>Profile</h1>
         <div className={styles.container}>
         <button 
           className={styles.optionButton}
@@ -26,6 +27,10 @@ const SettingsPage = () => {
         >
           Logout
         </button>
+
+        <DIDPanel 
+            aItem={state? state.dids: []}
+        />
 
         {/* Wallet pubkey Section */}
         {state.wallet?
@@ -41,4 +46,4 @@ const SettingsPage = () => {
   );
 };
 
-export default SettingsPage;
+export default ProfilePage;

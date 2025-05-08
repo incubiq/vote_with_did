@@ -30,10 +30,10 @@ const BottomNav = () => {
         Credentials
       </button>
       <button 
-        className={`${styles.navButton} ${isActive('/settings') ? styles.active : ''}`}
-        onClick={() => navigate('/settings')}
+        className={`${styles.navButton} ${isActive('/profile') ? styles.active : ''}`}
+        onClick={() => navigate('/profile')}
       >
-        Settings
+        Profile
       </button>
     </nav>
   );

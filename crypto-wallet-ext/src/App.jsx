@@ -10,7 +10,7 @@ import GeneratePassphrase from "./pages/Onboard_GeneratePassphrase";
 import WalletDashboard from "./pages/DashboardPage";
 import VotesPage from "./pages/VotesPage";
 import VCsPage from "./pages/VCsPage";
-import SettingsPage from "./pages/SettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 
 import './styles/base.css';
 
@@ -26,7 +26,7 @@ function App() {
           <Route path="/dashboard" element={<WalletDashboard />} />
           <Route path="/votes" element={<VotesPage />} />
           <Route path="/vcs" element={<VCsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </Router>
     </WalletProvider>
