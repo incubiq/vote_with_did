@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateMnemonic } from "../utils/bip39";
-import { srv_getWalletInfo } from "../utils/rpc_identity";
+import { srv_getWalletInfo, srv_postAuth, srv_postEntity } from "../utils/rpc_identity";
+import { async_getIdentusApiKey } from '../utils/encrypt';
 import PinDialog from '../components/PinDialog';
 import { useWallet } from '../state/WalletContext';
 import { storage } from '../utils/storage';
@@ -33,7 +34,7 @@ const GeneratePassphrase = () => {
     }
   };
 
-  const generateWallet = async () => {
+  const generateWallet = async (_pin) => {
     try {
       let dataWallet=await srv_getWalletInfo(state.recoveryPhrase);
       if(!dataWallet || ! dataWallet.data) {
@@ -49,8 +50,29 @@ const GeneratePassphrase = () => {
       actions.walletCreated(userWallet);
       actions.clearRecoveryPhrase(); // Clear sensitive data
       
-      // Navigate to wallet dashboard or next step
-      navigate('/dashboard');
+
+      // authenticate user into backend
+      const username = "VotingWallet_"+dataWallet.data.addr.slice(-8);
+      const dataAuth = await srv_postAuth({
+        username: username,
+        seed: dataWallet.data.seed
+      });
+
+      if(dataAuth.data) {
+        // create entity, wallet, did into Identus
+        srv_postEntity({
+          mnemonic: state.recoveryPhrase,
+          name: username,
+          role: "caller",
+        }, dataAuth.data.token);
+
+        // Navigate to wallet dashboard or next step
+        navigate('/dashboard');
+      }
+      else {
+        actions.setError('Could not authenticate user');
+      }
+
     } catch (error) {
       actions.setError(error.message);
     }
@@ -66,14 +88,14 @@ const GeneratePassphrase = () => {
       setShowPinSetup(true);
     }
     else {
-      generateWallet();
+      generateWallet(state.pin);
     }
   };
 
 
   const handleSetPin = async (pin) => {
       actions.setPin(pin);
-      generateWallet();
+      generateWallet(pin);
   };
 
   // Show any errors
@@ -148,7 +170,7 @@ const GeneratePassphrase = () => {
                 onClick={handleProceed}
                 disabled={!confirmed || state.status !== 'creating'}
               >
-                {state.status === 'creating' ? 'Creating Wallet...' : 'Create Wallet'}
+                Create Wallet
               </button>
             </div>
           </div>

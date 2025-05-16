@@ -28,8 +28,10 @@ router.get("/", function(req, res, next) {
 // GET /entities
 router.get("/entities", function(req, res, next) {
     routeUtils.apiGet(req, res, srvIdentus.async_getEntities, {
+      offset: req.query.offset? parseInt(req.query.offset) : 0,           // offset for pagination 
+      limit: req.query.limit? parseInt(req.query.limit) : 100,           // limit for pagination
     });
-  });
+});
   
   // GET /entity
   router.get("/entity/:entity", function(req, res, next) {

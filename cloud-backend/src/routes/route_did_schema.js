@@ -13,7 +13,7 @@ const srvIdentus = require("../utils/util_identus_schema");
 // GET all schemas
 router.get("/", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentus.async_getSchemas, {
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                   // apikey to get in the header...
   });
 });
 
@@ -21,7 +21,7 @@ router.get("/", function(req, res, next) {
 router.get("/:schema", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentus.async_getSchemaById, {
     id: req.params.schema? req.params.schema: null,
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                   // apikey to get in the header...
   });
 });
 
@@ -34,7 +34,7 @@ router.post("/", function(req, res, next) {
     author:  req.body.author? req.body.author : null,       // published short DID of author for this schema (compulsory)
     aTag:  req.body.aTag? req.body.aTag : [],               // array of tag strings
     aProp:  req.body.aProp? req.body.aProp : null,          // array of props in this format: {name: "abc", type: "string", isRequired: true}
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                  // apikey to get in the header...
   });
 });
 
@@ -56,7 +56,7 @@ router.patch("/:schema", function(req, res, next) {
 router.post("/install", function(req, res, next) {
   routeUtils.apiPost(req, res, srvIdentus.async_ensureSchemas, {
     aSchema: req.body.aSchema? req.body.aSchema : [],       // array of all schema to ensure are created
-    key: req.headers.apikey? req.headers.apikey: null       // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key     // apikey to get in the header...
   });
 });
 

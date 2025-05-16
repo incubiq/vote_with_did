@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
+// all routes here start with               api/v1/public/
 /*
  *      Public routes
  */

@@ -8,34 +8,17 @@ const utilIdentity = require('../utils/util_identus_identity');
 const utilConnection = require('../utils/util_identus_connections');
 const utilProof = require('../utils/util_identus_proof');
 const utilCardano = require('../utils/util_cardano');
+const cCookie = require('../const/const_cookie');
 
 
 /*
  *      Cookies
  */
 
-    function getCookieName() {
-        if(gConfig.isDebug) {
-            return "jwt_DEBUG_token_"+gConfig.appName;
-        }
-        return "jwt_token_"+gConfig.appName;
-    }
-
-    // same site cookie info...
-    function getCookieOptions() {
-        var objOptions= {
-            sameSite: "Lax"
-        };
-        if(!gConfig.isDebug){
-            objOptions.secure=true;
-        }
-        return objOptions
-    }
-
     // JWT signed payload to authenticate into SIWW
     async function async_addSecretToCookie(req, id, secret) {
         try {
-            dataPayload=await async_getInfoFromCookie(req, getCookieName());
+            dataPayload=await async_getInfoFromCookie(req, cCookie.getCookieName());
             if(dataPayload && dataPayload.data) {
                 dataPayload.data.aEntity.push({
                     id: id,
@@ -102,7 +85,10 @@ const utilCardano = require('../utils/util_cardano');
 
     // add keys to entities who have been set (in cookie)
     async function async_getEntitiesWithKeys(aKeys) {
-        let dataA=await utilIdentity.async_getEntities();
+        let dataA=await utilIdentity.async_getEntities({
+            offset: 0,
+            limit: 1000
+        });
         if(dataA && dataA.data) {
             for (var k=0; k<aKeys.length; k++) {
                 let i=dataA.data.findIndex(function (x) {return x.id===aKeys[k].id});
@@ -327,7 +313,7 @@ router.post("/static/entity_create", function(req, res, next) {
             if (data.data) {
                 async_addSecretToCookie(req, data.data.id_entity, data.data.key)
                 .then(_cookie => {
-                    res.cookie(getCookieName(), _cookie, getCookieOptions());       // store this cookie
+                    res.cookie(getCookieName(), _cookie, cCookie.getCookieOptions());       // store this cookie
                     res.redirect("/static/entity/"+data.data.id_entity);            
                 })
                 .catch(err => {throw err})
@@ -353,7 +339,7 @@ router.post("/static/entity/:id/secret", function(req, res, next) {
         if (data.data.length>0) {
             async_addSecretToCookie(req, req.params.id, req.body.secret)
             .then(_cookie => {
-                res.cookie(getCookieName(), _cookie, getCookieOptions());       // store this cookie
+                res.cookie(getCookieName(), _cookie, cCookie.getCookieOptions());       // store this cookie
                 res.redirect("/static/entity/"+req.params.id);            
             })
             .catch(err => {throw err})

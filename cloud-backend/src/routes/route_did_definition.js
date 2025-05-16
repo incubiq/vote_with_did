@@ -13,7 +13,7 @@ const srvIdentus = require("../utils/util_identus_definitions");
 // GET all definitions
 router.get("/", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentus.async_getAllVCDefinitions, {
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                  // apikey to get in the header...
   });
 });
 
@@ -21,7 +21,7 @@ router.get("/", function(req, res, next) {
 router.get("/:uid", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentus.async_getVCDefinition, {
     guid: req.params.uid? req.params.uid: null,
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key           // apikey to get in the header...
   });
 });
 
@@ -34,7 +34,7 @@ router.post("/", function(req, res, next) {
     author:  req.body.author? req.body.author : null,       // published short DID of author for this def (compulsory)
     tags:  req.body.tags? req.body.tags : "",               // string
     location:  req.body.location? req.body.location : null,          // location of the schema definition
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                  // apikey to get in the header...
   });
 });
 

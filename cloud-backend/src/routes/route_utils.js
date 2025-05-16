@@ -16,7 +16,7 @@ module.exports = {
 };
 
 function _error(res, objErr) {
-    var status=objErr && objErr.status? objErr.status:500;
+    var status=objErr && objErr.status? objErr.status: objErr?.response?.status? objErr.response.status : 500;
     let msg=objErr? (objErr.statusText? objErr.statusText: objErr.message) : "something went wrong"
 
     // specials identus...

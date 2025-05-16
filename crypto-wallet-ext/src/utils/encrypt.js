@@ -2,9 +2,59 @@
 
 const SALT = new Uint8Array([119, 193, 229, 8, 191, 197, 62, 137, 198, 10, 108, 20]); // Fixed salt for PBKDF2
 
-export const getIdentusApiKey = (wallet) => {
-  // todo : generate an API key from private key + salt
-  return "BOB_api_key_secret";
+function uint8ArrayToHexString(array) {
+  return Array.from(array)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export const async_getIdentusApiKey = async(wallet, saltHexString = uint8ArrayToHexString(SALT),  iterations = 10000, length = 32, format = 'urlsafe') => {
+  if (!wallet  || !wallet.private || typeof wallet.private !== 'string') {
+    throw new Error('Private key must be a non-empty string');
+  }
+  
+  if (!saltHexString || typeof saltHexString !== 'string') {
+    throw new Error('Salt must be a non-empty string');
+  }
+
+  try {
+    const encoder = new TextEncoder();
+    const privateKeyBytes = encoder.encode(wallet.private);
+    const saltBytes = encoder.encode(saltHexString);
+    
+    // Create a combined buffer of private key and salt
+    const combinedBuffer = new Uint8Array(privateKeyBytes.length + saltBytes.length);
+    combinedBuffer.set(privateKeyBytes);
+    combinedBuffer.set(saltBytes, privateKeyBytes.length);
+    
+    // Use the SubtleCrypto API to create a digest
+    const hashBuffer = await crypto.subtle.digest('SHA-256', combinedBuffer);
+    const hashArray = new Uint8Array(hashBuffer);
+    
+    // If you need a specific length, trim or pad the array
+    const resultArray = new Uint8Array(length);
+    for (let i = 0; i < length; i++) {
+      resultArray[i] = hashArray[i % hashArray.length];
+    }
+    if (format === 'hex') {
+      return Array.from(resultArray)
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    } else if (format === 'base64') {
+      return btoa(String.fromCharCode.apply(null, resultArray));
+    } else if (format === 'urlsafe') {
+      // URL-safe base64: replace '+' with '-', '/' with '_', and remove '='
+      return btoa(String.fromCharCode.apply(null, resultArray))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+    } else {
+      throw new Error('Invalid format. Use "hex", "base64", or "urlsafe"');
+    }
+  } catch (error) {
+    console.error('Error generating API key:', error);
+    throw error;
+  }
 }
 
 // Derive an encryption key from the PIN

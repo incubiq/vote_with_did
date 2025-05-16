@@ -3,6 +3,11 @@ const path = require('path');
 const srvIdentus = require("./utils/util_identus_identity");
 const srvUtil = require("./utils/util_services");
 const srvIdentusUtil = require("./utils/util_identus_utils");
+const cUser=require('./const/const_users');
+const cCookie=require('./const/const_cookie');
+const jwt = require('jsonwebtoken');
+const Q = require('q');
+
 /*
  *      App Inits
  */
@@ -30,7 +35,9 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
 
             // set the accepted access-control-allow-methods
             app.use(cors({
-                methods: ["OPTIONS", "PUT", "GET", "POST", "PATCH", "DELETE", "LINK", "UNLINK"]
+                methods: ["OPTIONS", "PUT", "GET", "POST", "PATCH", "DELETE", "LINK", "UNLINK"],
+                origin: objParam.config.webapp.origin,
+                credentials: true
             }));
 
             app.use(bodyParser.urlencoded({ extended: false }));
@@ -42,9 +49,13 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
                 resave: true,
                 saveUninitialized: true,
                 cookie : {
-                    sameSite: 'Lax'
+                    httpOnly: false,        // true = Prevents JavaScript access to the cookie
+                    secure:  objParam.config.isDebug? false : true,          // Only sent over HTTPS
+                    sameSite: 'Lax',    // Prevents CSRF attacks
                 }
             }));
+
+            app.options('*', cors());  // Allow pre-flight requests
 
             await async_continueInitialize(app);         
             return true;
@@ -73,7 +84,10 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
     async function async_pingIdentus() {
             // test Identus agent connection
             try {
-                await srvIdentus.async_getEntities();
+                await srvIdentus.async_getEntities({
+                    offset: 0,
+                    limit: 10
+                });
                 srvUtil.consoleLog("Identus is ready at "+gConfig.identus.host);
                 gConfig.identus.isLive=true;
                 return true;
@@ -127,7 +141,7 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
         app.all('/*', function (req, res, next) {
 
             var strAllow="Origin, X-Requested-With, charset, Content-Type, Accept, Authorization, Access-Control-Allow-Credentials, x-www-form-urlencoded";
-            res.header("Access-Control-Allow-Origin", "*");
+//            res.header("Access-Control-Allow-Origin", "*");
             res.header('Access-Control-Allow-Methods', 'PUT, GET, POST, PATCH, DELETE, OPTIONS, LINK, UNLINK');
 
             // override origin?
@@ -177,8 +191,10 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
         const routeDefinition = require('./routes/route_did_definition');
         const routeCredentials = require('./routes/route_did_credentials');
         const routeProof = require('./routes/route_did_proof');
+        const routeAdmin = require('./routes/route_did_admin');
         const routePublicAPI = require('./routes/route_public');
         const routeUI = require('./routes/route_ui');
+        const routeAuth = require('./routes/route_auth');
         const routePrivateSuperAdminAPI = require('./routes/route_superadmin');
         const routePrivateAdmin = require('./routes/route_private_admin');
         const routePrivateDesigner = require('./routes/route_private_designer');
@@ -191,19 +207,71 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
             next();
         };
 
+        const fnValidateIdentusSuperAdmin = function (req, res, next) {
+            if (req.headers['x-admin-api-key'] === srvIdentusUtil.getIdentusAdminKey()) {
+                return next();
+            }
+            return res.status(401).json({ 
+                data: null,
+                status: 401,
+                statusText: "Unauthorized" 
+            });
+        }
+
+        const fnValidateUserAccess = function (req, res, next) {
+            let token = null;
+            if (req && req.cookies) {
+                token = req.cookies[cCookie.getCookieName()];
+            }
+            if (token) {
+                var deferred = Q.defer();
+                jwt.verify(token, gConfig.jwtKey, function(err, decoded){
+                    if(err) {
+                        console.log("Could not decode Cookie");
+                        deferred.resolve({
+                            data: {
+                                isAuthenticated: false,
+                                isExpired: false,
+                                user: null
+                            }
+                        });
+                    }
+                    else {
+                        let _objUser=cUser.getUser(decoded.username);
+
+                        if(!_objUser) {
+                            return res.status(401).json({ 
+                                data: null,
+                                status: 401,
+                                statusText: "Unauthorized" 
+                            });
+                        }
+
+                        req.user = _objUser;
+                        next();
+                    }
+                });
+            }
+            else {
+                next();
+            }
+        }
+
         // all DID routes
+        app.use('/api/v1/admin', routeAdmin);
         app.use('/api/v1/wallet', routeWallet);
-        app.use('/api/v1/p2p', routeConnections);
-        app.use('/api/v1/identity', routeIdentity);
-        app.use('/api/v1/schema', routeSchema);
-        app.use('/api/v1/vc', routeCredentials);
-        app.use('/api/v1/proof', routeProof);
-        app.use('/api/v1/definition', routeDefinition);
+        app.use('/api/v1/p2p', fnValidateUserAccess, routeConnections);
+        app.use('/api/v1/identity', fnValidateUserAccess, routeIdentity);
+        app.use('/api/v1/schema', fnValidateUserAccess, routeSchema);
+        app.use('/api/v1/vc', fnValidateUserAccess, routeCredentials);
+        app.use('/api/v1/proof', fnValidateUserAccess, routeProof);
+        app.use('/api/v1/definition', fnValidateUserAccess, routeDefinition);
 
 
-        app.use('/api/v1/private/admin', routePrivateAdmin);          // ballot admin
-        app.use('/api/v1/private/designer', routePrivateDesigner);    // ballot designer
-        app.use('/api/v1/private/voter', routePrivateVoter);          // ballot voter
+        app.use('/api/v1/auth', routeAuth);          // Authenticate user into backend
+        app.use('/api/v1/private/admin', fnValidateUserAccess, routePrivateAdmin);          // ballot admin
+        app.use('/api/v1/private/designer', fnValidateUserAccess, routePrivateDesigner);    // ballot designer
+        app.use('/api/v1/private/voter', fnValidateUserAccess, routePrivateVoter);          // ballot voter
         app.use('/api/v1/public/viewer', routePublicViewer);          // vote results viewer
 
         // public API route
@@ -211,22 +279,8 @@ const srvIdentusUtil = require("./utils/util_identus_utils");
 
         // UI route
         app.use('/', routeUI);
-        // Admin API route
-//        app.use('/api/v1/private/admin', routePrivateAdminAPI);
         
-        app.use('/api/v1/superadmin',
-            (req, res, next) => {
-                if (req.headers['x-admin-api-key'] === srvIdentusUtil.getIdentusAdminKey()) {
-                    return next();
-                }
-                return res.status(401).json({ 
-                    data: null,
-                    status: 401,
-                    statusText: "Unauthorized" 
-                });
-            },
-            routePrivateSuperAdminAPI
-        );
+        app.use('/api/v1/superadmin', fnValidateIdentusSuperAdmin, routePrivateSuperAdminAPI);
     
         //  API failure
         app.use('/api/v1',  function (req, res, next) {

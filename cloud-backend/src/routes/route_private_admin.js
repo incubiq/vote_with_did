@@ -15,11 +15,6 @@ const srvIdentus = require("../utils/util_identus_identity");
  *      status
  */
 
-// get authenticated admin details
-router.get("/", function(req, res, next) {
-//    todo
-});
-
 
 /*
  *      admin routes

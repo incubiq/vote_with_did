@@ -6,6 +6,7 @@ import {  rootAPI,
   API_PRIVATEROUTE,
   API_PUBLICROUTE,
   API_ADMINROUTE,
+  API_SUPERADMINROUTE,
   srv_getRoute, 
   srv_getUniqueRoute,
   srv_patchRoute,
@@ -25,12 +26,33 @@ export const srv_getWalletInfo= async(mnemonic) => {
 }
 
 /*
+ *    AUTH
+ */
+
+// authenticate user into backend
+export const srv_postAuth= async(objUser) => {
+  return srv_postRoute(API_ROUTE+'auth/', {
+    username: objUser.username,
+    seed: objUser.seed
+  });
+}
+
+/*
  *    DIDs
  */
 
 // Get User DID
 export const srv_getDid= async(_apiKey) => {
   return srv_getRoute(API_ROUTE+'identity/dids', {apikey: _apiKey});
+}
+
+// Create Entity-wallet-DID for new user
+export const srv_postEntity= async(objParam, _token) => {
+  return srv_postRoute(API_PRIVATEROUTE+'voter/entity', {
+    name:objParam.name,
+    role: objParam.role,
+    mnemonic: objParam.mnemonic,
+  }, {token: _token});
 }
 
 /*

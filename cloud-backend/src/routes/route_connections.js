@@ -13,7 +13,7 @@ const srvIdentus = require("../utils/util_identus_connections");
 // GET all connections for an entity
 router.get("/", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentus.async_getAllConnectionsForEntity, {
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                   // apikey to get in the header...
   });
 });
 
@@ -21,7 +21,7 @@ router.get("/", function(req, res, next) {
 router.get("/:id", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentus.async_getConnectionById, {
     id: req.params.id? req.params.id: null,
-    key: req.headers.apikey? req.headers.apikey: null                    // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                     // apikey to get in the header...
   });
 });
 
@@ -29,7 +29,7 @@ router.get("/:id", function(req, res, next) {
 router.post("/invite", function(req, res, next) {
   routeUtils.apiPost(req, res, srvIdentus.async_createInvite, {
     from:  req.body.from? req.body.from : null,                    // strictly not required, but using to generate nicely formed message 
-    key: req.headers.apikey? req.headers.apikey: null              // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key            // apikey to get in the header...
   });
 });
 
@@ -37,7 +37,7 @@ router.post("/invite", function(req, res, next) {
 router.post("/accept", function(req, res, next) {
   routeUtils.apiPost(req, res, srvIdentus.async_acceptInvite, {
     invitation:  req.body.invitation ? req.body.invitation : null,    // the encoded invite
-    key: req.headers.apikey? req.headers.apikey: null                 // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key                 // apikey to get in the header...
   });
 });
 

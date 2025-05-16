@@ -1,16 +1,20 @@
 // src/pages/WalletDashboard.jsx
 import React, { useState, useEffect } from 'react'
-import {getConnector} from '@incubiq/siww';
+// import {getConnector} from '@incubiq/siww';
+import {siww} from '../utils/siww/siww';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
-import { getIdentusApiKey } from '../utils/encrypt';
-import { srv_getDid, srv_getCredsOffers } from "../utils/rpc_identity";
+import { async_getIdentusApiKey } from '../utils/encrypt';
+import { srv_getDid, srv_getCredsOffers, srv_postAuth } from "../utils/rpc_identity";
 import { srv_postWalletType } from "../utils/rpc_settings";
+import { getTokenFromCookie } from "../utils/cookies";
+
 import BottomNav from '../components/BottomNav';
 
 import styles from '../styles/Base.module.css';
 
-const gSIWW=getConnector("SIWC");
+const _siww=new siww();
+const gSIWW=_siww.getConnector("SIWC");
 
 const WalletDashboard = () => {
   const { state, actions } = useWallet();
@@ -18,11 +22,10 @@ const WalletDashboard = () => {
   const navigate = useNavigate();
 
   // instanciate the cardano connector
-  useEffect(() => {
+  useEffect( () => {
 
     // init SIWC
     gSIWW.async_initialize({
-      
       onNotifyAccessibleWallets: function(_aWallet){
         setAAvailWallet(_aWallet);
         _aWallet.forEach((item) => {
@@ -33,18 +36,26 @@ const WalletDashboard = () => {
             name: item.name,
             logo: item.logo,
             networkId: item.networkId,
-          }, getIdentusApiKey(state.wallet))
+          })
           .then(data=> {
           })
           .catch(err => {
           })
+
+          if(item.isEnabled) {
+            // connect + get balance of coins / tokens
+//            let _api = await window.cardano[idWallet].enable();
+          }
         })
       },
 
-      onNotifyConnectedWallet: function(_wallet){
+      onNotifyConnectedWallet: async(_wallet) => {
         // just enabled a wallet? issue a VC (wallet name, pub key, funds)
-        if(_wallet.isEnabled) {
+        if(_wallet.wallet && _wallet.wallet.isEnabled) {
 
+          const _assets=await gSIWW.async_checkWallet(_wallet.wallet.id);
+
+          return;
         }
         
       },
@@ -56,34 +67,56 @@ const WalletDashboard = () => {
 
   }, []);
 
-  const onConnectWallet = (_wallet) => {
-    gSIWW.async_connectWallet(_wallet.id);
+  const onConnectWallet = async (_wallet) => {
+    try {
+      gSIWW.async_connectWallet(_wallet.id);
+//      const _api = await window.cardano[_wallet.id].enable();
+    }
+    catch (err) {
+      return;
+    }
   }
 
+  const async_getDIDs = async (_apiKey) => {
+    srv_getDid(_apiKey)
+    .then(data=> {
+      actions.identusDiDSet(data.data);
+    })
+    .catch(err => {
+      console.log("Could not access DID from wallet");
+    })
+  }
 
+  const async_getVCs = async (_apiKey) => {
+    srv_getCredsOffers(_apiKey)
+    .then(data=> {
+      actions.identusVCSet(data.data);
+    })
+    .catch(err => {
+      console.log("Could not access VC offers from wallet");
+    })
+  }
   // Redirect to home if wallet is not loaded
   React.useEffect(() => {
     if (state.status !== 'ready' || !state.wallet) {
       navigate('/');
     }
     else {
-      // load the DIDs
-      let _apikey=getIdentusApiKey(state.wallet);
-      srv_getDid(_apikey)
-        .then(data=> {
-          actions.identusDiDSet(data.data);
-        })
-        .catch(err => {
-          console.log("Could not access DID from wallet");
-        })
 
-      srv_getCredsOffers(_apikey)
-        .then(data=> {
-          actions.identusVCSet(data.data);
-        })
-        .catch(err => {
-          console.log("Could not access VC offers from wallet");
-        })
+      // ensure we have a cookie for the user (we always to this as the backend could have been reset, and not have kept this user in memory )
+      srv_postAuth({
+        username: "VotingWallet_"+state.wallet.address.slice(-8),
+        seed: state.wallet.seed
+      })
+      .then(_data => {
+
+        // load the DIDs / VCs
+        async_getDIDs();
+        async_getVCs();
+      })
+      .catch(err => {
+        console.log("Could not authenticate ");
+      })
     }
   }, [state.status, state.wallet]);
 

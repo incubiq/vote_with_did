@@ -37,6 +37,10 @@ global.gConfig={
         isLive: false,                      // is Identus available online? 
     },
 
+    webapp: {
+        origin: "http://localhost:3000", 
+    },
+
     // misc
     isDocker: false,
     isDebug: true,                      // change to false to test PROD version
@@ -80,7 +84,8 @@ _setParams = function(_config) {
 if(gConfig.isDocker || process.env.DOCKER===true || process.env.DOCKER==="true") {
     gConfig.isDocker=true; 
     gConfig.isDebug=false;
-    gConfig.origin="https://identity.opensourceais.com/",
+    gConfig.origin="https://identity.votewithdid.com/",
+    gConfig.webapp.origin="https://app.votewithdid.com/",
     console.log("DOCKER=TRUE");
     console.log("DEBUG=FALSE");
 

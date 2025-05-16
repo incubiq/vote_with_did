@@ -20,7 +20,7 @@ router.post("/offer-noschema", function(req, res, next) {
 //    definition:  req.body.definition? req.body.definition : null,   // id of the definition VC 
 //    location:  req.body.location? req.body.location : null,         // location of the schema (eg : https://<identity_repo>/assets/credentials/<name>.json)
     claims:  req.body.claims? req.body.claims : {},                 // the claims to be issued in the VC (no idea why they are here, they are already in the definition)
-    key: req.headers.apikey? req.headers.apikey: null               // apikey to get in the header...    
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key          // apikey to get in the header...    
   });
 });
 
@@ -28,7 +28,7 @@ router.post("/offer-noschema", function(req, res, next) {
 router.get("/offers", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentusCreds.async_getAllVCOffers, {
     thid: req.query.thid? req.query.thid: null,                   // thid in the query?
-    key: req.headers.apikey? req.headers.apikey: null             // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key             // apikey to get in the header...
   });
 });
 
@@ -36,7 +36,7 @@ router.get("/offers", function(req, res, next) {
 router.get("/offer/:id", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentusCreds.async_getVCOffer, {
     recordId: req.params.id? req.params.id: null,                 // id of the pending offer to search for (compulsory)
-    key: req.headers.apikey? req.headers.apikey: null             // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key             // apikey to get in the header...
   });
 });
 
@@ -46,7 +46,7 @@ router.post("/accept", function(req, res, next) {
   routeUtils.apiPost(req, res, srvIdentusCreds.async_acceptVCOffer, {
     recordId: req.body.recordId? req.body.recordId: null,     // id of the pending offer to accept (compulsory / point of view of receiver)
     did:  req.body.did? req.body.did : null,                  // did of the VC offer doc (compulsory)
-    key: req.headers.apikey? req.headers.apikey: null         // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key    // apikey to get in the header...
   });
 });
 
@@ -54,14 +54,14 @@ router.post("/accept", function(req, res, next) {
 router.post("/issue", function(req, res, next) {
   routeUtils.apiPost(req, res, srvIdentusCreds.async_issueVC, {
     recordId: req.body.recordId? req.body.recordId: null,     // id of the pending offer to accept (compulsory / point of view of issuer)
-    key: req.headers.apikey? req.headers.apikey: null         // apikey to get in the header...
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key         // apikey to get in the header...
   });
 });
 
 // GET first VC that matches a type (point of view of Holder)
 router.get("/match/:type", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentusCreds.async_getFirstHolderVCMatchingType, {
-    key: req.headers.apikey? req.headers.apikey: null,             // apikey to get in the header...,
+    key: req.headers.apikey? req.headers.apikey: req?.user?.key,            // apikey to get in the header...,
     claim_type: req.params.type
   });
 });

@@ -11,6 +11,15 @@ const srvIdentus = require("../utils/util_identus_identity");
  *      Private routes (requires login)
  */
 
+router.post("/entity", function(req, res, next) {
+      routeUtils.apiPost(req, res, srvIdentus.async_createEntityWithAuth, {
+          name:  req.body && req.body.name? req.body.name : null,                   // a name for this wallet & entity
+          role:  req.body && req.body.role? req.body.role : null,                   // a role for this entity (caller, worker, provider, admin) 
+          mnemonic:  req.body.mnemonic? req.body.mnemonic : null,       // a seed phrase
+          id_wallet: null
+      });
+    });
+  
 /*
  *      status
  */

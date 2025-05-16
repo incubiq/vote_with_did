@@ -1,3 +1,5 @@
+import { getTokenFromCookie} from "./cookies.js";
+
 let  rootAPI="https://identity.opensourceais.com"
 let _userToken=null;
 
@@ -31,9 +33,35 @@ const API_ROUTE= rootAPI+"/api/v1/";
 const API_PUBLICROUTE= rootAPI+"/api/v1/public/";
 const API_PRIVATEROUTE= rootAPI+"/api/v1/private/";
 const API_ADMINROUTE= rootAPI+"/api/v1/private/admin/";
+const API_SUPERADMINROUTE= rootAPI+"/api/v1/superadmin/";
 
 const getUserToken = () => {
   return _userToken;
+}
+
+const getJSONHeader = (_token) => {
+  let headers = {'Content-Type': 'application/json'}
+  let _cookie_token=getTokenFromCookie(document.cookie);
+
+  // for localhost:3000 (debug) we do this
+  if(_token===null || _token===undefined) {
+    _token = {token: _userToken};
+  }
+  
+  if(_token) {
+    if(_token.token) {
+      _cookie_token=_token.token;
+    }
+    headers["Authorization"]="Bearer " + _cookie_token;
+
+    if(_token.apikey) {
+      headers["apikey"]= _token.apikey;
+    }
+    if(_token["x-admin-api-key"]) {
+      headers["x-admin-api-key"]= _token["x-admin-api-key"];
+    }    
+  }
+  return headers;
 }
 
 const srv_getRoute = async(route, _token) => {
@@ -41,19 +69,8 @@ const srv_getRoute = async(route, _token) => {
     let isPrivate=route.includes(API_PRIVATEROUTE);
     let _query={
       method: 'GET',
-      headers: {'Content-Type': 'application/json'},
-    }
-
-    if(_token) {
-      if(_token.token) {
-        _query.headers["Authorization"]="Bearer " + _token.token;
-      }
-      else {
-        if(_token.apikey) {
-          _query.headers["apikey"]= _token.apikey;
-        }
-
-      }
+      headers: getJSONHeader(_token),
+      credentials: 'include',
     }
 
     const response = await fetch(route, _query);
@@ -86,19 +103,13 @@ const srv_postRoute = async (route, data, _token) => {
 
 const _srv_pRoute = async (verb, route, data, _token) => {
   try {
-    let isPrivate=route.includes(API_PRIVATEROUTE);
     let jsonStr=data? JSON.stringify(data): null;
     let _query={
       method: verb,
-      headers: {'Content-Type': 'application/json'},
+      headers: getJSONHeader(_token),
+      credentials: 'include',
     }
-    // for localhost:3000 (debug) we do this
-    if(_token===null || _token===undefined) {
-      _token = _userToken;
-    }
-    if(isPrivate && _token) {
-      _query.headers["Authorization"]="Bearer " + (_token? _token : "")
-    }
+
     if(jsonStr) {
       _query.body=jsonStr;
     }
@@ -114,17 +125,9 @@ const _srv_pRoute = async (verb, route, data, _token) => {
 
 const srv_deleteRoute = async (route, _token) => {
   try {
-    // for localhost:3000 (debug) we do this
-    let isPrivate=route.includes(API_PRIVATEROUTE);
     let _query={
       method: 'DELETE',
-      headers: {'Content-Type': 'application/json'},
-    }
-    if(_token===null || _token===undefined) {
-      _token = _userToken;
-    }
-    if(isPrivate && _token) {
-      _query.headers["Authorization"]="Bearer " + (_token? _token : "")
+      headers: getJSONHeader(_token),
     }
 
     const response = await fetch(route, _query);
@@ -140,17 +143,9 @@ const srv_deleteRoute = async (route, _token) => {
 
 const srv_linkRoute = async (route, _token) => {
   try {
-    // for localhost:3000 (debug) we do this
-    let isPrivate=route.includes(API_PRIVATEROUTE);
     let _query={
       method: 'LINK',
-      headers: {'Content-Type': 'application/json'},
-    }
-    if(_token===null || _token===undefined) {
-      _token = _userToken;
-    }
-    if(isPrivate && _token) {
-      _query.headers["Authorization"]="Bearer " + (_token? _token : "")
+      headers: getJSONHeader(_token),
     }
 
     const response = await fetch(route, _query);
@@ -164,17 +159,9 @@ const srv_linkRoute = async (route, _token) => {
 
 const srv_unlinkRoute = async (route, _token) => {
   try {
-    // for localhost:3000 (debug) we do this
-    let isPrivate=route.includes(API_PRIVATEROUTE);
     let _query={
       method: 'UNLINK',
-      headers: {'Content-Type': 'application/json'},
-    }
-    if(_token===null || _token===undefined) {
-      _token = _userToken;
-    }
-    if(isPrivate && _token) {
-      _query.headers["Authorization"]="Bearer " + (_token? _token : "")
+      headers: getJSONHeader(_token),
     }
 
     const response = await fetch(route, _query);
@@ -194,6 +181,7 @@ export {
   API_PRIVATEROUTE,
   API_PUBLICROUTE,
   API_ADMINROUTE,
+  API_SUPERADMINROUTE,
   srv_getRoute, 
   srv_getUniqueRoute,
   srv_patchRoute,
