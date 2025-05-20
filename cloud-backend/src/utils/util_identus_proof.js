@@ -275,6 +275,8 @@ const async_createCustodialProof = async function (objParam) {
 
 
 module.exports = {
+    STATUS_PROVER_PROOF_SENT,
+    STATUS_PROVER_PROOF_REQRECEIVED,
     async_createVCPresentationRequest,
     async_getAllVCPresentationRequests,
     async_getFirstHolderPresentationRequestMatchingType,

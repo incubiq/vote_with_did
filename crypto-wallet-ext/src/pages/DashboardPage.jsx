@@ -55,6 +55,8 @@ const WalletDashboard = () => {
 
           const _assets=await gSIWW.async_checkWallet(_wallet.wallet.id);
 
+          // ensure VC proof of ownership of the wallet
+
           return;
         }
         

@@ -7,9 +7,29 @@ const addUser = (_username, _seed) =>  {
     if(iUser==-1) {
         aUser.push({
             username: _username,
-            seed: _seed
+            seed: _seed,
+            did: null,
+            aProof: []
         });
     }
+}
+
+const addProofToUser = (_username, _proof) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.username===_username});
+    if(iUser==-1) {
+        return false;
+    }
+    aUser[iUser].aProof.push(_proof);
+    return true;
+}
+
+const addDidToUser = (_username, _did) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.username===_username});
+    if(iUser==-1) {
+        return false;
+    }
+    aUser[iUser].did=_did;
+    return true;
 }
 
 const getUser = (_username) =>  {
@@ -21,6 +41,14 @@ const getUser = (_username) =>  {
     aUser[iUser].id_wallet = objIds.id_wallet;
     aUser[iUser].id_entity = objIds.id_entity;
     aUser[iUser].key = objIds.key;
+    return aUser[iUser];
+}
+
+const getUserFromKey = (_key) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.key===_key});
+    if(iUser==-1) {
+        return null;
+    }
     return aUser[iUser];
 }
 
@@ -36,5 +64,8 @@ module.exports = {
     aUser,
     addUser,
     getUser,
+    getUserFromKey,
     checkUser,
+    addDidToUser,
+    addProofToUser,
 }

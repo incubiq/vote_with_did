@@ -381,4 +381,8 @@ const Q = require('q');
 
         const classVoter= require('./api/api_user_voter');
         app.apiVoter=new classVoter();
+
+        //todo
+        // register Admin DID and Key as user
+
     }
