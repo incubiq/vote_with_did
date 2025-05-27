@@ -78,7 +78,65 @@ class api_user_voter extends apiBase {
                 objUser = cUsers.addDidToUser(objUser.username, dataDID.data[0].did);
             }
 
-            return objUser;
+            return {data: objUser};
+
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_getUserWithProofs(objParam) {
+        try {            
+            const dataUser=this.async_getUserWithDID(objParam);
+            const objUser=dataUser.data;
+            if(!objUser) {
+                return {data: null}
+            }
+
+            // if we already have a Proof in cache, we return it
+            if(objUser.aProof && objUser.aProof.length>0) {
+                const iProof=objUser.aProof.findIndex(function (x) {return (x.did==objUser.did)});
+                if(iProof!=-1) {
+                    return {data: {
+                        wasPresented: true,
+                        wasAccepted: true,
+                        username: objUser.username,
+                        did: objUser.did,
+                        claims: objUser.aProof[iProof].claims,
+                        thid: objUser.aProof[iProof].thid,
+                        proof: objUser.aProof[iProof].proof,
+                    }}
+                }
+            }
+            
+            // look if the proof was created before
+            const dataProofs= await utilsProof.async_getAllVCPresentationRequests({
+                key: objUser.key,
+                claim_type: objParam.claim_type,
+                status: utilsProof.STATUS_PROVER_PROOF_SENT
+            });
+
+            if(dataProofs && dataProofs.data && dataProofs.data.length>0) {
+                // list all proofs, see if one is our match
+                const now = new Date();
+                for (var i=0; i<dataProofs.data.length; i++) {
+                    cUsers.addProofToUser(objUser.username, dataProofs.data[i]);
+                    return {
+                        data: {
+                            wasPresented: true,
+                            wasAccepted: true,
+                            username: objUser.username,
+                            did: objUser.did,
+                            claims: dataProofs.data[i].claims,
+                            thid: dataProofs.data[i].thid,
+                            proof: dataProofs.data[i].proof,
+                        }
+                    };
+                }
+            }
+            
+            return {data: null};
 
         }
         catch(err) {
@@ -115,47 +173,14 @@ class api_user_voter extends apiBase {
 
                 // ensure DID
                 if(objUser.did==null) {
-                    objUser=await this.async_getUserWithDID(objParam);
+                    const dataUser=await this.async_getUserWithDID(objParam);
+                    objUser=dataUser.data;
                 }
 
-                // if we already have a Proof in cache, we return it
-                if(objUser.aProof && objUser.aProof.length>0) {
-                    const iProof=objUser.aProof.findIndex(function (x) {return (x.address==objParam.address)});
-                    if(iProof!=-1) {
-                        return {
-                            data: {
-                                wasPresented: true,
-                                wasAccepted: true,
-                                claims: objUser.aProof[iProof].claims,
-                                thid: objUser.aProof[iProof].thid,
-                                proof: objUser.aProof[iProof].proof,
-                            }
-                        }
-                    }
-                }
-                
-                // look if the proof was created before
-                const dataProofs= await utilsProof.async_getAllVCPresentationRequests({
-                    key: objUser.key,
-                    claim_type: objParam.claim_type,
-                    status: utilsProof.STATUS_PROVER_PROOF_SENT
-                });
-
-                if(dataProofs && dataProofs.data && dataProofs.data.length>0) {
-                    // list all proofs, see if one is our match
-                    const now = new Date();
-                    for (var i=0; i<dataProofs.data.length; i++) {
-                        cUsers.addProofToUser(objUser.username, dataProofs.data[i]);
-                        return {
-                            data: {
-                                wasPresented: true,
-                                wasAccepted: true,
-                                claims: dataProofs.data[i].claims,
-                                thid: dataProofs.data[i].thid,
-                                proof: dataProofs.data[i].proof,
-                            }
-                        };
-                    }
+                // do we have a proof already?
+                const dataExistingProof =  await this.async_getUserWithProofs(objParam);
+                if(dataExistingProof.data) {
+                    return dataExistingProof;
                 }
                 
                 // no proof? make it now

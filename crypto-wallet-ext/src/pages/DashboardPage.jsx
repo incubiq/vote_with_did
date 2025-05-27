@@ -87,8 +87,8 @@ const WalletDashboard = () => {
     }
   }
 
-  const async_getDIDs = async (_apiKey) => {
-    srv_getDid(_apiKey)
+  const async_getDIDs = async () => {
+    srv_getDid()
     .then(data=> {
       actions.identusDiDSet(data.data);
     })
@@ -97,7 +97,7 @@ const WalletDashboard = () => {
     })
   }
 
-  const async_getVCs = async (_apiKey) => {
+  const async_getVCs = async () => {
     srv_getCredsProofs()
     .then(data=> {
       actions.identusVCSet(data.data);

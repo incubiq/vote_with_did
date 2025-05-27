@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { generateMnemonic } from "../utils/bip39";
 import { srv_getWalletInfo, srv_postAuth, srv_postEntity } from "../utils/rpc_identity";
+import { setUserToken } from "../utils/base_rpc";
 import { async_getIdentusApiKey } from '../utils/encrypt';
 import PinDialog from '../components/PinDialog';
 import { useWallet } from '../state/WalletContext';
@@ -59,6 +60,8 @@ const GeneratePassphrase = () => {
       });
 
       if(dataAuth.data) {
+        setUserToken(dataAuth.data.token);
+
         // create entity, wallet, did into Identus
         srv_postEntity({
           mnemonic: state.recoveryPhrase,

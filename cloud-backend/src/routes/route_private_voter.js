@@ -31,14 +31,17 @@ router.get("/", function(req, res, next) {
 
 // get voter's DID (or generate one if none)
 router.get("/did", function(req, res, next) {
-  routeUtils.apiGet(req, res, //todo
-  );
+  routeUtils.apiGet(req, res, gConfig.app.apiVoter.async_getUserWithDID.bind(gConfig.app.apiVoter), {
+    key: req.user && req.user.key? req.user.key: null
+  });
 });
 
-// get voter's VCs (creds)
-router.get("/vcs", function(req, res, next) {
-  routeUtils.apiGet(req, res, //todo
-  );
+// get voter's VCs/Proofs 
+router.get("/proofs", function(req, res, next) {
+  routeUtils.apiGet(req, res, gConfig.app.apiVoter.async_getUserWithProofs.bind(gConfig.app.apiVoter), {
+    claim_type: req.query.claim_type? req.query.claim_type: "*",
+    key: req.user && req.user.key? req.user.key: null
+  });
 });
 
 

@@ -39,6 +39,10 @@ const getUserToken = () => {
   return _userToken;
 }
 
+const setUserToken = (_token) => {
+  _userToken=_token;
+}
+
 const getJSONHeader = (_token) => {
   let headers = {'Content-Type': 'application/json'}
   let _cookie_token=getTokenFromCookie(document.cookie);
@@ -180,6 +184,7 @@ export {
   rootAPI,
   isProd,
   getUserToken,
+  setUserToken,
   API_ROUTE,
   API_PRIVATEROUTE,
   API_PUBLICROUTE,

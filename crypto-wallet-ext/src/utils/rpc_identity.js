@@ -42,8 +42,8 @@ export const srv_postAuth= async(objUser) => {
  */
 
 // Get User DID
-export const srv_getDid= async(_apiKey) => {
-  return srv_getRoute(API_ROUTE+'identity/dids', {apikey: _apiKey});
+export const srv_getDid= async() => {
+  return srv_getRoute(API_PRIVATEROUTE+'voter/did', {token: _token});
 }
 
 // Create Entity-wallet-DID for new user
@@ -64,13 +64,14 @@ export const srv_linkWallet= async(objParam, _token) => {
   return srv_linkRoute(API_PRIVATEROUTE+'voter/wallet?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
 }
 
+// Get User VC proofs (we get the proof from VwD admin, we do not pass key )
+export const srv_getCredsProofs= async(_token) => {
+  return srv_getRoute(API_PRIVATEROUTE+'voter/proofs', {token: _token});
+}
+
 // Get User VC offers
 export const srv_getCredsOffers= async(_apiKey) => {
   return srv_getRoute(API_ROUTE+'vc/offers', {apikey: _apiKey});
 }
 
-// Get User VC proofs (we get the proof from VwD admin, we do not pass key )
-export const srv_getCredsProofs= async() => {
-  return srv_getRoute(API_ROUTE+'proof/presentations?status=PresentationSent', {apikey: null});
-}
 
