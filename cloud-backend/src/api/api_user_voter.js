@@ -98,7 +98,7 @@ class api_user_voter extends apiBase {
                 }
 
                 // we do not return user if repeated calls (here within 1min)
-                if(objUser.dateLock) {
+                if(objUser.dateLock && objUser.aProof.length==0) {
                     const now = new Date();
                     const oneMinuteFromLock = new Date(objUser.dateLock.getTime() + 60 * 1000);
                     if(Math.abs(oneMinuteFromLock.getTime()  - now.getTime() > 0 )) {
@@ -122,13 +122,22 @@ class api_user_voter extends apiBase {
                 if(objUser.aProof && objUser.aProof.length>0) {
                     const iProof=objUser.aProof.findIndex(function (x) {return (x.address==objParam.address)});
                     if(iProof!=-1) {
-                        return objUser.aProof[iProof];
+                        return {
+                            data: {
+                                wasPresented: true,
+                                wasAccepted: true,
+                                claims: objUser.aProof[iProof].claims,
+                                thid: objUser.aProof[iProof].thid,
+                                proof: objUser.aProof[iProof].proof,
+                            }
+                        }
                     }
                 }
                 
                 // look if the proof was created before
                 const dataProofs= await utilsProof.async_getAllVCPresentationRequests({
                     key: objUser.key,
+                    claim_type: objParam.claim_type,
                     status: utilsProof.STATUS_PROVER_PROOF_SENT
                 });
 
@@ -136,22 +145,16 @@ class api_user_voter extends apiBase {
                     // list all proofs, see if one is our match
                     const now = new Date();
                     for (var i=0; i<dataProofs.data.length; i++) {
-                        const decoded_wrapper = jwtDecode(dataProofs.data[i].data[0]);
-                        const encoded_proof=decoded_wrapper.vp.verifiableCredential[0];
-                        const decoded_proof = jwtDecode(encoded_proof);
-                        const dateExpire = new Date(decoded_proof.exp * 1000);
-
-                        if(decoded_proof.vc.credentialSubject && 
-                            decoded_proof.vc.credentialSubject.claim_type==objParam.claim_type &&
-                            decoded_proof.vc.credentialSubject.address==objParam.address) {
-                            // check if the proof is still valid
-                            if(dateExpire>now) {
-                                // we have a match, add to cache and return it
-                                decoded_proof.vc.credentialSubject.expire_at=dateExpire;
-                                cUsers.addProofToUser(objUser.username, decoded_proof.vc.credentialSubject);
-                                return decoded_proof.vc.credentialSubject;
+                        cUsers.addProofToUser(objUser.username, dataProofs.data[i]);
+                        return {
+                            data: {
+                                wasPresented: true,
+                                wasAccepted: true,
+                                claims: dataProofs.data[i].claims,
+                                thid: dataProofs.data[i].thid,
+                                proof: dataProofs.data[i].proof,
                             }
-                        }
+                        };
                     }
                 }
                 

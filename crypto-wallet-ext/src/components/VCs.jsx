@@ -1,37 +1,55 @@
 // src/components/BottomNav.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import DetailDialog from './detailDialog';
 
 import styles from '../styles/Creds.module.css';
 
 const VCPanel = (props) => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedProof, setSelectedProof] = useState(null);
 
   const renderProofOrOffer = (_proof, _index) => {
+    const _strDateTo = _proof.claims.expire_at? new Date(_proof.claims.expire_at).toLocaleDateString() : new Date(_proof.createdAt).toLocaleDateString();
     return (
-      <li key={_index} className={styles.listCreds}>
-        {_proof.protocolState=="CredentialReceived"? 
+      <li key={_index} className={styles.listCreds} onClick={() => openDialog(_proof)}>
         <>
-          <p className={styles.date}>{new Date(_proof.createdAt).toLocaleDateString()}</p>
+          <p className={styles.date}>valid until {_strDateTo}</p>
           <img className={styles.credsImage} src="/images/creds.png" />
           <div className={styles.pin_proof}>Proof Received</div>
 
-          <p className={styles.proof_content}>{_proof.claims.claim_type? _proof.claims.claim_type: "Unknown type"}</p>
-          <p className={styles.proof_content}>{_proof.claims.expire_at? "valid until "+ _proof.claims.expire_at: "Does not expire"}</p>
+          {_proof.claims.claim_type? 
+            <img src="/images/wallet_ownership.png" width="64px" height="64px" />
+          : <div>"Unknown type"</div>
+          }
 
-          {Object.entries(_proof.claims).map(([key, value]) => (
-            <li key={key} className="text-gray-600">
-              <span className="font-medium">{key}:</span> {value}
-            </li>
-          ))}
         </>
-        : 
-        <>
-          <p className={styles.date}>{new Date(_proof.createdAt).toLocaleDateString()}</p>
-          <div className={styles.pin_offer}>Offer pending</div>
-          <p className={styles.proof_content}>Awaiting Validation...</p>
-        </>}
       </li>
     )
   }
+
+  // Handle opening dialog
+  const openDialog = (_proof) => {
+    setSelectedProof(_proof.claims);
+    setIsDialogOpen(true);
+  };
+
+  // Handle closing dialog
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedProof(null);
+  };
+
+  // Handle ESC key press
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.key === 'Escape' && isDialogOpen) {
+        closeDialog();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [isDialogOpen]);
 
   return (
     <div>
@@ -44,6 +62,14 @@ const VCPanel = (props) => {
           ))}
         </ul>
       )}
+
+      {/* Dialog overlay */}
+      <DetailDialog 
+        item = {selectedProof? selectedProof : {}}
+        isOpen = {isDialogOpen}
+        onClose = {closeDialog}
+      />
+
     </div>
   )
 };

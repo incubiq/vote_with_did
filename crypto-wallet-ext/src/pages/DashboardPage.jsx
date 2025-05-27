@@ -5,7 +5,7 @@ import {siww} from '../utils/siww/siww';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
 import { async_getIdentusApiKey } from '../utils/encrypt';
-import { srv_getDid, srv_getCredsOffers, srv_postAuth, srv_linkWallet } from "../utils/rpc_identity";
+import { srv_getDid, srv_getCredsOffers, srv_getCredsProofs, srv_postAuth, srv_linkWallet } from "../utils/rpc_identity";
 import { srv_postWalletType } from "../utils/rpc_settings";
 import { getTokenFromCookie } from "../utils/cookies";
 
@@ -19,6 +19,7 @@ const gSIWW=_siww.getConnector("SIWC");
 const WalletDashboard = () => {
   const { state, actions } = useWallet();
   const [aAvailWallet, setAAvailWallet] = useState([]);
+  const [aAvailBallot, setAAvailBallot] = useState([]);
   const navigate = useNavigate();
 
   // instanciate the cardano connector
@@ -97,12 +98,12 @@ const WalletDashboard = () => {
   }
 
   const async_getVCs = async (_apiKey) => {
-    srv_getCredsOffers(_apiKey)
+    srv_getCredsProofs()
     .then(data=> {
       actions.identusVCSet(data.data);
     })
     .catch(err => {
-      console.log("Could not access VC offers from wallet");
+      console.log("Could not access Proofs from VwD");
     })
   }
   // Redirect to home if wallet is not loaded
@@ -160,7 +161,11 @@ const WalletDashboard = () => {
 
         </div>
 
-        <h1 className={styles.title}>Available Ballots</h1>
+        {aAvailBallot && aAvailBallot.length>0 ? 
+          <h1 className={styles.title}>Available Ballots</h1>
+          : ""
+        }
+        
 
       <BottomNav />
     </div>

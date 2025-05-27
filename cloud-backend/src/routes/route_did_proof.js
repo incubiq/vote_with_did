@@ -15,6 +15,7 @@ router.get("/presentations", function(req, res, next) {
   routeUtils.apiGet(req, res, srvIdentusProof.async_getAllVCPresentationRequests, {
     thid: req.query.thid && req.query.thid!="null"? req.query.thid: null,                   // thid in the query?
     status: req.query.status? req.query.status: null,             // status in the query?
+    claim_type: req.query.claim_type? req.query.claim_type: "*",
     key: req.headers.apikey? req.headers.apikey: req?.user?.key           // apikey to get in the header...
   });
 });

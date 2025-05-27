@@ -69,8 +69,8 @@ export const srv_getCredsOffers= async(_apiKey) => {
   return srv_getRoute(API_ROUTE+'vc/offers', {apikey: _apiKey});
 }
 
-// Get User VC proofs
-export const srv_getCredsProofs= async(_apiKey) => {
-  return srv_getRoute(API_ROUTE+'proof/presentations', {apikey: _apiKey});
+// Get User VC proofs (we get the proof from VwD admin, we do not pass key )
+export const srv_getCredsProofs= async() => {
+  return srv_getRoute(API_ROUTE+'proof/presentations?status=PresentationSent', {apikey: null});
 }
 
