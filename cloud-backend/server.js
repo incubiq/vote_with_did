@@ -37,6 +37,13 @@ global.gConfig={
         isLive: false,                      // is Identus available online? 
     },
 
+    // Vote with DID admin (to issue VCs / verify proofs, etc...)
+    vwd: {
+        seed: null,
+        did: null,
+        key: null,
+    },
+
     webapp: {
         origin: "http://localhost:3000", 
     },
@@ -73,6 +80,12 @@ _setParams = function(_config) {
         };     
         console.log("MONGODB was set");
     }
+    if(_config.VWD_DID) {gConfig.vwd.did=_config.VWD_DID;}
+    console.log("VWD Admin DID WAS SET");
+    if(_config.VWD_KEY) {gConfig.vwd.key=_config.VWD_KEY;}
+    console.log("VWD Admin KEY WAS SET");
+    if(_config.VWD_SEED) {gConfig.vwd.seed=_config.VWD_SEED;}
+    console.log("VWD Admin SEED WAS SET");
 
     if(_config.EXTRA) {
         return _config.EXTRA;

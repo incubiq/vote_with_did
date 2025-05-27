@@ -9,6 +9,7 @@ const addUser = (_username, _seed) =>  {
             username: _username,
             seed: _seed,
             did: null,
+            dateLock: null,
             aProof: []
         });
     }
@@ -17,19 +18,28 @@ const addUser = (_username, _seed) =>  {
 const addProofToUser = (_username, _proof) =>  {
     const iUser = aUser.findIndex(function (x) {return x.username===_username});
     if(iUser==-1) {
-        return false;
+        return null;
     }
     aUser[iUser].aProof.push(_proof);
-    return true;
+    return aUser[iUser];
 }
 
 const addDidToUser = (_username, _did) =>  {
     const iUser = aUser.findIndex(function (x) {return x.username===_username});
     if(iUser==-1) {
-        return false;
+        return null;
     }
     aUser[iUser].did=_did;
-    return true;
+    return aUser[iUser];
+}
+
+const addProcessLockToUser = (_username) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.username===_username});
+    if(iUser==-1) {
+        return null;
+    }
+    aUser[iUser].dateLock=new Date();
+    return aUser[iUser];
 }
 
 const getUser = (_username) =>  {
@@ -68,4 +78,5 @@ module.exports = {
     checkUser,
     addDidToUser,
     addProofToUser,
+    addProcessLockToUser,
 }

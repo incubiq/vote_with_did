@@ -128,6 +128,7 @@ const srv_deleteRoute = async (route, _token) => {
     let _query={
       method: 'DELETE',
       headers: getJSONHeader(_token),
+      credentials: 'include',
     }
 
     const response = await fetch(route, _query);
@@ -146,6 +147,7 @@ const srv_linkRoute = async (route, _token) => {
     let _query={
       method: 'LINK',
       headers: getJSONHeader(_token),
+      credentials: 'include',
     }
 
     const response = await fetch(route, _query);
@@ -162,6 +164,7 @@ const srv_unlinkRoute = async (route, _token) => {
     let _query={
       method: 'UNLINK',
       headers: getJSONHeader(_token),
+      credentials: 'include',
     }
 
     const response = await fetch(route, _query);

@@ -11,7 +11,8 @@ const srvIdentusUtils = require("./util_identus_utils");
 
 // get all active connnections for the authenticated entity
 const async_getAllConnectionsForEntity = async function(objParam) {
-    return srvIdentusUtils.async_simpleGet("connections/", objParam.key);
+    const _url = "connections/"+(objParam.thid? "?thid="+objParam.thid: "");
+    return srvIdentusUtils.async_simpleGet(_url, objParam.key);
 }
 
 // get a specific connnection (by ID) for the authenticated entity

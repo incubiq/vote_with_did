@@ -5,7 +5,7 @@ import {siww} from '../utils/siww/siww';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
 import { async_getIdentusApiKey } from '../utils/encrypt';
-import { srv_getDid, srv_getCredsOffers, srv_postAuth } from "../utils/rpc_identity";
+import { srv_getDid, srv_getCredsOffers, srv_postAuth, srv_linkWallet } from "../utils/rpc_identity";
 import { srv_postWalletType } from "../utils/rpc_settings";
 import { getTokenFromCookie } from "../utils/cookies";
 
@@ -54,8 +54,15 @@ const WalletDashboard = () => {
         if(_wallet.wallet && _wallet.wallet.isEnabled) {
 
           const _assets=await gSIWW.async_checkWallet(_wallet.wallet.id);
+          if(_assets.didUserAccept && _assets.wallet.hasReplied && _assets.wallet.isEnabled) {
+            // ensure VC proof of ownership of the wallet
+            srv_linkWallet({
+              address: _assets.assets.stakeAddress,
+              chain: _wallet.wallet.chain.symbol, 
+              networkId: _wallet.wallet.chain.id
+            })
+          }
 
-          // ensure VC proof of ownership of the wallet
 
           return;
         }

@@ -59,10 +59,11 @@ router.post("/wallet", function(req, res, next) {
 
 router.link("/wallet", function(req, res, next) {
   routeUtils.apiLink(req, res, gConfig.app.apiVoter.async_ensureProofOfOwnership.bind(gConfig.app.apiVoter), {
-    stake_address: req.body.stakeAddress? req.body.stakeAddress: null,
-    chain: req.body.chain? req.body.chain: null,
-    networkId: req.body.networkId? parseInt(req.body.networkId): 0,
-    key: req.headers.apikey? req.headers.apikey: req?.user?.key   
+    address: req.query.address? req.query.address: null,
+    chain: req.query.chain? req.query.chain: null,
+    networkId: req.query.networkId? parseInt(req.query.networkId): 0,
+    claim_type: "address_ownership",
+    key: req.user && req.user.key? req.user.key: null
     });
 });
 

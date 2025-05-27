@@ -59,6 +59,11 @@ export const srv_postEntity= async(objParam, _token) => {
  *    VCs
  */
 
+// Create Proof of wallet ownership
+export const srv_linkWallet= async(objParam, _token) => {
+  return srv_linkRoute(API_PRIVATEROUTE+'voter/wallet?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
+}
+
 // Get User VC offers
 export const srv_getCredsOffers= async(_apiKey) => {
   return srv_getRoute(API_ROUTE+'vc/offers', {apikey: _apiKey});
