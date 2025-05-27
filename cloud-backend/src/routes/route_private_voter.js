@@ -31,7 +31,7 @@ router.get("/", function(req, res, next) {
 
 // get voter's DID (or generate one if none)
 router.get("/did", function(req, res, next) {
-  routeUtils.apiGet(req, res, gConfig.app.apiVoter.async_getUserWithDID.bind(gConfig.app.apiVoter), {
+  routeUtils.apiGet(req, res, gConfig.app.apiVoter.async_getUserDIDs.bind(gConfig.app.apiVoter), {
     key: req.user && req.user.key? req.user.key: null
   });
 });

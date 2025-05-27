@@ -58,6 +58,19 @@ class api_user_voter extends apiBase {
         }
     }
 
+    async async_getUserDIDs(objParam) { 
+        try {
+            const dataUser = await this.async_getUserWithDID(objParam)
+            return {data : [{
+                did : dataUser.data.did,
+                status: "PUBLISHED"
+            }]}
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
     async async_getUserWithDID(objParam) {
         try {            
             let objUser=cUsers.getUserFromKey(objParam.key);
@@ -88,25 +101,16 @@ class api_user_voter extends apiBase {
 
     async async_getUserWithProofs(objParam) {
         try {            
-            const dataUser=this.async_getUserWithDID(objParam);
-            const objUser=dataUser.data;
+            const dataUser=await this.async_getUserWithDID(objParam);
+            let objUser=dataUser.data;
             if(!objUser) {
                 return {data: null}
             }
 
             // if we already have a Proof in cache, we return it
             if(objUser.aProof && objUser.aProof.length>0) {
-                const iProof=objUser.aProof.findIndex(function (x) {return (x.did==objUser.did)});
-                if(iProof!=-1) {
-                    return {data: {
-                        wasPresented: true,
-                        wasAccepted: true,
-                        username: objUser.username,
-                        did: objUser.did,
-                        claims: objUser.aProof[iProof].claims,
-                        thid: objUser.aProof[iProof].thid,
-                        proof: objUser.aProof[iProof].proof,
-                    }}
+                return {
+                    data: objUser.aProof
                 }
             }
             
@@ -121,22 +125,15 @@ class api_user_voter extends apiBase {
                 // list all proofs, see if one is our match
                 const now = new Date();
                 for (var i=0; i<dataProofs.data.length; i++) {
-                    cUsers.addProofToUser(objUser.username, dataProofs.data[i]);
-                    return {
-                        data: {
-                            wasPresented: true,
-                            wasAccepted: true,
-                            username: objUser.username,
-                            did: objUser.did,
-                            claims: dataProofs.data[i].claims,
-                            thid: dataProofs.data[i].thid,
-                            proof: dataProofs.data[i].proof,
-                        }
-                    };
+                    // no duplicate 
+                    const iFound=objUser.aProof.findIndex(function (x) {return x.address===dataProofs.data[i].address})
+                    if(iFound==-1) {
+                        objUser = cUsers.addProofToUser(objUser.username, dataProofs.data[i]);
+                    }
                 }
             }
             
-            return {data: null};
+            return {data: objUser.aProof};
 
         }
         catch(err) {

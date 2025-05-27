@@ -42,7 +42,7 @@ export const srv_postAuth= async(objUser) => {
  */
 
 // Get User DID
-export const srv_getDid= async() => {
+export const srv_getDid= async(_token) => {
   return srv_getRoute(API_PRIVATEROUTE+'voter/did', {token: _token});
 }
 
