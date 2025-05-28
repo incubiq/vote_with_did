@@ -67,7 +67,7 @@ const getDecodedProof = function (item, _claim_type, _filterStatus) {
 const async_getAllVCPresentationRequests = async function (objParam) {
     try {
         let _url="present-proof/presentations"+(objParam.thid? "?thid="+objParam.thid: "");
-        let dataRet = await srvIdentusUtils.async_simpleGet(_url, gConfig.vwd.key);
+        let dataRet = await srvIdentusUtils.async_simpleGet(_url, objParam.key);
 
         // filter out with status?
         let _aRet=[];
