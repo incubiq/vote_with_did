@@ -62,7 +62,7 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
  M3 (28 May 2025)
 
-- 13min explanation video of M3: 
+- 13min explanation video of M3: https://youtu.be/79Igc1TlvI4
 
   - Development work
     * Big work on Identus compatibility (unfortunately the v1.39.0 which I dockerised decided to not work anymore, proving to me that unfortunately, doker is not enough to self contain an Identus release. Lots of work to make it work again, as some breaking changes outside of my control were made in third-party libs called by Identus itself)
