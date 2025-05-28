@@ -60,6 +60,22 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
     Note: To access DIDs and VCs, the browser extension app requires another backend running in the background, which I have not included in the code here as this is part of M3.
 
+ M3 (28 May 2025)
+
+- 10min explanation video of M3: 
+
+  - Development work
+    * Big work on Identus compatibility (unfortunately the v1.39.0 which I dockerised decided to not work anymore, proving that doker is not enough to self contain a release. Lots of work to make it work again, as some breaking changes outside of my control were made in parts called by Identus itself)
+    * Initiated a cloud backend for redirecting all Identus calls + managing user (including secure Authentication) + start of the ballot APIs (part of M4)
+    * connected the browser ext App to the backend with seamless secure authentication
+    * created a full POSTMAN test env
+
+  - How to test it
+   * run the backend (will on port 8101 and connect on an Identus host on https://identus.opensourceais.com)
+   * Note: the backend requires a VotingWithDID admin to issue Offers/Proofs. You can either create one yourself (via Postman) and add it to a local_secret.json at startup. or ask me for creds of my current test admin user. In the end, there could be as many validating admins as we wish for separation of concerns.
+   * run the browser ext (refer to M2 doc)
+
+
 ## Support
 
 If you are interested in this project and would like to learn more, help on testing, or give some input on requirements, you are welcome to send email to eric [at] incubiq [dot] com with title [Vote with DID].
