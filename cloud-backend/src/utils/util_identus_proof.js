@@ -11,6 +11,7 @@ const { consoleLog } = require("./util_services");
 
 const STATUS_PROVER_PROOF_REQRECEIVED="RequestReceived";
 const STATUS_PROVER_PROOF_SENT="PresentationSent";
+const STATUS_HOLDER_PROOF_ACCEPTED="PresentationAccepted";
 
 /*
  *       VC - Proof / Verification
@@ -19,49 +20,36 @@ const STATUS_PROVER_PROOF_SENT="PresentationSent";
 const getDecodedProof = function (item, _claim_type, _filterStatus) {
 
     let _claims = null;
-    let _presId = null;
-    let _thid = null;
-    let _proof = null;
     
     // happy with the challenge requested?
     const _options=(item.requestData? JSON.parse(item.requestData[0]).options : {});
     if(_options.challenge==_claim_type || _claim_type=="*") {
 
-        _presId=item.presentationId;
-        _thid=item.thid;
         hasSameType=true;
 
-        if(_filterStatus===STATUS_PROVER_PROOF_SENT) {
-            _proof=item.data[0];
-            const decoded_wrapper = jwtDecode(item.data[0]);
-            const encoded_proof=decoded_wrapper.vp.verifiableCredential[0];
-            const decoded_proof = jwtDecode(encoded_proof);
-            const dateExpire = new Date(decoded_proof.exp * 1000);
-            const now = new Date();
-//                        if(dateExpire> now) {              SHIT Identus expiry date does not work, so we cannot compare...
-
-                // now this must be the one 
-                if(decoded_proof.vc.credentialSubject && decoded_proof.vc.credentialSubject.claim_type==_claim_type || _claim_type=="*") {
-                    isValid=true;
-                    delete decoded_proof.vc.credentialSubject.id;
-                    _claims=decoded_proof.vc.credentialSubject;
-                    _claims.expire_at = dateExpire;
-                }
-//                        }
+        if(_filterStatus===item.status || _filterStatus=="*") {
+            const decoded_wrapper = item.data && item.data.length==1? jwtDecode(item.data[0]): null;
+            if(decoded_wrapper) {
+                const encoded_proof=decoded_wrapper.vp.verifiableCredential[0];
+                const decoded_proof = jwtDecode(encoded_proof);
+                const dateExpire = new Date(decoded_proof.exp * 1000);
+                const now = new Date();
+    //                        if(dateExpire> now) {              SHIT Identus expiry date does not work, so we cannot compare...
+    
+                    // now this must be the one 
+                    if(decoded_proof.vc.credentialSubject && decoded_proof.vc.credentialSubject.claim_type==_claim_type || _claim_type=="*") {
+                        isValid=true;
+                        delete decoded_proof.vc.credentialSubject.id;
+                        _claims=decoded_proof.vc.credentialSubject;
+                        _claims.expire_at = dateExpire;
+                    }
+    //                        }
+    
+            }
         }
     }
-
-    if (!_claims) {
-        return null;
-    }
     
-    return {
-        claims: _claims,
-        presId: _presId,
-        thid: _thid,
-        proof: _proof
-    };
-
+    return _claims;
 }
 
 const async_getAllVCPresentationRequests = async function (objParam) {
@@ -73,14 +61,15 @@ const async_getAllVCPresentationRequests = async function (objParam) {
         let _aRet=[];
         let _filterStatus = objParam.status? objParam.status : STATUS_PROVER_PROOF_SENT;     
         dataRet.data.forEach(item => {
-            const dataDecoded = getDecodedProof(item, objParam.claim_type, _filterStatus);
-            if(dataDecoded) {
+            if(item.status == _filterStatus) {
+                const _claims = getDecodedProof(item, objParam.claim_type, _filterStatus);
                 _aRet.push({
-                    claims: dataDecoded.claims,
-                    thid: dataDecoded.thid,
-                    presId: dataDecoded.presId,
-                    proof: dataDecoded.proof        
-                });
+                    claims: _claims,
+                    proof: item.data && item.data.length==1? item.data[0]: null,   
+                    thid: item.thid,
+                    presentationId: item.presentationId,
+                    status: item.status     
+                });    
             }
         })
         return {data: _aRet}
@@ -123,11 +112,10 @@ const async_getFirstHolderPresentationRequestMatchingType = async function (objP
             if(_presId==null && item.status == _filterStatus) {
                 _cVCAccepted++;
 
-                const dataDecoded = getDecodedProof(item, objParam.claim_type, _filterStatus);
-                _claims = dataDecoded.claims;
-                _thid = dataDecoded.thid;
-                _presId = dataDecoded.presId;
-                _proof = dataDecoded.proof;
+                _claims = getDecodedProof(item, objParam.claim_type, _filterStatus);
+                _thid = item.thid;
+                _presId = item.presentationId;
+                _proof = item.data && item.data.length==1? item.data[0]: null;
             }
         })
 
@@ -240,7 +228,8 @@ const async_createCustodialProof = async function (objParam) {
         
         let dataPresReqAsHolder = await async_getAllVCPresentationRequests({
             key: objParam.keyPeer2,
-            thid: dataPresReqAsVerifier.data.thid
+            thid: dataPresReqAsVerifier.data.thid,
+            status: STATUS_PROVER_PROOF_REQRECEIVED
         })
 
         let objBestMatchRecord=null;

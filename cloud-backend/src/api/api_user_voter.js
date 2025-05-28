@@ -176,7 +176,7 @@ class api_user_voter extends apiBase {
 
                 // do we have a proof already?
                 const dataExistingProof =  await this.async_getUserWithProofs(objParam);
-                if(dataExistingProof.data) {
+                if(dataExistingProof.data && dataExistingProof.data.length>0 && dataExistingProof.data[0].claims!=null && dataExistingProof.data[0].proof!=null) {
                     return dataExistingProof;
                 }
                 

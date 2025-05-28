@@ -7,6 +7,8 @@ const srvIdentusUtils = require("./util_identus_utils");
 const { consoleLog } = require("./util_services");
 
 const STATUS_HOLDER_CREDSRECEIVED="CredentialReceived";
+const STATUS_HOLDER_OFFERRECEIVED="OfferReceived";
+const STATUS_HOLDER_REQUESTSENT="RequestSent";
 
 /*
  *       VC - Offer / Accept / Issue
@@ -92,8 +94,10 @@ const async_getFirstHolderVCMatchingType = async function (objParam) {
             })
         }
         // we need to check in all VC received by peer2, if one matches the claim
+        let _thid=null;
         let _recId=null;
         let _vc=null;
+        let _status = null;
         let _cVCAccepted=null;
         let isValid=false;
         let hasSameType=false;
@@ -101,12 +105,14 @@ const async_getFirstHolderVCMatchingType = async function (objParam) {
 
             // filter through given status (if no status, only get those Proofs in a final state), but keep first mathing one if we have it
             let _filterStatus = objParam.status? objParam.status : STATUS_HOLDER_CREDSRECEIVED;      
-            if(_recId==null && item.protocolState == _filterStatus) {
+            if(_recId==null && (item.protocolState == _filterStatus || _filterStatus=="*")) {
                 _cVCAccepted++;
 
                 // happy with the challenge requested?
                 if(item.claims && item.claims.claim_type &&  item.claims.claim_type==objParam.claim_type) {
                     _recId=item.recordId;
+                    _thid=item.thid;
+                    _status = item.protocolState;
                     _vc=item;
                     hasSameType=true;
                 }
@@ -132,6 +138,8 @@ const async_getFirstHolderVCMatchingType = async function (objParam) {
 
         return {data: {
             recordId: _recId,
+            thid: _thid,
+            status: _status,
             vc: _vc
         }}
     }
@@ -166,40 +174,75 @@ const async_createCustodialCredential = async function (objParam) {
             try {
                 dataExist= await async_getFirstHolderVCMatchingType({
                     key: objParam.keyPeer2,
-                    claim_type: objParam.claims.claim_type
+                    claim_type: objParam.claims.claim_type,
+                    status: STATUS_HOLDER_CREDSRECEIVED
                 });
                 return dataExist;
             }
             catch(err) {}
         }
 
+        // no received offer...  were we stuck in a pending offer not validated?
+        let _recordIdIssuer=null;
+        let _recordIdHolder=null;
+        let _thid=null;
+        let _status=null;
+        try {
+            dataExist= await async_getFirstHolderVCMatchingType({
+                key: objParam.keyPeer2,
+                claim_type: objParam.claims.claim_type,
+                status: "*"
+            });
+
+            // we have something...
+            _recordIdHolder=dataExist.data.recordId;
+            _thid=dataExist.data.thid;
+            _status=dataExist.data.status;
+
+            // we want the recordID viewpoint of issuer
+            const dataIssuer= await async_getAllVCOffers({
+                key: objParam.keyPeer1,
+                thid: _thid
+            });
+            dataIssuer.data.forEach(item => {
+                if(item.thid===_thid) {
+                    _recordIdIssuer=item.recordId;
+                }
+            })  
+        }
+        catch(err) {}
+
         // create an offer
-        let dataOfferByIssuer= await async_createVCOfferWithoutSchema({
-            connection: objParam.connection,
-            validity: objParam.validity,
-            key: objParam.keyPeer1,
-            author: objParam.didPeer1,
-            claims: objParam.claims
-        });
-            
-        // F@@# Identus will fail if called within less than 4, 5, or 6 secs after this call... oh my... we slow it down
-        await srvIdentusUtils.wait(gConfig.identus.delay);
+        if(!dataExist || dataExist.data==null) {
+            let dataOfferByIssuer= await async_createVCOfferWithoutSchema({
+                connection: objParam.connection,
+                validity: objParam.validity,
+                key: objParam.keyPeer1,
+                author: objParam.didPeer1,
+                claims: objParam.claims
+            });
+            _recordIdIssuer=dataOfferByIssuer.data.recordId;
+                
+            // F@@# Identus will fail if called within less than 4, 5, or 6 secs after this call... oh my... we slow it down
+            await srvIdentusUtils.wait(gConfig.identus.delay);
 
-        // get offer record from holder point of view
-        let _recordId=null;
-        let dataOfferedToHolder= await async_getAllVCOffers({
-            key: objParam.keyPeer2,
-            thid: dataOfferByIssuer.data.thid
-        });
+            // get offer record from holder point of view
+            let dataOfferedToHolder= await async_getAllVCOffers({
+                key: objParam.keyPeer2,
+                thid: dataOfferByIssuer.data.thid
+            });
 
-        // we should have only one in the array
-        dataOfferedToHolder.data.forEach(item => {
-            if(item.thid===dataOfferByIssuer.data.thid) {
-                _recordId=item.recordId;
-            }
-        })
+            // we should have only one in the array
+            dataOfferedToHolder.data.forEach(item => {
+                if(item.thid===dataOfferByIssuer.data.thid) {
+                    _recordIdHolder=item.recordId;
+                    _thid=dataOfferByIssuer.data.thid;
+                    _status=STATUS_HOLDER_OFFERRECEIVED;          
+                }
+            })  
+        }
 
-        if(!_recordId) {
+        if(!_recordIdHolder || !_recordIdIssuer) {
             throw({
                 data:null,
                 status: 404,
@@ -208,11 +251,13 @@ const async_createCustodialCredential = async function (objParam) {
         }
 
         // ask the AI to accept this offer (with its own recordId)
-        let dataAcceptedByHolder= await async_acceptVCOffer({
-            key: objParam.keyPeer2,
-            recordId: _recordId,
-            did: objParam.didPeer2
-        });
+        if(_status==STATUS_HOLDER_OFFERRECEIVED) {
+            let dataAcceptedByHolder= await async_acceptVCOffer({
+                key: objParam.keyPeer2,
+                recordId: _recordIdHolder,
+                did: objParam.didPeer2
+            });    
+        }
 
         // F@@# Identus will fail if called within less than 4, 5, or 6 secs after this call... oh my... we slow it down
         await srvIdentusUtils.wait(gConfig.identus.delay);
@@ -220,7 +265,7 @@ const async_createCustodialCredential = async function (objParam) {
         // now issue the VC
         let dataVCByIssuer=await async_issueVC({
             key: objParam.keyPeer1,
-            recordId: dataOfferByIssuer.data.recordId
+            recordId: _recordIdIssuer
         })        
 
         // F@@# Identus will fail if called within less than 4, 5, or 6 secs after this call... oh my... we slow it down
@@ -229,7 +274,7 @@ const async_createCustodialCredential = async function (objParam) {
         // get the proof (as per holder)
         let dataVCToHolder= await async_getAllVCOffers({
             key: objParam.keyPeer2,
-            thid: dataOfferByIssuer.data.thid
+            thid: _thid
         });
 
         return {
