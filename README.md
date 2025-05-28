@@ -62,17 +62,21 @@ This project is planned to start in August 2024, and be delivered by end July 20
 
  M3 (28 May 2025)
 
-- 10min explanation video of M3: 
+- 13min explanation video of M3: 
 
   - Development work
-    * Big work on Identus compatibility (unfortunately the v1.39.0 which I dockerised decided to not work anymore, proving that doker is not enough to self contain a release. Lots of work to make it work again, as some breaking changes outside of my control were made in parts called by Identus itself)
-    * Initiated a cloud backend for redirecting all Identus calls + managing user (including secure Authentication) + start of the ballot APIs (part of M4)
-    * connected the browser ext App to the backend with seamless secure authentication
+    * Big work on Identus compatibility (unfortunately the v1.39.0 which I dockerised decided to not work anymore, proving to me that unfortunately, doker is not enough to self contain an Identus release. Lots of work to make it work again, as some breaking changes outside of my control were made in third-party libs called by Identus itself)
+    * Initiated a cloud backend for connecting to Identus + managing user (including secure Authentication) + start of the ballot APIs (started, but that's part of M4)
+    * issuance of DID as soon as the user creates a Digital Identiy Wallet
+    * Self Issuance of Proof of Ownership when User "Sign Message" proof of ownership of a wallet (works multi wallet, multi chains)
+    * Self Issuance of proof of funds from a proof of wallet ownership. 
+    * connected the browser Ext App to the backend with seamless secure authentication
+    * updated the browser Ext App to show User's DIDs and Proofs
     * created a full POSTMAN test env
 
   - How to test it
    * run the backend (will on port 8101 and connect on an Identus host on https://identus.opensourceais.com)
-   * Note: the backend requires a VotingWithDID admin to issue Offers/Proofs. You can either create one yourself (via Postman) and add it to a local_secret.json at startup. or ask me for creds of my current test admin user. In the end, there could be as many validating admins as we wish for separation of concerns.
+   * Note: the backend requires a VotingWithDID admin (I mean an Identus user allowed to create VCs/Proofs) to issue Offers/Proofs. You can either create one yourself (via Postman) and add it to a local_secret.json at startup. Or ask me for creds of my current test admin user. In the end, there could be as many validating admins as we wish for separation of concerns.
    * run the browser ext (refer to M2 doc)
 
 

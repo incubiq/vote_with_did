@@ -59,6 +59,7 @@ const VotesPage = () => {
 
 	const async_genProofOfVotingPower = async() => {
 		try {
+			setIsYesNoDialogOpen(false);
 			if (connectedWallets.length === 0) {
 				alert("No connected wallets found. Please connect at least one wallet first.");
 				return;
