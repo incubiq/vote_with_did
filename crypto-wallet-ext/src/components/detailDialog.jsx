@@ -1,7 +1,7 @@
-// src/components/BottomNav.jsx
+// src/components/detailDialog.jsx
 import React, { useState, useEffect } from 'react';
 
-import styles from '../styles/Creds.module.css';
+import styles from '../styles/Dialogs.module.css';
 
 const DetailDialog = (props) => {
 

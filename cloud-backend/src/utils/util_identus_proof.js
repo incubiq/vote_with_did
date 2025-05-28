@@ -210,7 +210,10 @@ const async_createCustodialProof = async function (objParam) {
                     key: objParam.keyPeer2,
                     claim_type: objParam.claim_type,
                 })
-                return dataExist;
+
+                if(dataExist.data && dataExist.data.claims) {
+                    return dataExist;
+                }
             }
             catch(err) {}
         }

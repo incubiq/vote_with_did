@@ -1,171 +1,138 @@
-// src/pages/WalletDashboard.jsx
-import React, { useState, useEffect } from 'react'
-// import {getConnector} from '@incubiq/siww';
-import {siww} from '../utils/siww/siww';
+import React, { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
-import { async_getIdentusApiKey } from '../utils/encrypt';
-import { srv_getDid, srv_getCredsOffers, srv_getCredsProofs, srv_postAuth, srv_linkWallet } from "../utils/rpc_identity";
-import { srv_postWalletType } from "../utils/rpc_settings";
-import { getTokenFromCookie } from "../utils/cookies";
-
+import { useWalletBackend } from '../hooks/useWalletBackend';
+import { useWalletConnection } from '../hooks/useWalletConnection';
+import WalletList from '../components/WalletList';
 import BottomNav from '../components/BottomNav';
-
 import styles from '../styles/Base.module.css';
-
-const _siww=new siww();
-const gSIWW=_siww.getConnector("SIWC");
 
 const WalletDashboard = () => {
   const { state, actions } = useWallet();
-  const [aAvailWallet, setAAvailWallet] = useState([]);
-  const [aAvailBallot, setAAvailBallot] = useState([]);
+  const [availableBallots] = useState([]); // Placeholder for future ballot functionality
+  const initializationRef = useRef(false);
   const navigate = useNavigate();
+  
+  const {
+    loading: backendLoading,
+    error: backendError,
+    authenticateUser,
+    fetchDIDs,
+    fetchVCs,
+    registerWalletType,
+    linkWallet
+  } = useWalletBackend();
 
-  // instanciate the cardano connector
-  useEffect( () => {
+  // Handle wallet detection and registration
+  const handleWalletDetected = useCallback(async (wallets) => {
+    // Register each detected wallet with backend
+    const registrationPromises = wallets.map(wallet => registerWalletType(wallet));
+    await Promise.allSettled(registrationPromises);
+  }, [registerWalletType]);
 
-    // init SIWC
-    gSIWW.async_initialize({
-      onNotifyAccessibleWallets: function(_aWallet){
-        setAAvailWallet(_aWallet);
-        _aWallet.forEach((item) => {
-          // check if wallet is already registered in the backend
-          srv_postWalletType({
-            chain: item.chain,
-            id: item.id,
-            name: item.name,
-            logo: item.logo,
-            networkId: item.networkId,
-          })
-          .then(data=> {
-          })
-          .catch(err => {
-          })
+  // Handle successful wallet connection
+  const handleWalletConnected = useCallback(async (walletData) => {
+    if (!walletData.wallet?.isEnabled) return;
 
-          if(item.isEnabled) {
-            // connect + get balance of coins / tokens
-//            let _api = await window.cardano[idWallet].enable();
-          }
-        })
-      },
-
-      onNotifyConnectedWallet: async(_wallet) => {
-        // just enabled a wallet? issue a VC (wallet name, pub key, funds)
-        if(_wallet.wallet && _wallet.wallet.isEnabled) {
-
-          const _assets=await gSIWW.async_checkWallet(_wallet.wallet.id);
-          if(_assets.didUserAccept && _assets.wallet.hasReplied && _assets.wallet.isEnabled) {
-            // ensure VC proof of ownership of the wallet
-            srv_linkWallet({
-              address: _assets.assets.stakeAddress,
-              chain: _wallet.wallet.chain.symbol, 
-              networkId: _wallet.wallet.chain.id
-            })
-          }
-
-
-          return;
-        }
-        
-      },
-
-      onNotifySignedMessage: function(_wallet){
-          return;
-      },
-    });
-
-  }, []);
-
-  const onConnectWallet = async (_wallet) => {
     try {
-      gSIWW.async_connectWallet(_wallet.id);
-//      const _api = await window.cardano[_wallet.id].enable();
+      const assets = await checkWallet(walletData.wallet.id);
+      
+      if (assets.didUserAccept && assets.wallet.hasReplied && assets.wallet.isEnabled) {
+        await linkWallet({
+          address: assets.assets.stakeAddress,
+          chain: walletData.wallet.chain.symbol,
+          networkId: walletData.wallet.chain.id
+        });
+      }
+    } catch (err) {
+      console.error("Error handling wallet connection:", err);
     }
-    catch (err) {
-      return;
+  }, [linkWallet]);
+
+  const {
+    availableWallets,
+    connecting,
+    connectWallet,
+    checkWallet
+  } = useWalletConnection({
+    onWalletDetected: handleWalletDetected,
+    onWalletConnected: handleWalletConnected
+  });
+
+  const handleConnectWallet = useCallback(async (wallet) => {
+    try {
+      await connectWallet(wallet.id);
+    } catch (err) {
+      console.error("Failed to connect wallet:", err);
     }
-  }
+  }, [connectWallet]);
 
-  const async_getDIDs = async () => {
-    srv_getDid()
-    .then(data=> {
-      actions.identusDiDSet(data.data);
-    })
-    .catch(err => {
-      console.log("Could not access DID from wallet");
-    })
-  }
-
-  const async_getVCs = async () => {
-    srv_getCredsProofs()
-    .then(data=> {
-      actions.identusVCSet(data.data);
-    })
-    .catch(err => {
-      console.log("Could not access Proofs from VwD");
-    })
-  }
-  // Redirect to home if wallet is not loaded
+  // Initialize user session and load data
   React.useEffect(() => {
     if (state.status !== 'ready' || !state.wallet) {
       navigate('/');
+      return;
     }
-    else {
 
-      // ensure we have a cookie for the user (we always to this as the backend could have been reset, and not have kept this user in memory )
-      srv_postAuth({
-        username: "VotingWallet_"+state.wallet.address.slice(-8),
-        seed: state.wallet.seed
-      })
-      .then(_data => {
-
-        // load the DIDs / VCs
-        async_getDIDs();
-        async_getVCs();
-      })
-      .catch(err => {
-        console.log("Could not authenticate ");
-      })
+    if (initializationRef.current) {
+      return; // Already initialized
     }
-  }, [state.status, state.wallet]);
 
+    const initializeSession = async () => {
+      try {
+        initializationRef.current = true;
+        await authenticateUser(state.wallet);
+        
+        // Load DIDs and VCs in parallel
+        const [dids, vcs] = await Promise.allSettled([
+          fetchDIDs(),
+          fetchVCs()
+        ]);
+
+        if (dids.status === 'fulfilled') {
+          actions.identusDiDSet(dids.value);
+        }
+        
+        if (vcs.status === 'fulfilled') {
+          actions.identusVCSet(vcs.value);
+        }
+      } catch (err) {
+        console.error("Failed to initialize session:", err);
+      }
+    };
+
+    initializeSession();
+  }, [state.status, state.wallet, navigate, authenticateUser, fetchDIDs, fetchVCs, actions]);
+
+  React.useEffect(() => {
+    initializationRef.current = false;
+  }, [state.wallet?.address]);
+  
   if (state.status !== 'ready' || !state.wallet) {
     return null; // Will redirect via useEffect
   }
 
   return (
     <div className={styles.pageContainer}>
-          <div className={styles.container}>
-
-          <h1 className={styles.title}>Wallets</h1>
-
-          {aAvailWallet && aAvailWallet.length>0 ? aAvailWallet.map((item, index) => {
-            return (
-              <div 
-                key={index} 
-                className={styles.wallet}
-                onClick = {() => onConnectWallet(item)}
-              >
-                <img src={item.logo} />
-                <div className={styles.title} >{item.name}</div>
-                <span className={`${styles.connected} ${item.isEnabled? styles.on: styles.off}`}>{item.isEnabled? "Connected": "click to connect"}</span>
-              </div>
-            )
-          }): 
-          
-            <div className={styles.section}>
-              <p>No wallet detected on this browser</p>
-            </div>
-            }
-
-        </div>
-
-        {aAvailBallot && aAvailBallot.length>0 ? 
-          <h1 className={styles.title}>Available Ballots</h1>
-          : ""
-        }
+      <div className={styles.container}>
+        <h1 className={styles.title}>Wallets</h1>
         
+        {backendError && (
+          <div className={styles.error}>
+            Error: {backendError}
+          </div>
+        )}
+        
+        <WalletList 
+          wallets={availableWallets}
+          onConnectWallet={handleConnectWallet}
+          connecting={connecting}
+        />
+      </div>
+
+      {availableBallots && availableBallots.length > 0 && (
+        <h1 className={styles.title}>Available Ballots</h1>
+      )}
 
       <BottomNav />
     </div>

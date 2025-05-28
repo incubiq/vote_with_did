@@ -43,7 +43,10 @@ global.gConfig={
         did: null,
         key: null,
     },
-
+    blockfrost: {
+        key: null,
+        url: 'https://cardano-mainnet.blockfrost.io/api/v0',
+    },
     webapp: {
         origin: "http://localhost:3000", 
     },
@@ -63,6 +66,8 @@ _setParams = function(_config) {
     if(_config.JWT_SECRET) {gConfig.jwtKey=_config.JWT_SECRET; }
     console.log("JWT_SECRET was set");
     if(_config.IDENTUS_ADMIN) {gConfig.identus.adminKey=_config.IDENTUS_ADMIN;}
+    console.log("BLOCKFROST_APIKEY was set");
+    if(_config.BLOCKFROST_APIKEY) {gConfig.blockfrost.key=_config.BLOCKFROST_APIKEY;}
     console.log("IDENTUS ADMIN KEY WAS SET");
     if(_config.IDENTUS_HOST) {gConfig.identus.host=_config.IDENTUS_HOST;}
     console.log("IDENTUS HOST WAS SET TO "+_config.IDENTUS_HOST);

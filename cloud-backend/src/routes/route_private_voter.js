@@ -29,6 +29,25 @@ router.get("/", function(req, res, next) {
 //    todo
 });
 
+/*
+ *      wallet access routes (so that backend knows all wallet types seen client side)
+ */
+
+router.post("/wallet", function(req, res, next) {
+  routeUtils.apiPost(req, res, gConfig.app.apiVoter.async_ensureWalletType.bind(gConfig.app.apiVoter), {
+       did: req.user && req.user.did? req.user.did: null,
+       chain: req.body.chain? req.body.chain: null,
+       id: req.body.id? req.body.id: null,
+       name: req.body.name? req.body.name: null,
+       logo: req.body.logo? req.body.logo: null,
+       networkId: req.body.networkId? parseInt(req.body.networkId): 0,
+     });
+});
+
+/*
+ *    DIDs and VCs
+ */
+
 // get voter's DID (or generate one if none)
 router.get("/did", function(req, res, next) {
   routeUtils.apiGet(req, res, gConfig.app.apiVoter.async_getUserDIDs.bind(gConfig.app.apiVoter), {
@@ -44,28 +63,22 @@ router.get("/proofs", function(req, res, next) {
   });
 });
 
-
-/*
- *      wallet access routes
- */
-
-router.post("/wallet", function(req, res, next) {
-   routeUtils.apiPost(req, res, gConfig.app.apiVoter.async_ensureWalletType.bind(gConfig.app.apiVoter), {
-        did: req.user && req.user.did? req.user.did: null,
-        chain: req.body.chain? req.body.chain: null,
-        id: req.body.id? req.body.id: null,
-        name: req.body.name? req.body.name: null,
-        logo: req.body.logo? req.body.logo: null,
-        networkId: req.body.networkId? parseInt(req.body.networkId): 0,
-      });
+// issue a VC/Proof of funds
+router.link("/assets", function(req, res, next) {
+  routeUtils.apiLink(req, res, gConfig.app.apiVoter.async_issueProofOfFunds.bind(gConfig.app.apiVoter), {
+    address: req.query.address? req.query.address: null,
+    chain: req.query.chain? req.query.chain: null,
+    networkId: req.query.networkId? parseInt(req.query.networkId): 0,
+    key: req.user && req.user.key? req.user.key: null
+  });
 });
 
+// issue a Proof of wallet ownership (when user confirms owning a wallet)
 router.link("/wallet", function(req, res, next) {
   routeUtils.apiLink(req, res, gConfig.app.apiVoter.async_ensureProofOfOwnership.bind(gConfig.app.apiVoter), {
     address: req.query.address? req.query.address: null,
     chain: req.query.chain? req.query.chain: null,
     networkId: req.query.networkId? parseInt(req.query.networkId): 0,
-    claim_type: "address_ownership",
     key: req.user && req.user.key? req.user.key: null
     });
 });

@@ -64,6 +64,11 @@ export const srv_linkWallet= async(objParam, _token) => {
   return srv_linkRoute(API_PRIVATEROUTE+'voter/wallet?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
 }
 
+// Create Entity-wallet-DID for new user
+export const srv_linkAssets= async(objParam, _token) => {
+  return srv_linkRoute(API_PRIVATEROUTE+'voter/assets?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
+}
+
 // Get User VC proofs (we get the proof from VwD admin, we do not pass key )
 export const srv_getCredsProofs= async(_token) => {
   return srv_getRoute(API_PRIVATEROUTE+'voter/proofs', {token: _token});

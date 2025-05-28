@@ -17,9 +17,9 @@ const VCPanel = (props) => {
           <img className={styles.credsImage} src="/images/creds.png" />
           <div className={styles.pin_proof}>Proof Received</div>
 
-          {_proof.claims.claim_type? 
-            <img src="/images/wallet_ownership.png" width="64px" height="64px" />
-          : <div>"Unknown type"</div>
+          {_proof.claims.claim_type == "address_ownership"?   <img src="/images/wallet_ownership.png" width="64px" height="64px" /> :
+          _proof.claims.claim_type == "proof_of_fund"?   <img src="/images/proof_of_fund.png" width="64px" height="64px" /> :
+          <div>"Unknown type"</div>
           }
 
         </>

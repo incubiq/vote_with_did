@@ -5,6 +5,7 @@ const utilsCreds = require('../utils/util_identus_credentials');
 const utilsProof = require('../utils/util_identus_proof');
 const utilsIdentity = require('../utils/util_identus_identity');
 const utilsConnection = require('../utils/util_identus_connections');
+const utilsBlockfrost = require('../utils/util_blockfrost');
 const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
 const { connection } = require('mongoose');
@@ -126,7 +127,7 @@ class api_user_voter extends apiBase {
                 const now = new Date();
                 for (var i=0; i<dataProofs.data.length; i++) {
                     // no duplicate 
-                    const iFound=objUser.aProof.findIndex(function (x) {return x.address===dataProofs.data[i].address})
+                    const iFound=objUser.aProof.findIndex(function (x) {return x.thid===dataProofs.data[i].thid})
                     if(iFound==-1) {
                         objUser = cUsers.addProofToUser(objUser.username, dataProofs.data[i]);
                     }
@@ -141,7 +142,7 @@ class api_user_voter extends apiBase {
         }
     }
 
-    async async_ensureProofOfOwnership(objParam) {
+    async async_ensureProof(objParam, objClaim) {
             try {
                 let objUser=cUsers.getUserFromKey(objParam.key);
                 if(!objUser) {
@@ -177,7 +178,16 @@ class api_user_voter extends apiBase {
                 // do we have a proof already?
                 const dataExistingProof =  await this.async_getUserWithProofs(objParam);
                 if(dataExistingProof.data && dataExistingProof.data.length>0 && dataExistingProof.data[0].claims!=null && dataExistingProof.data[0].proof!=null) {
-                    return dataExistingProof;
+                    // only keep same claim_type
+                    let _aRet=[];
+                    dataExistingProof.data.forEach(item => {
+                        if(item.claims && item.claims.claim_type==objClaim.claim_type) {
+                            _aRet.push(item);
+                        }
+                    })
+                    if(_aRet.length>0) {
+                        return _aRet;
+                    }
                 }
                 
                 // no proof? make it now
@@ -225,20 +235,13 @@ class api_user_voter extends apiBase {
                 // the connection is the one from VwD admin viewpoint
                 connection = dataConnect.data[0];
 
-                const  claims={
-                    address: objParam.address,
-                    chain: objParam.chain,
-                    networkId: objParam.networkId,
-                    claim_type: objParam.claim_type,
-                };
-
                 // in case claim was created already, we get it
                 let dataExist=null;
                 let vc=null;
                 try {
                     dataExist= await utilsCreds.async_getFirstHolderVCMatchingType({
                         key: objUser.key,
-                        claim_type: objParam.claim_type
+                        claim_type: objClaim.claim_type
                     });   
                     
                     if(dataExist && dataExist.data) {
@@ -256,7 +259,7 @@ class api_user_voter extends apiBase {
                         didPeer1:  gConfig.vwd.did,          // published short DID of issuer
                         didPeer2:  objUser.did,              // published short DID of holder
                         validity:  gConfig.identus.validity,           // 30d by default
-                        claims: claims,             
+                        claims: objClaim,             
                         noDuplicate: true
                     });
 
@@ -264,16 +267,23 @@ class api_user_voter extends apiBase {
                 }
 
                 // now we generate a proof for this claim
-                cUsers.addProofToUser(objUser.username, claims);
                 const dataProof = await utilsProof.async_createCustodialProof({
                     noDuplicate: true,
                     keyPeer1: gConfig.vwd.key,
                     keyPeer2: objUser.key,
                     connection: connection.connectionId,
-                    claim_type: objParam.claim_type,
+                    claim_type: objClaim.claim_type,
                     domain : "votewithdid.com",
                     thid: vc.thid,
                 });
+
+                cUsers.addProofToUser(objUser.username, {
+                    claims: objClaim,
+                    proof: dataProof.data.proof,
+                    status:  utilsProof.STATUS_PROVER_PROOF_SENT,
+                    thid: dataProof.data.thid
+                });
+
 
                 return dataProof;
             }
@@ -281,6 +291,34 @@ class api_user_voter extends apiBase {
                 throw err;
             }
         }
+
+        
+    async async_ensureProofOfOwnership(objParam) {
+
+        return this.async_ensureProof(objParam, {
+            address: objParam.address,
+            chain: objParam.chain,
+            networkId: objParam.networkId,
+            claim_type: "address_ownership",
+        })        
+    }
+
+    async async_issueProofOfFunds (objParam) {
+        try {
+            const objAssets = await utilsBlockfrost.async_getWalletAssetsFromAddress(objParam.address)
+            return this.async_ensureProof(objParam, {
+                address: objParam.address,
+                chain: objParam.chain,
+                networkId: objParam.networkId,
+                token: "ADA",
+                value: objAssets.adaAmount,
+                claim_type: "proof_of_fund",
+            }) 
+        }
+        catch(err) {
+            throw err;
+        }
+    }
 }
 
 module.exports = api_user_voter;
