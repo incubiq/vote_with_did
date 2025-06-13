@@ -15,9 +15,12 @@ class api_ballot extends apiBase {
 
         const classDBBallot = require('../dbaccess/db_ballot');
         this.dbBallot=new classDBBallot({stdTTL: 864000});   // 10 day cache...
+
+        const classDBQuestion = require('../dbaccess/db_question');
+        this.dbQuestion=new classDBQuestion({stdTTL: 864000});   // 10 day cache...
     }
 
-       async async_createBallot(objParam) {
+    async async_createBallot(objParam) {
         try {
             if(!objParam.did) {
                 throw {
@@ -361,6 +364,25 @@ class api_ballot extends apiBase {
             return {data: null}
         }
         catch (err) {
+            throw err;
+        }
+    }
+
+/*   
+ *      Question APIs
+ */
+
+    async async_createQuestion(objParam)  {
+        try {
+
+            const objQ=await this.dbQuestion.async_createQ({
+                type: , 
+                title: ,
+            })
+
+            return {data: objQ}
+        }
+        catch(err) {
             throw err;
         }
     }

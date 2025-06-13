@@ -21,7 +21,7 @@ import {  rootAPI,
 
 // post wallet type (Cardano) to the server
 export const srv_postWalletType= async(objParam, _token) => {
-  return srv_postRoute(API_PRIVATEROUTE+'voter/wallet', {    
+  return srv_postRoute(API_ROUTE+'auth/wallet', {    
     chain: objParam.chain? objParam.chain: null,
     id: objParam.id? objParam.id: null,
     name: objParam.name? objParam.name: null,

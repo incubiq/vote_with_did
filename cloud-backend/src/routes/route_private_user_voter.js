@@ -11,6 +11,7 @@ const srvIdentus = require("../utils/util_identus_identity");
  *      Private routes (requires login)
  */
 
+// create the Digital ID of the (first time) logged user / voter
 router.post("/entity", function(req, res, next) {
       routeUtils.apiPost(req, res, srvIdentus.async_createEntityWithAuth, {
           name:  req.body && req.body.name? req.body.name : null,                   // a name for this wallet & entity
@@ -26,23 +27,11 @@ router.post("/entity", function(req, res, next) {
 
 // get authenticated voter details
 router.get("/", function(req, res, next) {
-//    todo
+  routeUtils.apiGet(req, res, gConfig.app.apiUserVoter.async_getUser.bind(gConfig.app.apiUserVoter), {
+    key: req.user && req.user.key? req.user.key: null
+  });
 });
 
-/*
- *      wallet access routes (so that backend knows all wallet types seen client side)
- */
-
-router.post("/wallet", function(req, res, next) {
-  routeUtils.apiPost(req, res, gConfig.app.apiVoter.async_ensureWalletType.bind(gConfig.app.apiVoter), {
-       did: req.user && req.user.did? req.user.did: null,
-       chain: req.body.chain? req.body.chain: null,
-       id: req.body.id? req.body.id: null,
-       name: req.body.name? req.body.name: null,
-       logo: req.body.logo? req.body.logo: null,
-       networkId: req.body.networkId? parseInt(req.body.networkId): 0,
-     });
-});
 
 /*
  *    DIDs and VCs
@@ -50,14 +39,14 @@ router.post("/wallet", function(req, res, next) {
 
 // get voter's DID (or generate one if none)
 router.get("/did", function(req, res, next) {
-  routeUtils.apiGet(req, res, gConfig.app.apiVoter.async_getUserDIDs.bind(gConfig.app.apiVoter), {
+  routeUtils.apiGet(req, res, gConfig.app.apiUserVoter.async_getUserDIDs.bind(gConfig.app.apiUserVoter), {
     key: req.user && req.user.key? req.user.key: null
   });
 });
 
 // get voter's VCs/Proofs 
 router.get("/proofs", function(req, res, next) {
-  routeUtils.apiGet(req, res, gConfig.app.apiVoter.async_getUserWithProofs.bind(gConfig.app.apiVoter), {
+  routeUtils.apiGet(req, res, gConfig.app.apiUserVoter.async_getUserWithProofs.bind(gConfig.app.apiUserVoter), {
     claim_type: req.query.claim_type? req.query.claim_type: "*",
     key: req.user && req.user.key? req.user.key: null
   });
@@ -65,7 +54,7 @@ router.get("/proofs", function(req, res, next) {
 
 // issue a VC/Proof of funds
 router.link("/assets", function(req, res, next) {
-  routeUtils.apiLink(req, res, gConfig.app.apiVoter.async_issueProofOfFunds.bind(gConfig.app.apiVoter), {
+  routeUtils.apiLink(req, res, gConfig.app.apiUserVoter.async_issueProofOfFunds.bind(gConfig.app.apiUserVoter), {
     address: req.query.address? req.query.address: null,
     chain: req.query.chain? req.query.chain: null,
     networkId: req.query.networkId? parseInt(req.query.networkId): 0,
@@ -75,7 +64,7 @@ router.link("/assets", function(req, res, next) {
 
 // issue a Proof of wallet ownership (when user confirms owning a wallet)
 router.link("/wallet", function(req, res, next) {
-  routeUtils.apiLink(req, res, gConfig.app.apiVoter.async_ensureProofOfOwnership.bind(gConfig.app.apiVoter), {
+  routeUtils.apiLink(req, res, gConfig.app.apiUserVoter.async_ensureProofOfOwnership.bind(gConfig.app.apiUserVoter), {
     address: req.query.address? req.query.address: null,
     chain: req.query.chain? req.query.chain: null,
     networkId: req.query.networkId? parseInt(req.query.networkId): 0,

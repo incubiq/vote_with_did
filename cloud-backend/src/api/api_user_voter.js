@@ -1,5 +1,5 @@
 const jwtDecode = require('jwt-decode');
-const apiBase = require('./base_publicApi_base');
+const apiViewer = require('./api_user_viewer');
 const utilServices = require('../utils/util_services');
 const utilsCreds = require('../utils/util_identus_credentials');
 const utilsProof = require('../utils/util_identus_proof');
@@ -14,45 +14,29 @@ const { connection } = require('mongoose');
  *      User / VOTER APIs
  */
 
-class api_user_voter extends apiBase {
+class api_user_voter extends apiViewer {
 
     constructor(objParam) {
         super(objParam); // need to call the parent constructor when inheriting
 
-//        const classDBVoter = require('../dbaccess/db_voter');
-//        this.dbVoter=new classDBVoter({stdTTL: 864000});   // 10 day cache...
-
-        const classDBWalletType = require('../dbaccess/db_wallet_type');
-        this.dbWalletType=new classDBWalletType({stdTTL: 864000});   // 10 day cache...
     }
 
 
 /*
- *  Public APIs   
+ *  Voter (user)
  */
     
-    // ensure that we know this kind of wallet (chain + wallet name (LACE, NAMI, ...) )
-    async async_ensureWalletType(objParam) {
-        try {            
-            // exist?
-            let objWT=await this.dbWalletType.async_findWalletType({
-                chain: objParam.chain,
-                id: objParam.id,
-                deleted_at: null
-            });
-            
-            if(!objWT) {
-                // create it
-                objWT={
-                    chain: objParam.chain,
-                    id: objParam.id,
-                    networkId: objParam.networkId,
-                    name: objParam.name,
-                    logo: objParam.logo,
-                };
-                objWT=await this.dbWalletType.async_createWalletType(objWT);
-            }
-            return objWT;            
+    async async_getUser(objParam) {
+        try {
+            const dataUser = await this.async_getUserWithDID(objParam)
+            return {data : [{
+                username: dataUser.data.username,
+                did : dataUser.data.did,
+                isViewer: true,
+                isVoter: true,
+                isDesigner: false,
+                isAdmin: false,
+            }]}
         }
         catch(err) {
             throw err;
@@ -141,6 +125,10 @@ class api_user_voter extends apiBase {
             throw err;
         }
     }
+
+/*
+ *  Proof for Voter
+ */
 
     async async_ensureProof(objParam, objClaim) {
             try {

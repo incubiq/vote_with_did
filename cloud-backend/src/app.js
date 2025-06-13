@@ -196,9 +196,9 @@ const Q = require('q');
         const routeUI = require('./routes/route_ui');
         const routeAuth = require('./routes/route_auth');
         const routePrivateSuperAdminAPI = require('./routes/route_superadmin');
-        const routePrivateAdmin = require('./routes/route_private_admin');
-        const routePrivateDesigner = require('./routes/route_private_designer');
-        const routePrivateVoter = require('./routes/route_private_voter');
+        const routePrivateAdmin = require('./routes/route_private_user_admin');
+        const routePrivateDesigner = require('./routes/route_private_user_designer');
+        const routePrivateVoter = require('./routes/route_private_user_voter');
         const routePublicViewer = require('./routes/route_public_viewer');
 
         // If we don't want to redirect on authentication error...
@@ -246,6 +246,11 @@ const Q = require('q');
                                 statusText: "Unauthorized" 
                             });
                         }
+
+                        _objUser.isViewer=true;
+                        _objUser.isVoter=_objUser.did!=null;
+                        _objUser.isDesigner=false;              // todo
+                        _objUser.isAdmin=false;                 // todo
 
                         req.user = _objUser;
                         next();
@@ -377,10 +382,16 @@ const Q = require('q');
         app.apiBallot=new classBallot();
 
         const classViewer= require('./api/api_user_viewer');
-        app.apiViewer=new classViewer();
+        app.apiUserViewer=new classViewer();
 
         const classVoter= require('./api/api_user_voter');
-        app.apiVoter=new classVoter();
+        app.apiUserVoter=new classVoter();
+
+        const classDesigner= require('./api/api_user_designer');
+        app.apiUserDesigner=new classDesigner();
+
+        const classAdmin= require('./api/api_user_admin');
+        app.apiUserAdmin=new classAdmin();
 
         //todo
         // register Admin DID and Key as user

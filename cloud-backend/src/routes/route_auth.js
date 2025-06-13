@@ -1,9 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const routeUtils = require('./route_utils');
 const jwt = require('jsonwebtoken');
 
 const cUser=require('../const/const_users');
 const cCookie=require('../const/const_cookie');
+
+const classDBWalletType = require('../dbaccess/db_wallet_type');
+const dbWalletType=new classDBWalletType({stdTTL: 864000});   // 10 day cache...
 
 // all routes here start with               api/v1/auth/
 /*
@@ -35,6 +39,48 @@ router.post("/", function(req, res, next) {
     });
     return res.json({ data: {
         token: token }
+    });
+});
+
+/*
+ *      wallet access routes (so that backend knows all wallet types seen client side)
+ */
+
+router.post("/wallet", function(req, res, next) {
+
+    const async_ensureWalletType = async(objParam) => {
+        try {            
+            // exist?
+            let objWT=await dbWalletType.async_findWalletType({
+                chain: objParam.chain,
+                id: objParam.id,
+                deleted_at: null
+            });
+            
+            if(!objWT) {
+                // create it
+                objWT={
+                    chain: objParam.chain,
+                    id: objParam.id,
+                    networkId: objParam.networkId,
+                    name: objParam.name,
+                    logo: objParam.logo,
+                };
+                objWT=await dbWalletType.async_createWalletType(objWT);
+            }
+            return objWT;            
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    routeUtils.apiPost(req, res, async_ensureWalletType, {
+        chain: req.body.chain? req.body.chain: null,
+        id: req.body.id? req.body.id: null,
+        name: req.body.name? req.body.name: null,
+        logo: req.body.logo? req.body.logo: null,
+        networkId: req.body.networkId? parseInt(req.body.networkId): 0,
     });
 });
 

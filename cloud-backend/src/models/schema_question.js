@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 
 const _Schema = new Schema({
 
-    uid: {type: Number, required: true},                            // uid of question
+    uid: {type: Number, required: true},                               // uid of question
     did_designer: {type: String, required: true},                      // who created this question (DID)
 
 // dates
