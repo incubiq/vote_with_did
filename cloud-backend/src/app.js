@@ -115,21 +115,21 @@ const Q = require('q');
                 "X-XSS-Protection": "1; mode=block",
                 "Content-Security-Policy":
                     gConfig.isDebug?
-                        "default-src 'self' 'unsafe-eval' data: http://localhost:"+gConfig.port +" https://*.amazonaws.com http://identus.opensourceais.com https://identity.opensourceais.com ; " +
+                        "default-src 'self' 'unsafe-eval' data: http://localhost:"+gConfig.port +" https://*.amazonaws.com http://identus.opensourceais.com https://identity.opensourceais.com  https://cardano-mainnet.blockfrost.io; " +
                         "script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:"+gConfig.port +" unpkg.com http://identus.opensourceais.com https://identity.opensourceais.com ; " +
                         "style-src 'self' 'unsafe-eval' 'unsafe-inline' http://localhost:"+gConfig.port +" fonts.googleapis.com  cdnjs.cloudflare.com ; " +
                         "font-src  http://localhost:"+gConfig.port + " fonts.gstatic.com cdnjs.cloudflare.com ; " +
-                        "connect-src ws://localhost:"+gConfig.port +" http://localhost:"+gConfig.port +" 'self' accounts.youtube.com *.trycloudflare.com http://identus.opensourceais.com https://identity.opensourceais.com  ; " +
+                        "connect-src ws://localhost:"+gConfig.port +" http://localhost:"+gConfig.port +" 'self' accounts.youtube.com *.trycloudflare.com http://identus.opensourceais.com https://identity.opensourceais.com https://cardano-mainnet.blockfrost.io ; " +
                         "worker-src blob: ; " +
                         "img-src 'self' data: http://localhost:"+gConfig.port +" googleusercontent.com googletagmanager.com ; " +
                         "frame-src 'self'  youtube.com youtu.be ;" +
                         "media-src 'self'  http://localhost:"+gConfig.port +" http://*:"+gConfig.port +" youtube.com youtu.be ;"
                         :
-                        "default-src 'self' 'unsafe-eval' data: https://*.amazonaws.com http://identus.opensourceais.com https://identity.opensourceais.com ; " +
+                        "default-src 'self' 'unsafe-eval' data: https://*.amazonaws.com http://identus.opensourceais.com https://identity.opensourceais.com https://cardano-mainnet.blockfrost.io ; " +
                         "script-src 'self' 'unsafe-inline' 'unsafe-eval' shortfakes.com  cdnjs.cloudflare.com www.googletagmanager.com unpkg.com http://identus.opensourceais.com https://identity.opensourceais.com ; " +
                         "style-src 'self' 'unsafe-eval' 'unsafe-inline' data:  shortfakes.com fonts.googleapis.com cdnjs.cloudflare.com ; "  +
                         "font-src fonts.gstatic.com  cdnjs.cloudflare.com ; "+
-                        "connect-src  'self'  *.google-analytics.com *.trycloudflare.com http://identus.opensourceais.com https://identity.opensourceais.com ; " +
+                        "connect-src  'self'  *.google-analytics.com *.trycloudflare.com http://identus.opensourceais.com https://identity.opensourceais.com  https://cardano-mainnet.blockfrost.io ; " +
                         "worker-src blob: ; " +
                         "img-src 'self' data:  googleusercontent.com googletagmanager.com ; " +
                         "frame-src 'self' www.youtube.com youtube.com www.youtu.be youtu.be  ;" +
@@ -250,7 +250,7 @@ const Q = require('q');
                         _objUser.isViewer=true;
                         _objUser.isVoter=_objUser.did!=null;
                         _objUser.isDesigner=false;              // todo
-                        _objUser.isAdmin=false;                 // todo
+                        _objUser.isAdmin=_objUser.canCreateBallot;
 
                         req.user = _objUser;
                         next();

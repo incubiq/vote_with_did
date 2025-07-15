@@ -22,7 +22,7 @@ router.post("/entity", function(req, res, next) {
     });
   
 /*
- *      status
+ *      status / authorizations
  */
 
 // get authenticated voter details
@@ -32,6 +32,12 @@ router.get("/", function(req, res, next) {
   });
 });
 
+// request admin rights for creating ballots
+router.post("/authorize/admin", function(req, res, next) {
+  routeUtils.apiPost(req, res, gConfig.app.apiUserVoter.async_authorizeAdmin.bind(gConfig.app.apiUserVoter), {
+      key: req.user && req.user.key? req.user.key: null
+  });
+});
 
 /*
  *    DIDs and VCs

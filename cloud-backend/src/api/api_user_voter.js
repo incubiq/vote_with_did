@@ -126,6 +126,29 @@ class api_user_voter extends apiViewer {
         }
     }
 
+    async async_authorizeAdmin(objParam) {
+        try {
+            let objUser=cUsers.getUserFromKey(objParam.key);
+            if(!objUser) {
+                throw {
+                    data: null,
+                    status: 404,
+                    statusText: "Unknown user"
+                }
+            }
+
+            // for now, we accept upgrade of access rights in exchange of nothing
+            cUsers.addAccessRightToUser(objUser.username, {
+                canCreateBallot: true
+            })
+            objUser.isAdmin=true;
+            return {data: objUser}
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
 /*
  *  Proof for Voter
  */

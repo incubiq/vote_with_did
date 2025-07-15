@@ -38,10 +38,17 @@ class api_ballot extends apiBase {
             }
 
             let objB=await this.dbBallot.async_createBallot({
-                did_amin: objParam.did,
+                did_admin: objParam.did,
                 name: objParam.name
             });
 
+            if(!objB) {
+                throw {
+                    data:null,
+                    status: 400,
+                    statusText: "Could not create Ballot"    
+                }
+            }
 
             // track ballot create event
             try{
@@ -56,7 +63,7 @@ class api_ballot extends apiBase {
             }
             catch(err){}
 
-            return {data : objBallot}
+            return {data : objB}
         }
         catch(err) {
             throw err;
@@ -376,8 +383,8 @@ class api_ballot extends apiBase {
         try {
 
             const objQ=await this.dbQuestion.async_createQ({
-                type: , 
-                title: ,
+                type: null, 
+                title: null,
             })
 
             return {data: objQ}

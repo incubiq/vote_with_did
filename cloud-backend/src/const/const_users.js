@@ -10,7 +10,10 @@ const addUser = (_username, _seed) =>  {
             seed: _seed,
             did: null,
             dateLock: null,
-            aProof: []
+            aProof: [],
+
+            // user rights
+            canCreateBallot: false
         });
     }
 }
@@ -30,6 +33,17 @@ const addDidToUser = (_username, _did) =>  {
         return null;
     }
     aUser[iUser].did=_did;
+    return aUser[iUser];
+}
+
+const addAccessRightToUser = (_username, objAccessRight) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.username===_username});
+    if(iUser==-1) {
+        return null;
+    }
+    for (const prop in objAccessRight) {
+        aUser[iUser][prop]=objAccessRight[prop];        
+    }
     return aUser[iUser];
 }
 
@@ -79,4 +93,5 @@ module.exports = {
     addDidToUser,
     addProofToUser,
     addProcessLockToUser,
+    addAccessRightToUser,
 }

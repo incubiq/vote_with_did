@@ -13,6 +13,9 @@ const initialState = {
   dids: [],        // array of DIDs
   vcs: [],         // array of VCs
 
+// access level 
+  authorization: "voter",    // can be changed to access more UI features
+
 // vote
   ballots: [],      
   votes: [],        
@@ -33,6 +36,8 @@ export const ACTIONS = {
   IDENTUS_LOADED: 'IDENTUS_LOADED',
   SET_DIDS: 'SET_DIDS',
   SET_VCS: 'SET_VCS',
+  SET_AUTHORIZATION: 'SET_AUTHORIZATION',
+  SET_BALLOTS: 'SET_BALLOTS',
   SET_ERROR: 'SET_ERROR',
   CLEAR_ERROR: 'CLEAR_ERROR',
   CLEAR_RECOVERY_PHRASE: 'CLEAR_RECOVERY_PHRASE',
@@ -113,6 +118,18 @@ function walletReducer(state, action) {
         ...state,
         vcs: action.payload.vcs,
       };
+
+    case ACTIONS.SET_AUTHORIZATION: 
+      return {
+        ...state,
+        authorization: action.payload.authorization,
+      };
+
+    case ACTIONS.SET_BALLOTS:
+      return {
+        ...state,
+        ballots: action.payload.ballots,
+    };
 
     case ACTIONS.CLEAR_RECOVERY_PHRASE:
       return {
@@ -237,6 +254,20 @@ export function WalletProvider({ children }) {
       dispatch({ 
         type: ACTIONS.SET_VCS, 
         payload: { vcs } 
+      });
+    },
+
+    authorizationSet: ( authorization = "voter") => {
+      dispatch({ 
+        type: ACTIONS.SET_AUTHORIZATION, 
+        payload: { authorization } 
+      });
+    },
+
+    ballotsSet: ( ballots = []) => {
+      dispatch({ 
+        type: ACTIONS.SET_BALLOTS, 
+        payload: { ballots } 
       });
     },
 

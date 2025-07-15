@@ -26,7 +26,7 @@ export const srv_getWalletInfo= async(mnemonic) => {
 }
 
 /*
- *    AUTH
+ *    AUTH / ACCESS RIGHTS
  */
 
 // authenticate user into backend
@@ -35,6 +35,11 @@ export const srv_postAuth= async(objUser) => {
     username: objUser.username,
     seed: objUser.seed
   });
+}
+
+export const srv_postAccessRight= async(objAuth, _token) => {
+  const _route = API_PRIVATEROUTE+'voter/authorize/'+objAuth.authorization.toLowerCase();
+  return srv_postRoute(_route, {token: _token});
 }
 
 /*

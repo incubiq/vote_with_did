@@ -24,7 +24,7 @@ class dbBallot extends dbBase {
         if(!obj || !obj.did_admin || !obj.name) {return null}
 
         obj.created_at=new Date(new Date().toUTCString());
-        objCreate.uid=this.generateUid();
+        obj.uid=this.generateUid();
         return this.async_cached_create(obj);
     }
 

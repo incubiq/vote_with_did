@@ -9,6 +9,7 @@ import EnterPassphrase from "./pages/Onboard_EnterPassphrase";
 import GeneratePassphrase from "./pages/Onboard_GeneratePassphrase";
 import WalletDashboard from "./pages/DashboardPage";
 import VotesPage from "./pages/VotesPage";
+import BallotsPage from "./pages/BallotsPage";
 import VCsPage from "./pages/VCsPage";
 import ProfilePage from "./pages/ProfilePage";
 
@@ -25,6 +26,7 @@ function App() {
           <Route path="/generate-passphrase" element={<GeneratePassphrase />} />
           <Route path="/dashboard" element={<WalletDashboard />} />
           <Route path="/votes" element={<VotesPage />} />
+          <Route path="/ballots" element={<BallotsPage />} />
           <Route path="/vcs" element={<VCsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Routes>

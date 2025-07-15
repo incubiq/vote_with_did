@@ -35,6 +35,7 @@ class api_user_admin extends apiDesigner {
                 isVoter: true,
                 isDesigner: true,
                 isAdmin: true,
+                canCreateBallot: true
             }]}
         }
         catch(err) {
@@ -48,7 +49,7 @@ class api_user_admin extends apiDesigner {
 
     async async_createBallot(objParam) {
         try {
-            if(!canCreateBallot){
+            if(!objParam.canCreateBallot){
                  throw {
                         data: null,
                         status: 403,

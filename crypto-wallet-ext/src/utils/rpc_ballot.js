@@ -1,0 +1,52 @@
+// src/utils/rpc_settings.js
+import {  rootAPI,
+  isProd,
+  getUserToken,
+  API_ROUTE,
+  API_PRIVATEROUTE,
+  API_PUBLICROUTE,
+  API_ADMINROUTE,
+  srv_getRoute, 
+  srv_getUniqueRoute,
+  srv_patchRoute,
+  srv_postRoute,
+  srv_deleteRoute,
+  srv_linkRoute,
+  srv_unlinkRoute } from "./base_rpc";
+
+
+/*
+ *    BALLOT
+ */
+
+// create a ballot (with name)
+export const srv_postCreateBallot= async(objParam, _token) => {
+  return srv_postRoute(API_PRIVATEROUTE+'admin/ballot', {    
+    name: objParam.name? objParam.name: null,
+  }, _token);
+}
+
+// get a user's ballots (as admin)
+export const srv_getBallots= async(objParam, _token) => {
+  return srv_getRoute(API_PRIVATEROUTE+'admin/ballots', {    
+  }, _token);
+}
+
+// get a user's specific ballot details
+export const srv_getBallot= async(objParam, _token) => {
+  return srv_getRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid, {    
+  }, _token);
+}
+
+// update voting rules of a ballot
+export const srv_patchBallotRules= async(objParam, _token) => {
+  return srv_patchRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid+"/rules", {    
+    rules: objParam.rules
+  }, _token);
+}
+
+// publish a ballot
+export const srv_publishBallot= async(objParam, _token) => {
+  return srv_patchRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid+"/publish", {    
+  }, _token);
+}

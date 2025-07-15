@@ -1,6 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
+import { useBallot } from '../hooks/useBallot';
 import { useWalletBackend } from '../hooks/useWalletBackend';
 import { useWalletConnection } from '../hooks/useWalletConnection';
 import WalletList from '../components/WalletList';
@@ -23,7 +24,11 @@ const WalletDashboard = () => {
     linkWallet
   } = useWalletBackend();
 
-  // Handle wallet detection and registration
+  const {
+    fetchBallots,
+  } = useBallot();
+
+// Handle wallet detection and registration
   const handleWalletDetected = useCallback(async (wallets) => {
     // Register each detected wallet with backend
     const registrationPromises = wallets.map(wallet => registerWalletType(wallet));
@@ -88,6 +93,10 @@ const WalletDashboard = () => {
           fetchDIDs(),
           fetchVCs()
         ]);
+
+        // load all user' s ballots
+        const [ballots] = await fetchBallots();
+        actions.ballotsSet(ballots);
 
         if (dids.status === 'fulfilled') {
           actions.identusDiDSet(dids.value);
