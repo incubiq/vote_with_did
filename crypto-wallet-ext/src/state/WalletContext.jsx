@@ -1,6 +1,7 @@
 // src/state/WalletContext.jsx
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { storage } from '../utils/storage';
+import { srv_getBallots } from '../utils/rpc_ballot';
 
 // Initial state
 const initialState = {
@@ -173,6 +174,11 @@ export function WalletProvider({ children }) {
           });
         }
 
+        const profileState = await storage.async_loadProfile();
+        if (profileState && profileState.authorization) {
+          actions.authorizationSet(profileState.authorization);
+        }
+
         if (storedState && storedState.identus) {
 
           dispatch({
@@ -262,12 +268,20 @@ export function WalletProvider({ children }) {
         type: ACTIONS.SET_AUTHORIZATION, 
         payload: { authorization } 
       });
+      if(authorization=="admin") {
+        srv_getBallots()
+          .then(_data => {
+            actions.ballotsSet(_data.data);
+          })
+          .catch(err => {
+          })        
+      }
     },
 
     ballotsSet: ( ballots = []) => {
       dispatch({ 
         type: ACTIONS.SET_BALLOTS, 
-        payload: { ballots } 
+        payload: { ballots }
       });
     },
 

@@ -249,7 +249,7 @@ const Q = require('q');
 
                         _objUser.isViewer=true;
                         _objUser.isVoter=_objUser.did!=null;
-                        _objUser.isDesigner=false;              // todo
+                        _objUser.isDesigner=_objUser.caEditBallot;
                         _objUser.isAdmin=_objUser.canCreateBallot;
 
                         req.user = _objUser;

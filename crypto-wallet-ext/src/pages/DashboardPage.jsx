@@ -94,10 +94,6 @@ const WalletDashboard = () => {
           fetchVCs()
         ]);
 
-        // load all user' s ballots
-        const [ballots] = await fetchBallots();
-        actions.ballotsSet(ballots);
-
         if (dids.status === 'fulfilled') {
           actions.identusDiDSet(dids.value);
         }

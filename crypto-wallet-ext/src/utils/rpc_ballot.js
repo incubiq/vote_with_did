@@ -26,6 +26,16 @@ export const srv_postCreateBallot= async(objParam, _token) => {
   }, _token);
 }
 
+// Update a ballot attr
+export const srv_patchBallot= async(objParam, _token) => {
+  return srv_patchRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid, {    
+    name: objParam.name? objParam.name: null,
+    opening_at: objParam.opening_at? objParam.opening_at: null,
+    closing_at: objParam.closing_at? objParam.closing_at: null,
+    settings: objParam.settings? encodeURIComponent(encodeURIComponent(objParam.settings)): null,
+  }, _token);
+}
+
 // get a user's ballots (as admin)
 export const srv_getBallots= async(objParam, _token) => {
   return srv_getRoute(API_PRIVATEROUTE+'admin/ballots', {    

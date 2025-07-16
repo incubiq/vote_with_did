@@ -28,7 +28,7 @@ const BottomNav = () => {
         Votes
       </button>
 
-      {state.authorization=="Admin" ?
+      {state.authorization=="admin" ?
         <button 
           className={`${styles.navButton} ${isActive('/ballots') ? styles.active : ''}`}
           onClick={() => navigate('/ballots')}

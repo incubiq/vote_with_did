@@ -5,6 +5,7 @@ import { async_deriveKeyFromPin, encryptData, decryptData } from '../utils/encry
 const STORAGE_IDENTITY = 'VwD_IDENTITY';
 const STORAGE_WALLET = 'VwD_WALLET';
 const STORAGE_PIN = "VwD_PIN"
+const STORAGE_PROFILE = "VwD_PROFILE"
 
 const saveToStorage = (entry, _obj) => {
   if(entry!=null) {
@@ -163,6 +164,43 @@ export const storage = {
   async async_clearPin(_pin) {
     try {
       removeStorage(STORAGE_PIN);
+      return true;
+    } catch (error) {
+      return false;
+    }    
+  },
+
+
+/*
+ *      PROFILE
+ */
+
+  async async_saveProfile(_authorization) {
+    try {
+      saveToStorage(STORAGE_PROFILE, {
+        authorization: _authorization,
+        lastChecked_at: new Date(new Date().toUTCString())
+      });
+      return true;
+    }
+    catch(err) {
+      return false;
+    }
+  },
+
+  async async_loadProfile() {
+    try {
+      const objPr= loadFromStorage(STORAGE_PROFILE);
+      return objPr;
+    }
+    catch(err) {
+      return null;
+    }
+  },
+
+  async async_clearProfile() {
+    try {
+      removeStorage(STORAGE_PROFILE);
       return true;
     } catch (error) {
       return false;

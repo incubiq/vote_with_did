@@ -13,7 +13,9 @@ const addUser = (_username, _seed) =>  {
             aProof: [],
 
             // user rights
-            canCreateBallot: false
+            canCreateBallot: false,
+            canEditBallot: false,
+            canPublishBallot: false
         });
     }
 }

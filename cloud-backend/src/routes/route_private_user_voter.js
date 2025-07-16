@@ -39,6 +39,18 @@ router.post("/authorize/admin", function(req, res, next) {
   });
 });
 
+router.post("/authorize/designer", function(req, res, next) {
+  routeUtils.apiPost(req, res, gConfig.app.apiUserVoter.async_authorizeDesigner.bind(gConfig.app.apiUserVoter), {
+      key: req.user && req.user.key? req.user.key: null
+  });
+});
+
+router.post("/authorize/voter", function(req, res, next) {
+  routeUtils.apiPost(req, res, gConfig.app.apiUserVoter.async_authorizeVoter.bind(gConfig.app.apiUserVoter), {
+      key: req.user && req.user.key? req.user.key: null
+  });
+});
+
 /*
  *    DIDs and VCs
  */

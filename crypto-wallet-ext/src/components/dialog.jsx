@@ -134,6 +134,12 @@ const BasicDialog = (props) => {
                 alt = "image"
               />
             : ""}
+
+            {props.type =="form" ?
+              <div>
+                {props.form}
+              </div>
+            : ""}
           </div>
 
           <div className={styles.actionBar}>

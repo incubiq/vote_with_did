@@ -35,7 +35,9 @@ class api_user_admin extends apiDesigner {
                 isVoter: true,
                 isDesigner: true,
                 isAdmin: true,
-                canCreateBallot: true
+                canCreateBallot: true,
+                canEditBallot: true,
+                canPublishBallot: true,
             }]}
         }
         catch(err) {

@@ -86,13 +86,17 @@ class api_ballot extends apiBase {
             });
             
             // upd
+            let objUpd = {};
+            if(objUpdate.name) {objUpd.name = objUpdate.name}
+            if(objUpdate.opening_at) {objUpd.opening_at = objUpdate.opening_at}
+            if(objUpdate.closing_at) {objUpd.closing_at = objUpdate.closing_at}
+            if(objUpdate.settings) {objUpd.settings_admin = objUpdate.settings}
+
             let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid
-            }, {
-                settings_admin: JSON.stringify(objUpdate)
-            });
+            }, objUpd);
             
-            return objUpdB;            
+            return {data: objUpdB};
         }
         catch(err) {
             throw err;
@@ -205,7 +209,7 @@ class api_ballot extends apiBase {
     }
     async async_findMyBallot(objParam) {
         try {
-            let objBallot = this._async_findMyBallot(objParam);
+            let objBallot = await this._async_findMyBallot(objParam);
             if(objBallot.did_admin!==objParam.did) {
                 throw {
                     data: null,

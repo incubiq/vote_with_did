@@ -32,6 +32,20 @@ router.post("/ballot", function(req, res, next) {
     });
 });
 
+// Update a Ballot
+router.patch("/ballot/:uid", function(req, res, next) {
+    routeUtils.apiPatch(req, res, gConfig.app.apiBallot.async_updateBallotByAdmin.bind(gConfig.app.apiBallot), {
+      canEditBallot: req.user.canEditBallot? req.user.canEditBallot: false,
+      did: req.user.did? req.user.did: null,
+      uid: req.params.uid? parseInt(req.params.uid) : null
+    }, {
+      name: req.body.name? decodeURIComponent(decodeURIComponent(req.body.name)): null,
+      opening_at: req.body.opening_at? req.body.opening_at: null,
+      closing_at: req.body.closing_at? req.body.closing_at: null,
+      settings: req.body.settings? decodeURIComponent(decodeURIComponent(req.body.settings)): null
+    });
+});
+
 // get ALL my Ballot
 router.get("/ballots", function(req, res, next) {
   routeUtils.apiGet(req, res, gConfig.app.apiUserAdmin.async_getMyBallots.bind(gConfig.app.apiUserAdmin), {
@@ -50,6 +64,7 @@ router.get("/ballot/:uid", function(req, res, next) {
 // Define voting rules for a ballot
 router.patch("/ballot/:uid/rules", function(req, res, next) {
   routeUtils.apiPatch(req, res, gConfig.app.apiUserAdmin.async_updateBallotRules.bind(gConfig.app.apiUserAdmin), {
+    canEditBallot: req.user.canEditBallot? req.user.canEditBallot: false,
     uid: req.params.uid? parseInt(req.params.uid) : null,
     did: req.user.did? req.user.did: null
   }, {
@@ -60,6 +75,7 @@ router.patch("/ballot/:uid/rules", function(req, res, next) {
 // Publish a ballot
 router.patch("/ballot/:uid/publish", function(req, res, next) {
   routeUtils.apiPatch(req, res, gConfig.app.apiUserAdmin.async_publishBallot.bind(gConfig.app.apiUserAdmin), {
+    canPublishBallot: req.user.canPublishBallot? req.user.canPublishBallot: false,
     uid: req.params.uid? parseInt(req.params.uid) : null,
     did: req.user.did? req.user.did: null
   }, {    

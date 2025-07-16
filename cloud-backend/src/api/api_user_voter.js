@@ -36,6 +36,10 @@ class api_user_voter extends apiViewer {
                 isVoter: true,
                 isDesigner: false,
                 isAdmin: false,
+                canCreateBallot: false,
+                canEditBallot: false,
+                canPublishBallot: false,
+
             }]}
         }
         catch(err) {
@@ -125,8 +129,7 @@ class api_user_voter extends apiViewer {
             throw err;
         }
     }
-
-    async async_authorizeAdmin(objParam) {
+    async _async_authorize(objParam) {
         try {
             let objUser=cUsers.getUserFromKey(objParam.key);
             if(!objUser) {
@@ -139,14 +142,43 @@ class api_user_voter extends apiViewer {
 
             // for now, we accept upgrade of access rights in exchange of nothing
             cUsers.addAccessRightToUser(objUser.username, {
-                canCreateBallot: true
+                canEditBallot: objParam.canEditBallot,
+                canCreateBallot: objParam.canCreateBallot,
+                canPublishBallot: objParam.canPublishBallot
             })
-            objUser.isAdmin=true;
+            objUser.isAdmin=objParam.canCreateBallot==true;
+            objUser.isDesigner=objParam.canEditBallot==true;
             return {data: objUser}
         }
         catch(err) {
             throw err;
         }
+    }
+    async async_authorizeAdmin(objParam) {
+        return this._async_authorize({
+            key: objParam.key, 
+            canEditBallot: true,
+            canCreateBallot: true,
+            canPublishBallot: true
+        })
+    }
+
+    async async_authorizeDesigner(objParam) {
+        return this._async_authorize({
+            key: objParam.key, 
+            canEditBallot: true,
+            canCreateBallot: false,
+            canPublishBallot: false
+        })
+    }
+
+    async async_authorizeVoter(objParam) {
+        return this._async_authorize({
+            key: objParam.key, 
+            canEditBallot: false,
+            canCreateBallot: false,
+            canPublishBallot: false
+        })
     }
 
 /*
