@@ -1,5 +1,6 @@
 // src/pages/VotesPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 
 import { useWallet } from '../state/WalletContext';
@@ -18,6 +19,7 @@ const BallotsPage = () => {
 	const [currentBallot, setCurrentBallot] = useState(null);
 
 	const { state, actions } = useWallet();
+    const navigate = useNavigate();
 
 	const async_loadBallots = async() => {
 		srv_getBallots()
@@ -141,12 +143,13 @@ const BallotsPage = () => {
 							<th>Start Date</th>
 							<th>End Date</th>
 							<th># Questions</th>
-							<th>Actions</th>
+							<th>&nbsp;</th>
+							<th>&nbsp;</th>
 							</tr>
 						</thead>
 						<tbody>
 							{state.ballots.map((ballot) => (
-							<tr key={ballot.id}>
+							<tr key={ballot.uid}>
 								<td>
 								<a href={`/ballots/${ballot.id}/questions`}>{ballot.name}</a>
 								</td>
@@ -158,7 +161,13 @@ const BallotsPage = () => {
 								<button className = {styles.button} onClick={() => {
 									setCurrentBallot(ballot);
 									setIsEditDialogOpen(true);
-								}}>Edit</button>
+								}}>Settings</button>
+								</td>
+								<td>
+								<button className = {styles.button} onClick={() => {
+									setCurrentBallot(ballot);
+									  navigate("/questions?BallotId="+ballot.uid);
+								}}>Questions</button>
 								</td>
 							</tr>
 							))}
