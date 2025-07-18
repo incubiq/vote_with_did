@@ -24,7 +24,7 @@ class dbQuestion extends dbBase {
         if(!obj || !obj.type || !obj.title) {return null}
 
         obj.created_at=new Date(new Date().toUTCString());
-        objCreate.uid=this.generateUid();
+        obj.uid=this.generateUid();
         return this.async_cached_create(obj);
     }
 

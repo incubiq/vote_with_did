@@ -35,6 +35,7 @@ class api_user_admin extends apiDesigner {
                 isVoter: true,
                 isDesigner: true,
                 isAdmin: true,
+                canAddQuestion: true,
                 canCreateBallot: true,
                 canEditBallot: true,
                 canPublishBallot: true,

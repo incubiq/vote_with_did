@@ -102,78 +102,87 @@ class api_ballot extends apiBase {
             throw err;
         }
     }
-    
-    async async_updateBallotByDesigner(objParam, objUpdate) {
+
+    async async_addOrEditQuestion(objParam) {
         try {
+            if(!objParam.canAddQuestion)  {
+                throw {
+                    data:null,
+                    status: 401,
+                    statusText: "No rights to add or edit a question"    
+                }
+            }
 
-             // get this ballot 
-             let dataBallot = await this.async_findBallotForDesigner({
-                did: objParam.did,
-                uid: objParam.uid
-            });
-
-            
-            // upd
-            let objUpdB=await this.dbBallot.async_updateBallot({
-                uid: objParam.uid
-            }, {
-                settings_designer: JSON.stringify(objUpdate)
-            });
-            
-            return objUpdB;            
-        }
-        catch(err) {
-            throw err;
-        }
-    }
-
-    async async_addQuestion(objParam, uid_question) {
-        try {
             // get this ballot 
             let dataBallot = await this.async_findBallotForDesigner({
                 did: objParam.did,
-                uid: objParam.uid
+                uid: objParam.uid_ballot
             });
 
-            // add question
             let _aQ=[...dataBallot.data.aQuestion];
-            if(_aQ.findIndex(function (x) {return x===uid_question})==-1) {
-                _aQ.push(uid_question);
+            if(objParam.uid_question) {
+                const i=_aQ.findIndex(function (x) {return x===objParam.uid_question});
+                if(i!=-1) {
+                    // edit
+                    if(objParam.title) {_aQ[i].title = objParam.title}
+                    if(objParam.rich_text) {_aQ[i].rich_text = objParam.rich_text}
+                    if(objParam.link) {_aQ[i].link = objParam.link}
+                    if(objParam.image) {_aQ[i].image = objParam.image}
+                    if(objParam.type) {_aQ[i].type = objParam.type}
+                    if(objParam.aChoice) {_aQ[i].aChoice = objParam.aChoice}
+                }
             }
+            else {
+                // add
+                let dataQ = await this.async_createQuestion(objParam);
+                if (dataQ.data) {
+                    _aQ.push(dataQ.data);
+                }
+            }
+
+            // update ballot with question
             let objUpdB=await this.dbBallot.async_updateBallot({
-                uid: objParam.uid
+                uid: objParam.uid_ballot
             }, {
                 aQuestion: _aQ
             });
 
-            return objUpdB;
+            return {data: objUpdB};
         }
         catch(err) {
             throw err;
         }
     }
 
-    async async_removeQuestion(objParam, uid_question) {
+    async async_removeQuestion(objParam) {
         try {
+            if(!objParam.canAddQuestion)  {
+                throw {
+                    data:null,
+                    status: 401,
+                    statusText: "No rights to remove a question"    
+                }
+            }
+
             // get this ballot 
             let dataBallot = await this.async_findBallotForDesigner({
                 did: objParam.did,
-                uid: objParam.uid
+                uid: objParam.uid_ballot
             });
 
             // remove question
             let _aQ=[...dataBallot.data.aQuestion];
-            const i=_aQ.findIndex(function (x) {return x===uid_question});
+            const i=_aQ.findIndex(function (x) {return x===objParam.uid_question});
             if(i!=-1) {
                 _aQ.splice(i, 1);
             }
             let objUpdB=await this.dbBallot.async_updateBallot({
-                uid: objParam.uid
+                uid: objParam.uid_ballot
             }, {
                 aQuestion: _aQ
             });
 
-            return objUpdB;
+            return {data: objUpdB};
         }
         catch(err) {
             throw err;
@@ -226,8 +235,13 @@ class api_ballot extends apiBase {
 
     async async_findBallotForDesigner(objParam) {
         try {
-            let objBallot = this._async_findMyBallot(objParam);
-            if(!objBallot.a_did_designer.includes(objParam.did)) {
+            let objBallot = await this._async_findMyBallot(objParam);
+
+            // if admin, do not bother with designer
+            if(objBallot.did_admin==objParam.did) {
+                return {data: objBallot};
+            }
+            if(!objBallot.a_did_designer || !objBallot.a_did_designer.includes(objParam.did)) {
                 throw {
                     data: null,
                     status: 403,
@@ -385,12 +399,31 @@ class api_ballot extends apiBase {
 
     async async_createQuestion(objParam)  {
         try {
+            if(!objParam.title || !objParam.type || !objParam.did) {
+                throw {
+                    data: null,
+                    status: 400,
+                    statusText: "Cannot create question without title or type"
+                }
+            }
 
-            const objQ=await this.dbQuestion.async_createQ({
-                type: null, 
-                title: null,
-            })
+            let objCreate = {
+                type: objParam.type, 
+                title: objParam.title,
+                did_designer: objParam.did,
+                rich_text: "awaiting content"
+            }
 
+            if(objParam.rich_text) {objCreate.rich_text=objParam.rich_text} 
+            if(objParam.link) {objCreate.link=objParam.link}
+            if(objParam.image) {objCreate.image=objParam.image}
+
+            if(objParam.type=="bool" && (!objParam.aChoice || objParam.aChoice.length==0)) {
+                objParam.aChoice=[{text: "yes", value: true}, {text: "no", value: false}]
+            }
+            if(objParam.aChoice) {objCreate.aChoice=objParam.aChoice}
+
+            const objQ=await this.dbQuestion.async_createQ(objCreate);
             return {data: objQ}
         }
         catch(err) {

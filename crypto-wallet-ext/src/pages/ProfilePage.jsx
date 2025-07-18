@@ -23,15 +23,7 @@ const ProfilePage = () => {
 
   const async_changeProfile = async(_profile) => {
     try {
-      const _data = await srv_postAccessRight({
-        authorization: _profile
-      })
-
-      if(_data.data==null) {
-        throw _data
-      }
-
-      actions.authorizationSet(_profile);   // will reload Ballots
+      actions.authorizationSet(_profile);   // will set profile auth to backend and reload Ballots
       const objPr = await storage.async_saveProfile(_profile);
       return _data.data;
     }

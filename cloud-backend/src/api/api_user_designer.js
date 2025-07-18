@@ -35,8 +35,9 @@ class api_user_designer extends apiVoter {
                 isVoter: true,
                 isDesigner: true,
                 isAdmin: false,
+                canAddQuestion: true,
                 canCreateBallot: false,
-                canEditBallot: true,
+                canEditBallot: false,
                 canPublishBallot: false,
             }]}
         }

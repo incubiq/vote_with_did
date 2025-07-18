@@ -60,3 +60,19 @@ export const srv_publishBallot= async(objParam, _token) => {
   return srv_patchRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid+"/publish", {    
   }, _token);
 }
+
+
+/*
+ *    QUESTIONS
+ */
+
+// create a question
+export const srv_postCreateQuestion= async(objParam, _token) => {
+  return srv_postRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid_ballot+"/question", {    
+    title: objParam.title? encodeURIComponent(encodeURIComponent(objParam.title)): null,
+    link: objParam.link? encodeURIComponent(encodeURIComponent(objParam.link)) : null,
+    type: objParam.type? objParam.type: null,
+    rich_text: objParam.rich_text? encodeURIComponent(encodeURIComponent(objParam.rich_text)): null,
+    image: objParam.image? objParam.image: null
+  }, _token);
+}

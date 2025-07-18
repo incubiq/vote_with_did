@@ -36,6 +36,7 @@ class api_user_voter extends apiViewer {
                 isVoter: true,
                 isDesigner: false,
                 isAdmin: false,
+                canAddQuestion: false,
                 canCreateBallot: false,
                 canEditBallot: false,
                 canPublishBallot: false,
@@ -142,6 +143,7 @@ class api_user_voter extends apiViewer {
 
             // for now, we accept upgrade of access rights in exchange of nothing
             cUsers.addAccessRightToUser(objUser.username, {
+                canAddQuestion: objParam.canAddQuestion,
                 canEditBallot: objParam.canEditBallot,
                 canCreateBallot: objParam.canCreateBallot,
                 canPublishBallot: objParam.canPublishBallot
@@ -157,6 +159,7 @@ class api_user_voter extends apiViewer {
     async async_authorizeAdmin(objParam) {
         return this._async_authorize({
             key: objParam.key, 
+            canAddQuestion: true,
             canEditBallot: true,
             canCreateBallot: true,
             canPublishBallot: true
@@ -166,7 +169,8 @@ class api_user_voter extends apiViewer {
     async async_authorizeDesigner(objParam) {
         return this._async_authorize({
             key: objParam.key, 
-            canEditBallot: true,
+            canAddQuestion: true,
+            canEditBallot: false,
             canCreateBallot: false,
             canPublishBallot: false
         })
@@ -175,6 +179,7 @@ class api_user_voter extends apiViewer {
     async async_authorizeVoter(objParam) {
         return this._async_authorize({
             key: objParam.key, 
+            canAddQuestion: false,
             canEditBallot: false,
             canCreateBallot: false,
             canPublishBallot: false

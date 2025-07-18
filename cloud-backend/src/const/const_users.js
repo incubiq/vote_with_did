@@ -13,6 +13,7 @@ const addUser = (_username, _seed) =>  {
             aProof: [],
 
             // user rights
+            canAddQuestion: false,
             canCreateBallot: false,
             canEditBallot: false,
             canPublishBallot: false

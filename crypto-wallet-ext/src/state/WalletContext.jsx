@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { storage } from '../utils/storage';
 import { srv_getBallots } from '../utils/rpc_ballot';
+import { srv_postAccessRight } from '../utils/rpc_identity';
 
 // Initial state
 const initialState = {
@@ -268,14 +269,23 @@ export function WalletProvider({ children }) {
         type: ACTIONS.SET_AUTHORIZATION, 
         payload: { authorization } 
       });
-      if(authorization=="admin") {
-        srv_getBallots()
-          .then(_data => {
-            actions.ballotsSet(_data.data);
-          })
-          .catch(err => {
-          })        
-      }
+
+      // set the profile to backend
+      srv_postAccessRight({
+          authorization: authorization
+      })
+        .then(_data => {
+            if(authorization=="admin") {
+              srv_getBallots()
+                .then(_data => {
+                  actions.ballotsSet(_data.data);
+                })
+                .catch(err => {
+                })        
+            }
+
+        })
+  
     },
 
     ballotsSet: ( ballots = []) => {
