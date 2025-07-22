@@ -20,6 +20,10 @@ class api_ballot extends apiBase {
         this.dbQuestion=new classDBQuestion({stdTTL: 864000});   // 10 day cache...
     }
 
+/*   
+ *      Ballot
+ */
+
     async async_createBallot(objParam) {
         try {
             if(!objParam.did) {
@@ -103,15 +107,13 @@ class api_ballot extends apiBase {
         }
     }
 
-    async async_addOrEditQuestion(objParam) {
+    async async_linkQuestion(objParam) {
         try {
-            if(!objParam.canAddQuestion)  {
-                throw {
-                    data:null,
-                    status: 401,
-                    statusText: "No rights to add or edit a question"    
-                }
-            }
+            // get this question 
+            let objQ = await this._async_findQuestion({
+                uid: objParam.uid_question,
+                canAddQuestion: objParam.canAddQuestion
+            });
 
             // get this ballot 
             let dataBallot = await this.async_findBallotForDesigner({
@@ -120,25 +122,7 @@ class api_ballot extends apiBase {
             });
 
             let _aQ=[...dataBallot.data.aQuestion];
-            if(objParam.uid_question) {
-                const i=_aQ.findIndex(function (x) {return x===objParam.uid_question});
-                if(i!=-1) {
-                    // edit
-                    if(objParam.title) {_aQ[i].title = objParam.title}
-                    if(objParam.rich_text) {_aQ[i].rich_text = objParam.rich_text}
-                    if(objParam.link) {_aQ[i].link = objParam.link}
-                    if(objParam.image) {_aQ[i].image = objParam.image}
-                    if(objParam.type) {_aQ[i].type = objParam.type}
-                    if(objParam.aChoice) {_aQ[i].aChoice = objParam.aChoice}
-                }
-            }
-            else {
-                // add
-                let dataQ = await this.async_createQuestion(objParam);
-                if (dataQ.data) {
-                    _aQ.push(dataQ.data);
-                }
-            }
+            _aQ.push(objParam.uid_question)
 
             // update ballot with question
             let objUpdB=await this.dbBallot.async_updateBallot({
@@ -153,16 +137,14 @@ class api_ballot extends apiBase {
             throw err;
         }
     }
-
-    async async_removeQuestion(objParam) {
+    
+    async async_unlinkQuestion(objParam) {
         try {
-            if(!objParam.canAddQuestion)  {
-                throw {
-                    data:null,
-                    status: 401,
-                    statusText: "No rights to remove a question"    
-                }
-            }
+            // get this question 
+            let objQ = await this._async_findQuestion({
+                uid: objParam.uid_question,
+                canAddQuestion: objParam.canAddQuestion
+            });
 
             // get this ballot 
             let dataBallot = await this.async_findBallotForDesigner({
@@ -172,10 +154,19 @@ class api_ballot extends apiBase {
 
             // remove question
             let _aQ=[...dataBallot.data.aQuestion];
-            const i=_aQ.findIndex(function (x) {return x===objParam.uid_question});
+            const i=_aQ.findIndex(function (x) {return x.uid===objParam.uid_question});
             if(i!=-1) {
                 _aQ.splice(i, 1);
             }
+            else {
+                throw  {
+                    data:null,
+                    status: 404,
+                    statusText: "Question not found in ballot (Q uid:"+objParam.uid_question+")"
+                } 
+            }
+
+            // update ballot
             let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid_ballot
             }, {
@@ -210,6 +201,18 @@ class api_ballot extends apiBase {
                     statusText: "No ballot with uid "+uid
                 }
             }
+
+            // load all questions
+            let _aQ=[];
+            for (var i=0; i<objBallot.aQuestion.length; i++) {
+                const objQ = await this._async_findQuestion({
+                    canAddQuestion: true,
+                    uid:  objBallot.aQuestion[i]
+                })
+                _aQ.push(objQ);
+            }
+
+            objBallot.aQuestion = _aQ;
             return objBallot;  
         }
         catch(err) {
@@ -397,8 +400,20 @@ class api_ballot extends apiBase {
  *      Question APIs
  */
 
+/*   
+ *      Questions
+ */
+
     async async_createQuestion(objParam)  {
         try {
+            if(!objParam.canAddQuestion)  {
+                throw {
+                    data:null,
+                    status: 401,
+                    statusText: "No rights to create a question"    
+                }
+            }
+
             if(!objParam.title || !objParam.type || !objParam.did) {
                 throw {
                     data: null,
@@ -425,6 +440,98 @@ class api_ballot extends apiBase {
 
             const objQ=await this.dbQuestion.async_createQ(objCreate);
             return {data: objQ}
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async _async_findQuestion(objParam) {
+        try {
+            if(!objParam.canAddQuestion)  {
+                throw {
+                    data:null,
+                    status: 401,
+                    statusText: "No rights to add/update a question"    
+                }
+            }
+
+            // get this question 
+            let objQ = await this.dbQuestion.async_findQ({
+                uid: objParam.uid,
+            });
+
+            if(!objQ)  {
+                throw {
+                    data:null,
+                    status: 404,
+                    statusText: "No question with uid "+objParam.uid    
+                }
+            }
+
+            return objQ;
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_findQuestion(objFind) {
+        try {
+            // get this question 
+            let objQ = await this._async_findQuestion({
+                uid: objFind.uid,
+                canAddQuestion: objFind.canAddQuestion
+            });
+
+            return {data: objQ};
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_updateQuestion(objFind, objUpdate) {
+        try {
+            // get this question 
+            let objQ = await this._async_findQuestion({
+                uid: objFind.uid,
+                canAddQuestion: objFind.canAddQuestion
+            });
+
+            if(objParam.title) {objQ.title = objParam.title}
+            if(objParam.rich_text) {objQ.rich_text = objParam.rich_text}
+            if(objParam.link) {objQ.link = objParam.link}
+            if(objParam.image) {objQ.image = objParam.image}
+            if(objParam.type) {objQ.type = objParam.type}
+            if(objParam.aChoice) {objQ.aChoice = objParam.aChoice}
+
+            // update question
+            let objUpQ=await this.dbQuestion.async_updateQ({
+                uid: objParam.uid
+            }, objQ);
+
+            return {data: objUpQ};
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_deleteQuestion(objParam) {
+        try {
+            // get this question 
+            let objQ = await this._async_findQuestion({
+                uid: objParam.uid,
+                canAddQuestion: objParam.canAddQuestion
+            });
+
+            // remove question from DB
+            await this.dbQuestion.async_deleteQ({
+                uid: objParam.uid
+            }) 
+
+            return {data: null};
         }
         catch(err) {
             throw err;

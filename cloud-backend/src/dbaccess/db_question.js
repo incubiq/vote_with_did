@@ -57,6 +57,11 @@ class dbQuestion extends dbBase {
             throw err;
         }
     }    
+
+    async async_deleteQ(obj){
+        return this.async_cached_delete(obj);
+    }
+
 }
 
 module.exports = dbQuestion;

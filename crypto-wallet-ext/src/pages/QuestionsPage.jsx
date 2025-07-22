@@ -7,7 +7,7 @@ import Dialog from '../components/dialog.jsx';
 import { ToastContainer, toast } from 'react-toastify';
 import BottomNav from '../components/BottomNav';
 
-import {  srv_getBallot, srv_patchBallot, srv_postCreateQuestion } from '../utils/rpc_ballot';
+import {  srv_getBallot, srv_patchQuestion, srv_postCreateQuestion, srv_deleteQuestion, srv_linkQuestion, srv_unlinkQuestion } from '../utils/rpc_ballot';
 
 import styles from '../styles/Base.module.css';
 
@@ -41,39 +41,67 @@ export default function QuestionsPage() {
 
 	const _async_load = async(_uid) => {
 		try {
+			if(_uid!=null) {
 			const _data = await srv_getBallot({
-				uid: _uid
-			});
-			setBallot(_data.data);
-			return _data;
+					uid: _uid
+				});
+				setBallot(_data.data);
+				return _data;
+			}
 		}
 		catch(err) {return null}
 	}
 
 	const async_createQuestion = async (_data) => {
-		setIsCreateDialogOpen(false);
+		try {
+			setIsCreateDialogOpen(false);
 
-		// create ballot with user as admin
-		srv_postCreateQuestion({
-			uid_ballot: ballotId, 
-			title: question.title,			
-			rich_text: question.rich_text,
-			link: question.link,			
-			type: question.type,			
-		})
-			.then(_data => {
-				if(_data.data==null) {
-					throw _data;
-				}
-
-				toast.success("Question "+_data+" was created");
-
-				// now load this ballot
-				async_loadBallot();
-			}) 
-			.catch(err => {
-				toast.error("Could not create question ("+err.message+")");
+			// create Question
+			const _dataQ= await srv_postCreateQuestion({
+				title: question.title,			
+				rich_text: question.rich_text,
+				link: question.link,			
+				type: question.type,			
 			})
+
+			if(!_dataQ.data) {throw _dataQ}
+
+			// link to Ballot
+			const dataB= await srv_linkQuestion({
+				uid_ballot: ballotId, 
+				uid_question: _dataQ.data.uid, 
+			})
+
+			toast.success("Question "+_data+" was created");
+
+			// now load this ballot
+			_async_load(ballotId);
+		}
+		catch(err) {
+			toast.error("Could not create question ("+err.message+")");
+		}
+	}
+
+	const async_deleteQuestion = async (_uid) => {
+		try {
+			const dataB= await srv_unlinkQuestion({
+				uid_ballot: ballotId, 
+				uid_question: _uid, 
+			})
+
+			// delete Question
+			const _dataQ= await srv_deleteQuestion({
+				uid_question: _uid, 
+			})
+
+			toast.success("Question was remove from Ballot");
+
+			// now load this ballot
+			_async_load(ballotId);
+		}
+		catch(err) {
+			toast.error("Could not delete question ("+err.message+")");
+		}
 	}
 
 	const updateQuestion = (_data) => {
@@ -227,6 +255,9 @@ export default function QuestionsPage() {
 									<img src="icons/icons8-delete-30.png" width = "32" height = "32"  
 									onClick={() => {
 										setQuestion(q);
+										async_deleteQuestion(q.uid).then(( )=> {
+											setQuestion(null);
+										})
 									}}
 									/>
 								</td>
