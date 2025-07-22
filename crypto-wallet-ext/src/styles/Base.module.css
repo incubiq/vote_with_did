@@ -321,3 +321,23 @@ position: fixed;
   width: 100%;
   text-align: left;
 }
+
+.previewQuestion {
+  min-height: 320px
+}
+
+.previewQuestion .question_descr {
+  border-top: solid 1px  #ddd;
+  padding: 6px 6px 24px 6px;
+  background-color: #fafafa;
+  min-height: 64px;
+}
+
+.previewQuestion .question_answers {
+  display: flex;
+  justify-content: center;  /* Horizontal center */
+  align-items: center;      /* Vertical center */
+  height: 50vh;
+  min-height: 100px;
+  max-height: 220px;
+}

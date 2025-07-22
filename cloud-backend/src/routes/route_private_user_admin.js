@@ -93,7 +93,7 @@ router.link("/ballot/:uid_ballot/question/:uid_question", function(req, res, nex
     });
 });
 
-// add question to a ballot
+// remove question from a ballot
 router.unlink("/ballot/:uid_ballot/question/:uid_question", function(req, res, next) {
     routeUtils.apiUnlink(req, res, gConfig.app.apiBallot.async_unlinkQuestion.bind(gConfig.app.apiBallot), {
       canAddQuestion: req.user.canAddQuestion? req.user.canAddQuestion: false,

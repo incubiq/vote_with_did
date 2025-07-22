@@ -154,7 +154,7 @@ class api_ballot extends apiBase {
 
             // remove question
             let _aQ=[...dataBallot.data.aQuestion];
-            const i=_aQ.findIndex(function (x) {return x.uid===objParam.uid_question});
+            const i=_aQ.findIndex(function (x) {return x===objParam.uid_question});
             if(i!=-1) {
                 _aQ.splice(i, 1);
             }
@@ -212,7 +212,7 @@ class api_ballot extends apiBase {
                 _aQ.push(objQ);
             }
 
-            objBallot.aQuestion = _aQ;
+            objBallot.aQuestionInFull = _aQ;
             return objBallot;  
         }
         catch(err) {
@@ -499,16 +499,16 @@ class api_ballot extends apiBase {
                 canAddQuestion: objFind.canAddQuestion
             });
 
-            if(objParam.title) {objQ.title = objParam.title}
-            if(objParam.rich_text) {objQ.rich_text = objParam.rich_text}
-            if(objParam.link) {objQ.link = objParam.link}
-            if(objParam.image) {objQ.image = objParam.image}
-            if(objParam.type) {objQ.type = objParam.type}
-            if(objParam.aChoice) {objQ.aChoice = objParam.aChoice}
+            if(objUpdate.title) {objQ.title = objUpdate.title}
+            if(objUpdate.rich_text) {objQ.rich_text = objUpdate.rich_text}
+            if(objUpdate.link) {objQ.link = objUpdate.link}
+            if(objUpdate.image) {objQ.image = objUpdate.image}
+            if(objUpdate.type) {objQ.type = objUpdate.type}
+            if(objUpdate.aChoice) {objQ.aChoice = objUpdate.aChoice}
 
             // update question
             let objUpQ=await this.dbQuestion.async_updateQ({
-                uid: objParam.uid
+                uid: objFind.uid
             }, objQ);
 
             return {data: objUpQ};

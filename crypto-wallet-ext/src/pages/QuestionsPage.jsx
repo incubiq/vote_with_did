@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Dialog from '../components/dialog.jsx';
+import PreviewQuestionPanel from '../components/previewQuestion.jsx';
 
 import { ToastContainer, toast } from 'react-toastify';
 import BottomNav from '../components/BottomNav';
@@ -24,6 +25,7 @@ const aQuestionTypes = [
 export default function QuestionsPage() {
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 	const [ballot, setBallot] = useState(null);
 	const [question, setQuestion] = useState(null);
 	const navigate = useNavigate();
@@ -104,7 +106,27 @@ export default function QuestionsPage() {
 		}
 	}
 
-	const updateQuestion = (_data) => {
+	const async_updateQuestion = async (_uid) => {
+		try {
+			const _dataQ= await srv_patchQuestion({
+				uid_question: _uid, 
+				title: question.title,			
+				rich_text: question.rich_text,
+				link: question.link,			
+				type: question.type,			
+			})
+
+			toast.success("Question was updated");
+
+			// now load this ballot
+			_async_load(ballotId);
+		}
+		catch(err) {
+			toast.error("Could not update question ("+err.message+")");
+		}
+	}
+
+	const updateQuestionPropVal = (_data) => {
 		let objQ= question? {...question} : {};
 		for (const key in _data) {
 			objQ[key]=_data[key]
@@ -112,6 +134,48 @@ export default function QuestionsPage() {
 		setQuestion(objQ);
 	}
 
+	const renderCreateQuestion = (iQuestion) => {
+		return (
+			<>
+				<div>
+					<label className={styles.prop}>
+						Title
+					</label>
+
+					<input
+						type="text"
+						value={question? question.title: ""}
+						onChange={(e) => updateQuestionPropVal({title: e.target.value})}
+						className={styles.input}
+						placeholder={"Compulsory"}
+					/>
+				</div>
+				
+				<div>
+					<label className={styles.prop}>
+						Type of answers
+					</label>
+
+					<select
+						value={question? question.type: "select"}
+						onChange={(e) => {
+							updateQuestionPropVal({type: e.target.value})
+						}}
+						className={styles.input}
+						>
+						{aQuestionTypes.map((item, index) => {
+							return (
+								<option key = {index} value={item.type} >{item.text}</option>
+							)
+						})}
+					</select>
+				</div>
+
+			</>
+		)
+	}
+
+	
 	const renderEditQuestion = (iQuestion) => {
 //    image: {type: String, required: false},                          // image url associated to Question
 
@@ -125,7 +189,7 @@ export default function QuestionsPage() {
 					<input
 						type="text"
 						value={question? question.title: ""}
-						onChange={(e) => updateQuestion({title: e.target.value})}
+						onChange={(e) => updateQuestionPropVal({title: e.target.value})}
 						className={styles.input}
 						placeholder={"Compulsory"}
 					/>
@@ -139,7 +203,7 @@ export default function QuestionsPage() {
 					<input
 						type="text"
 						value={question? question.link: ""}
-						onChange={(e) => updateQuestion({link: e.target.value})}
+						onChange={(e) => updateQuestionPropVal({link: e.target.value})}
 						className={styles.input}
 						placeholder={"Optional, add link here"}
 					/>
@@ -153,7 +217,7 @@ export default function QuestionsPage() {
 					<textarea
 						rows = "4"
 						value={question? question.rich_text: ""}
-						onChange={(e) => updateQuestion({rich_text: e.target.value})}
+						onChange={(e) => updateQuestionPropVal({rich_text: e.target.value})}
 						className={styles.input}
 						placeholder={"Describe your question here..."}
 					/>
@@ -167,7 +231,7 @@ export default function QuestionsPage() {
 					<select
 						value={question? question.type: "select"}
 						onChange={(e) => {
-							updateQuestion({type: e.target.value})
+							updateQuestionPropVal({type: e.target.value})
 						}}
 						className={styles.input}
 						>
@@ -188,7 +252,7 @@ export default function QuestionsPage() {
 						<select
 							value={question? question.aChoice: ""}
 							onChange={(e) => {
-								updateQuestion({aChoice: e.target.value})
+								updateQuestionPropVal({aChoice: e.target.value})
 							}}
 							className={styles.input}
 							>
@@ -230,7 +294,7 @@ export default function QuestionsPage() {
 				<table className={styles.tableBallot}>
 
 					<tbody>
-					{ballot?.aQuestion?.map((q, idx) => (
+					{ballot?.aQuestionInFull?.map((q, idx) => (
 							<tr key={q.uid}>
 								<td >{idx+1}.  {q.title}</td>
 								
@@ -247,6 +311,7 @@ export default function QuestionsPage() {
 									<img src="icons/icons8-preview-50.png" width = "32" height = "32"  
 									onClick={() => {
 										setQuestion(q);
+										setIsPreviewOpen(!isPreviewOpen)
 									}}
 									/>
 								</td>
@@ -273,7 +338,7 @@ export default function QuestionsPage() {
 					onClick = {( )=> {
 						setIsCreateDialogOpen(true);
 						setQuestion({
-							title: null,
+							title: "",
 							type: "select"
 						});
 					}
@@ -287,13 +352,40 @@ export default function QuestionsPage() {
 					isVisible = {isCreateDialogOpen}
 					title = "Add a new Question"
 					message = ""
-					form = {renderEditQuestion(null)}
+					form = {renderCreateQuestion(null)}
 					type = "form"
 					textCancel = "Cancel"
 					textOK = "Create"
 					onClose = {( ) => setIsCreateDialogOpen(false)}
 					onUpdate = {(_data) => async_createQuestion(_data)}
 			/>
+
+			<Dialog 
+					isVisible = {isEditDialogOpen}
+					title = "Edit Question Content"
+					message = ""
+					form = {renderEditQuestion(null)}
+					type = "form"
+					textCancel = "Cancel"
+					textOK = "Save"
+					onClose = {( ) => setIsEditDialogOpen(false)}
+					onUpdate = {(_data) => async_updateQuestion(question?.uid)}
+			/>
+
+			<Dialog 
+					isVisible = {isPreviewOpen}
+					title = {question?.title}
+					form = {<PreviewQuestionPanel 
+								question = {isPreviewOpen? question : null}
+							/>}
+					type = "form"
+					textCancel = "close"
+					textOK = {null}
+					onClose = {( ) => setIsPreviewOpen(false)}
+					onUpdate = {null}
+			/>
+
+			
 
 		<BottomNav />
 		<ToastContainer />
