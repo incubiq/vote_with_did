@@ -16,6 +16,15 @@
   display: inline-flex;
 }
 
+.bold_underlined {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.italic {
+  font-style: italic;
+}
+
 .button {
   background-color: var(--primary-color);
   color: white;
@@ -322,6 +331,13 @@ position: fixed;
   text-align: left;
 }
 
+.panelSelect {
+  padding-bottom: 12px;
+}
+.editQuestionContent {
+  min-height: 240px;
+}
+
 .previewQuestion {
   min-height: 320px
 }
@@ -340,4 +356,9 @@ position: fixed;
   height: 50vh;
   min-height: 100px;
   max-height: 220px;
+}
+
+.previewQuestion .question_answers .select {
+  min-width: 120px;
+  min-height: 24px
 }

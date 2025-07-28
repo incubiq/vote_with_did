@@ -432,10 +432,6 @@ class api_ballot extends apiBase {
             if(objParam.rich_text) {objCreate.rich_text=objParam.rich_text} 
             if(objParam.link) {objCreate.link=objParam.link}
             if(objParam.image) {objCreate.image=objParam.image}
-
-            if(objParam.type=="bool" && (!objParam.aChoice || objParam.aChoice.length==0)) {
-                objParam.aChoice=[{text: "yes", value: true}, {text: "no", value: false}]
-            }
             if(objParam.aChoice) {objCreate.aChoice=objParam.aChoice}
 
             const objQ=await this.dbQuestion.async_createQ(objCreate);
@@ -499,11 +495,21 @@ class api_ballot extends apiBase {
                 canAddQuestion: objFind.canAddQuestion
             });
 
+            let bHasTypeChanged = false;
             if(objUpdate.title) {objQ.title = objUpdate.title}
             if(objUpdate.rich_text) {objQ.rich_text = objUpdate.rich_text}
             if(objUpdate.link) {objQ.link = objUpdate.link}
             if(objUpdate.image) {objQ.image = objUpdate.image}
-            if(objUpdate.type) {objQ.type = objUpdate.type}
+            if(objUpdate.type) {
+                bHasTypeChanged= objQ.type != objUpdate.type;
+                objQ.type = objUpdate.type;
+            }
+
+            // remove prev choice if type was changed
+            if(bHasTypeChanged && objQ.aChoice.length>0) {
+                objUpdate.aChoice=[];
+            }
+            // (but) set it to new if provided
             if(objUpdate.aChoice) {objQ.aChoice = objUpdate.aChoice}
 
             // update question

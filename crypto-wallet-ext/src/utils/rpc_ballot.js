@@ -80,7 +80,7 @@ export const srv_postCreateQuestion= async(objParam, _token) => {
 // find a question
 export const srv_findQuestion= async(objParam, _token) => {
   return srv_getRoute(API_PRIVATEROUTE+'admin/question/'+objParam.uid_question, {
-        
+
   }, _token);
 }
 
@@ -91,7 +91,8 @@ export const srv_patchQuestion= async(objParam, _token) => {
     link: objParam.link? encodeURIComponent(encodeURIComponent(objParam.link)) : null,
     type: objParam.type? objParam.type: null,
     rich_text: objParam.rich_text? encodeURIComponent(encodeURIComponent(objParam.rich_text)): null,
-    image: objParam.image? objParam.image: null
+    image: objParam.image? objParam.image: null,
+    aChoice: objParam.aChoice? encodeURIComponent(encodeURIComponent(objParam.aChoice)): null,
   }, _token);
 }
 

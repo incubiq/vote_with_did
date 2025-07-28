@@ -26,6 +26,7 @@ export default function QuestionsPage() {
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+	const [editOption, setEditOption] = useState("option_overview");
 	const [ballot, setBallot] = useState(null);
 	const [question, setQuestion] = useState(null);
 	const navigate = useNavigate();
@@ -113,7 +114,8 @@ export default function QuestionsPage() {
 				title: question.title,			
 				rich_text: question.rich_text,
 				link: question.link,			
-				type: question.type,			
+				type: question.type,
+				aChoice: JSON.stringify(question.aChoice)
 			})
 
 			toast.success("Question was updated");
@@ -130,6 +132,14 @@ export default function QuestionsPage() {
 		let objQ= question? {...question} : {};
 		for (const key in _data) {
 			objQ[key]=_data[key]
+		}
+		setQuestion(objQ);
+	}
+
+	const updateAnswerPropVal = (_iChoice, _obj) => {
+		let objQ= question? {...question} : {};
+		for (const key in _obj) {
+			objQ.aChoice[_iChoice][key] = _obj[key]
 		}
 		setQuestion(objQ);
 	}
@@ -180,79 +190,40 @@ export default function QuestionsPage() {
 //    image: {type: String, required: false},                          // image url associated to Question
 
 		return (
-			<>
-				<div>
-					<label className={styles.prop}>
-						Title
-					</label>
-
-					<input
-						type="text"
-						value={question? question.title: ""}
-						onChange={(e) => updateQuestionPropVal({title: e.target.value})}
-						className={styles.input}
-						placeholder={"Compulsory"}
-					/>
-				</div>
-				
-				<div>
-					<label className={styles.prop}>
-						URL link
-					</label>
-
-					<input
-						type="text"
-						value={question? question.link: ""}
-						onChange={(e) => updateQuestionPropVal({link: e.target.value})}
-						className={styles.input}
-						placeholder={"Optional, add link here"}
-					/>
+			<div className={styles.editQuestionContent}>
+				<div className={styles.panelSelect}>
+					<a className={editOption=="option_overview"? styles.bold_underlined: ""} onClick = {( )=> {setEditOption("option_overview")}} href="#">Overview</a> 
+					&nbsp; - &nbsp;
+					<a className={editOption=="option_question"? styles.bold_underlined: ""} onClick = {( )=> {setEditOption("option_question")}} href="#">Question</a> 
+					&nbsp; - &nbsp;
+					<a className={editOption=="option_answers"? styles.bold_underlined: ""} onClick = {( )=> {setEditOption("option_answers")}} href="#">Possible answers</a> 
 				</div>
 
-				<div>
-					<label className={styles.prop}>
-						Description
-					</label>
-
-					<textarea
-						rows = "4"
-						value={question? question.rich_text: ""}
-						onChange={(e) => updateQuestionPropVal({rich_text: e.target.value})}
-						className={styles.input}
-						placeholder={"Describe your question here..."}
-					/>
-				</div>
-
-				<div>
-					<label className={styles.prop}>
-						Type of answers
-					</label>
-
-					<select
-						value={question? question.type: "select"}
-						onChange={(e) => {
-							updateQuestionPropVal({type: e.target.value})
-						}}
-						className={styles.input}
-						>
-						{aQuestionTypes.map((item, index) => {
-							return (
-								<option key = {index} value={item.type} >{item.text}</option>
-							)
-						})}
-					</select>
-				</div>
-
-				{iQuestion !=null?
+				{editOption=="option_overview"?
+				<>
 					<div>
 						<label className={styles.prop}>
-							Type of choices
+							Title
+						</label>
+
+						<input
+							type="text"
+							value={question? question.title: ""}
+							onChange={(e) => updateQuestionPropVal({title: e.target.value})}
+							className={styles.input}
+							placeholder={"Compulsory"}
+						/>
+					</div>
+
+					<div>
+						<label className={styles.prop}>
+							Type of answers
 						</label>
 
 						<select
-							value={question? question.aChoice: ""}
+							value={question? question.type: "select"}
 							onChange={(e) => {
-								updateQuestionPropVal({aChoice: e.target.value})
+								updateQuestionPropVal({type: e.target.value})
 							}}
 							className={styles.input}
 							>
@@ -263,8 +234,98 @@ export default function QuestionsPage() {
 							})}
 						</select>
 					</div>
+				</> 
 				:""}
-			</>
+
+				{editOption=="option_question"?
+				<>
+
+					<div>
+						<label className={styles.prop}>
+							URL link
+						</label>
+
+						<input
+							type="text"
+							value={question? question.link: ""}
+							onChange={(e) => updateQuestionPropVal({link: e.target.value})}
+							className={styles.input}
+							placeholder={"Optional, add link here"}
+						/>
+					</div>
+
+					<div>
+						<label className={styles.prop}>
+							Description
+						</label>
+
+						<textarea
+							rows = "4"
+							value={question? question.rich_text: ""}
+							onChange={(e) => updateQuestionPropVal({rich_text: e.target.value})}
+							className={styles.input}
+							placeholder={"Describe your question here..."}
+						/>
+					</div>
+				</>
+				:""}
+				
+				{editOption=="option_answers"?
+					<>
+						<h3 >
+							List of possible answers
+						</h3>
+
+						<div>
+							{question?.aChoice?.map((item, index) => {
+								return (
+									<div key = {index}>
+										<div >
+											<img src="icons/icons8-delete-30.png" width = "16" height = "16"
+												onClick={() => {
+													let tmpQ = {...question};
+													tmpQ.aChoice.splice(index, 1);
+													setQuestion(tmpQ);
+												}}
+											/>
+											&nbsp;
+											Choice {index+1}
+										</div>
+
+										<label className={styles.prop}  >Text</label>
+										<input 
+										type="text"
+											value={item.text? item.text: ""}
+											onChange={(e) => updateAnswerPropVal(index, {text: e.target.value})}
+											className={styles.input}
+											placeholder={"Text displayed to user"}
+										/>
+										<br />
+										<label className={styles.prop}  >Value</label>
+										<input 
+										type="text"
+											value={item.value? item.value: ""}
+											onChange={(e) => updateAnswerPropVal(index, {value: e.target.value})}
+											className={styles.input}
+											placeholder={"Value stored"}
+										/>
+									</div>
+								)
+							})}
+
+							{question?.type!=="bool"?
+								<div className={styles.button} onClick={()=> {
+									let tmpQ = {...question};
+									tmpQ.aChoice.push({text: "", value: null});
+									setQuestion(tmpQ);
+								}}> 
+									Add possible answer...
+								</div>
+							:""}
+						</div>
+					</>
+				:""}
+			</div>
 		)
 	}
 
@@ -296,7 +357,18 @@ export default function QuestionsPage() {
 					<tbody>
 					{ballot?.aQuestionInFull?.map((q, idx) => (
 							<tr key={q.uid}>
-								<td >{idx+1}.  {q.title}</td>
+								<td >{idx+1}. [{q.type}] {q.title}</td>
+								<td>
+									{ballot.aQuestionInFull && ballot.aQuestionInFull[idx].aChoice && ballot.aQuestionInFull[idx].aChoice.length>0?
+									<select>
+										 {ballot.aQuestionInFull[idx].aChoice.map((choice, iChoice) => (
+											<option value = {choice.value}>{choice.text}</option>
+										))}
+									</select>
+									: 
+										<span className={styles.italic}>in progress</span>
+									}
+								</td>
 								
 								<td width = "48">
 									<img src="icons/icons8-edit-24.png" width = "32" height = "32"  
@@ -351,7 +423,7 @@ export default function QuestionsPage() {
 			<Dialog 
 					isVisible = {isCreateDialogOpen}
 					title = "Add a new Question"
-					message = ""
+					message = {null}
 					form = {renderCreateQuestion(null)}
 					type = "form"
 					textCancel = "Cancel"
@@ -363,7 +435,7 @@ export default function QuestionsPage() {
 			<Dialog 
 					isVisible = {isEditDialogOpen}
 					title = "Edit Question Content"
-					message = ""
+					message = {null}
 					form = {renderEditQuestion(null)}
 					type = "form"
 					textCancel = "Cancel"

@@ -112,7 +112,7 @@ router.post("/question", function(req, res, next) {
       rich_text: req.body.rich_text? decodeURIComponent(decodeURIComponent(req.body.rich_text)): null,
       link: req.body.link? decodeURIComponent(decodeURIComponent(req.body.link)): null,
       type: req.body.type? req.body.type: "select",
-      aChoice: req.body.aChoice? req.body.aChoice: [],
+      aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? req.body.aChoice: [],
     });
 });
 
@@ -135,7 +135,7 @@ router.patch("/question/:uid", function(req, res, next) {
       rich_text: req.body.rich_text? decodeURIComponent(decodeURIComponent(req.body.rich_text)): null,
       link: req.body.link? decodeURIComponent(decodeURIComponent(req.body.link)): null,
       type: req.body.type? req.body.type: "select",
-      aChoice: req.body.aChoice? req.body.aChoice: [],
+      aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? JSON.parse(decodeURIComponent(decodeURIComponent(req.body.aChoice))): [],
     });
 });
 

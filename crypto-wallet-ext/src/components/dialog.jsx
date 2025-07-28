@@ -72,9 +72,11 @@ const BasicDialog = (props) => {
           </h2>
 
           <div className="mb-6">
+            {props.property?
             <label className={styles.prop}>
               {props.property}
             </label>
+            :""}
 
             {props.fnRender? props.fnRender() :""}
 
