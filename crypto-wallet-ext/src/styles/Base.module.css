@@ -326,6 +326,12 @@ position: fixed;
   box-shadow: 0 0 0 2px #3B82F6;  /* focus:ring-2 focus:ring-blue-500 */
 }
 
+.modal .select {
+  min-width: 60px;
+  min-height: 24px;
+  text-align: center; 
+}
+
 .tableBallot {
   width: 100%;
   text-align: left;

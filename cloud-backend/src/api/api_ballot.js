@@ -264,6 +264,21 @@ class api_ballot extends apiBase {
                 did_admin: objParam.did
             }, {}, []);
 
+            // return questions in full
+            for (var iQ=0; iQ<aB.length; iQ++) {
+                // load all questions
+                let _aQ=[];
+                for (var i=0; i<aB[iQ].aQuestion.length; i++) {
+                    const objQ = await this._async_findQuestion({
+                        canAddQuestion: true,
+                        uid:  aB[iQ].aQuestion[i]
+                    })
+                    _aQ.push(objQ);
+                }
+
+                aB[iQ].aQuestionInFull = _aQ;
+            }
+
             return {data : aB}
         }
         catch(err) {
