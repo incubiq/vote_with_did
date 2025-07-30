@@ -67,6 +67,16 @@ export const srv_publishBallot= async(objParam, _token) => {
 }
 
 
+// get all available ballots (as voter)
+export const srv_getPublicBallots= async(objParam, _token) => {
+  return srv_getRoute(API_PRIVATEROUTE+'voter/ballots', {    
+    isOpenForRegistration: objParam.isOpenForRegistration,
+    isOpenForVote: objParam.isOpenForVote,
+    isOpenForStats: objParam.isOpenForStats,
+  }, _token);
+}
+
+
 /*
  *    QUESTIONS
  */

@@ -34,6 +34,12 @@
   cursor: not-allowed;
 }
 
+h2, h3, h4 {
+  text-align: left;
+  color: #6d6060;
+  border-bottom: 1px solid #eee;
+}
+
 .button {
   background-color: var(--primary-color);
   color: white;

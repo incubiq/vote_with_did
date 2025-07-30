@@ -11,7 +11,7 @@ const VCsPage = () => {
 
   return (
     <div className={styles.pageContainer}>
-        <h1 className={styles.title}>Your Credentials</h1>
+        <h1 className={styles.title}>My Credentials</h1>
         <div className={styles.container}>
 
           <VCPanel 

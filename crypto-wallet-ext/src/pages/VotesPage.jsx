@@ -1,16 +1,32 @@
 // src/pages/VotesPage.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+
 import { useWallet } from '../state/WalletContext';
 import { useWalletBackend } from '../hooks/useWalletBackend';
 import { useWalletConnection } from '../hooks/useWalletConnection';
 import BottomNav from '../components/BottomNav';
 import YesNoDialog from '../components/yesnoDialog';
 
+import { srv_getPublicBallots } from '../utils/rpc_ballot';
+import { getHowLongUntil } from '../utils/misc';
+
 import styles from '../styles/Base.module.css';
+
+const PANEL_AWAITING_REGISTRATION = "awaiting_registration";
+const PANEL_AWAITING_VOTE = "awaiting_vote";
+const PANEL_VOTED = "voted";
+const PANEL_STATS_AVAILABLE = "stats";
+
 
 const VotesPage = () => {
 	const [isYesNoDialogOpen, setIsYesNoDialogOpen] = useState(false);
 	const [connectedWallets, setConnectedWallets] = useState([]); // Store connected wallets
+	const [panel, setPanel] = useState(PANEL_AWAITING_REGISTRATION);
+
+	const [aBallotOpenForRegistration, setABallotOpenForRegistration] = useState([]);
+	const [aBallotOpenForVote, setABallotOpenForVote] = useState([]);
+	const [aBallotOpenForStats, setABallotOpenForStats] = useState([]);
 
 	const { state } = useWallet();
 
@@ -26,6 +42,29 @@ const VotesPage = () => {
 		// do nothing
 	}, []);
 
+	useEffect(() => {
+			async_loadPublicBallots();
+	}, []);
+	
+	const async_loadPublicBallots = async() => {
+		srv_getPublicBallots({
+			isOpenForRegistration: true,
+	    	isOpenForVote: true,
+    		isOpenForStats: true,
+
+		})
+			.then(_data => {
+				if(_data.data ) {
+					setABallotOpenForRegistration(_data.data.aAwaitReg);
+					setABallotOpenForVote(_data.data.aAwaitVote);
+					setABallotOpenForStats(_data.data.aAvailStats);
+				}
+			})
+			.catch(err => {
+				toast.error("Could not load ballots ("+err.message+")");
+			})
+	}
+	
 	const handleWalletConnected = useCallback(async (walletData) => {
 		if (!walletData.wallet?.isEnabled) return;
 
@@ -87,37 +126,204 @@ const VotesPage = () => {
 		}
 	}	
 
+	const renderRequestCreds = ( )=> {
+		return (
+			<>
+			<a onClick={()=> setIsYesNoDialogOpen(true)}>Register Proof Of Voting power to vote... </a>
+			</>
+		)
+	}
+
+	const renderBallotsAwaitingRegistration = ( )=> {
+		return (				
+			<>
+			{panel==PANEL_AWAITING_REGISTRATION ?
+			<>
+			{aBallotOpenForRegistration.length>0? 
+				
+				<table className={styles.tableBallot}>
+					<thead>
+						<tr>
+						<th>Name</th>
+						<th>#Q</th>
+						<th>When</th>
+						<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{aBallotOpenForRegistration.map((ballot) => (
+						<tr key={ballot.uid}>
+							<td>
+							{ballot.name}
+							</td>
+							<td>{ballot.aQuestion?.length || 0}</td>
+
+							<td>
+								<span>{getHowLongUntil(ballot.openingRegistration_at)!=null ? 
+									"opening in "+getHowLongUntil(ballot.openingRegistration_at)
+									: "closing in "+getHowLongUntil(ballot.closingRegistration_at)
+								}</span>
+							</td>
+
+							<td>
+								<div className={styles.button} 
+									onClick={() => {
+									}}
+								>
+									Register...
+								</div>
+							</td>
+
+
+						</tr>
+						))}
+					</tbody>
+				</table>
+				:
+				<div className={styles.section}>
+					<p>No ballot in registration phase yet</p>
+				</div>
+			}
+			</>
+			:""}
+			</>
+		)
+	}
+
+	const renderBallotsAwaitingVote = ( )=> {
+		return (				
+			<>
+			{panel==PANEL_AWAITING_VOTE ?
+			<>
+			{aBallotOpenForVote.length>0? 
+				
+				<table className={styles.tableBallot}>
+					<thead>
+						<tr>
+						<th>Name</th>
+						<th>#Q</th>
+						<th>When</th>
+						<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{aBallotOpenForVote.map((ballot) => (
+						<tr key={ballot.uid}>
+							<td>
+							{ballot.name}
+							</td>
+							<td>{ballot.aQuestion?.length || 0}</td>
+
+							<td>
+								<span>{getHowLongUntil(ballot.openingVote_at)!=null ? 
+									"opening in "+getHowLongUntil(ballot.openingVote_at)
+									: "closing in "+getHowLongUntil(ballot.closingVote_at)
+								}</span>
+							</td>
+
+							<td>
+								<div className={styles.button} 
+									onClick={() => {
+									}}
+								>
+									Vote...
+								</div>
+							</td>
+
+
+						</tr>
+						))}
+					</tbody>
+				</table>
+				:
+				<div className={styles.section}>
+					<p>No ballot opened for voting yet</p>
+				</div>
+			}
+			</>
+			:""}
+			</>
+		)
+	}
+
+	const renderBallotsWithStats = ( )=> {
+		return (				
+			<>
+			{panel==PANEL_STATS_AVAILABLE ?
+			<>
+			{aBallotOpenForStats.length>0? 
+				
+				<table className={styles.tableBallot}>
+					<thead>
+						<tr>
+						<th>Name</th>
+						<th>#Q</th>
+						<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{aBallotOpenForStats.map((ballot) => (
+						<tr key={ballot.uid}>
+							<td>
+							{ballot.name}
+							</td>
+							<td>{ballot.aQuestion?.length || 0}</td>
+
+							<td>
+								<div className={styles.button} 
+									onClick={() => {
+									}}
+								>
+									Stats...
+								</div>
+							</td>
+
+
+						</tr>
+						))}
+					</tbody>
+				</table>
+				:
+				<div className={styles.section}>
+					<p>No ballot available for stats yet</p>
+				</div>
+			}
+			</>
+			:""}
+			</>
+		)
+	}
+
 	return (
 		<div className={styles.pageContainer}>
-			<h1 className={styles.title}>Your Votes</h1>
+			<h1 className={styles.title}>My Votes</h1>
 			<div className={styles.container}>
-				<div className={styles.section}>
-				{state.ballots.length === 0 ? (
-					<p>No ballot found</p>
-				) : (
-					<ul className={styles.list}>
-					{state.ballots.map((did, index) => (
-						<li key={index} className={styles.listItem}>
-						<span className={styles.property}>prop</span>
-						<span className={styles.value}>val</span>
-						</li>
-					))}
-					</ul>
-				)}
-				</div>
+			
+				<a className={panel==PANEL_AWAITING_REGISTRATION? styles.bold_underlined: ""} onClick={() => setPanel(PANEL_AWAITING_REGISTRATION)}>Awaiting Reg. ({aBallotOpenForRegistration.length})</a>
+				&nbsp; - &nbsp;
+				<a className={panel==PANEL_AWAITING_VOTE? styles.bold_underlined: ""} onClick={() => setPanel(PANEL_AWAITING_VOTE)}>Awaiting Vote({aBallotOpenForVote.length})</a>
+				&nbsp; - &nbsp;
+				<a className={panel==PANEL_STATS_AVAILABLE? styles.bold_underlined: ""} onClick={() => setPanel(PANEL_STATS_AVAILABLE)}>Stats ({aBallotOpenForStats.length})</a>
 
-				<a onClick={()=> setIsYesNoDialogOpen(true)}>Register Proof Of Voting power to vote... </a>
-				<YesNoDialog 
+				<br />
+				<br />
+
+				{renderBallotsAwaitingRegistration()}
+				{renderBallotsAwaitingVote()}
+				{renderBallotsWithStats()}
+
+			</div>
+
+			<YesNoDialog 
 				isOpen = {isYesNoDialogOpen}
 				title = "Generate a Proof of voting Power?"
 				message = "Press Yes to Generate a Proof (we will take your cumulated ADA balance of all linked wallets) - The proof will be issued within around 30 secs"
 				onNo = {( ) => setIsYesNoDialogOpen(false)}
 				onYes = {( ) => async_genProofOfVotingPower()}
-				/>
-
-			</div>
+			/>
 
 			<BottomNav />
+			<ToastContainer />
 		</div>
   );
 };

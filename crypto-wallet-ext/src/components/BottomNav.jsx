@@ -25,7 +25,7 @@ const BottomNav = () => {
         className={`${styles.navButton} ${isActive('/votes') ? styles.active : ''}`}
         onClick={() => navigate('/votes')}
       >
-        Votes
+        My Votes
       </button>
 
       {state.authorization=="admin" ?
@@ -33,7 +33,7 @@ const BottomNav = () => {
           className={`${styles.navButton} ${isActive('/ballots') ? styles.active : ''}`}
           onClick={() => navigate('/ballots')}
         >
-          Ballots
+          My Ballots
         </button>
       :""}
 
@@ -41,7 +41,7 @@ const BottomNav = () => {
         className={`${styles.navButton} ${isActive('/vcs') ? styles.active : ''}`}
         onClick={() => navigate('/vcs')}
       >
-        Credentials
+        My Credentials
       </button>
 
       <button 

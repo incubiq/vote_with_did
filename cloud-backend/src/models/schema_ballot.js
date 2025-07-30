@@ -31,10 +31,6 @@ const _Schema = new Schema({
 
 // published / finished?
     published_id: {type: Boolean, required: true, default: false},      // the ballot published ID on chain
-    is_openedToRegistration: {type: Boolean, required: true, default: false},           // opening time got triggered, ballot now open
-    is_closedToRegistration: {type: Boolean, required: true, default: false},         // closing time got triggered, ballot now closed
-    is_openedToVote: {type: Boolean, required: true, default: false},           // opening time got triggered, ballot now open
-    is_closedToVote: {type: Boolean, required: true, default: false},         // closing time got triggered, ballot now closed
 });
 
 _Schema.set('toJSON', { getters: true, virtuals: true });

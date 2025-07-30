@@ -367,6 +367,29 @@ class api_user_voter extends apiViewer {
             throw err;
         }
     }
+
+/* 
+ *      BALLOTS
+ */
+
+    async async_getAvailableBallots(objParam) {
+        try {
+            const dataAwaitReg = await gConfig.app.apiBallot.async_getPubliclyAvailableBallotsForRegistration();
+            const dataAwaitVote = await gConfig.app.apiBallot.async_getPubliclyAvailableBallotsForVoting();
+            const dataAvailStats = await gConfig.app.apiBallot.async_getPubliclyAvailableBallotsForStats();
+
+            return {
+                data: {
+                    aAwaitReg: dataAwaitReg.data,
+                    aAwaitVote: dataAwaitVote.data,
+                    aAvailStats: dataAvailStats.data
+                }
+            }
+        }
+        catch(err) {
+            throw err;
+        }
+    }
 }
 
 module.exports = api_user_voter;

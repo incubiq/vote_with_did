@@ -94,6 +94,16 @@ router.link("/wallet", function(req, res, next) {
  *      voter routes
  */
 
+// get all available ballots
+router.get("/ballots", function(req, res, next) {
+  routeUtils.apiGet(req, res, gConfig.app.apiUserVoter.async_getAvailableBallots.bind(gConfig.app.apiUserVoter), {
+    did: req.user.did? req.user.did: null,
+    isOpenForRegistration: req.query.isOpenForRegistration==true,
+    isOpenForVote: req.query.isOpenForVote==true,
+    isOpenForStats: req.query.isOpenForStats==true
+  });
+});
+
 // Cast a vote on a ballot    !!!! TODO - likely do this via DAPP (not cloud backend)
 router.post("/ballot/:uid", function(req, res, next) {
   routeUtils.apiPost(req, res, //todo

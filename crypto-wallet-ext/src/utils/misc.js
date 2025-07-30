@@ -51,6 +51,19 @@ export const getCurrencySign = (_cur) => {
   return "";
 }
 
+export const getHowLongUntil = (_date)=>  {
+		const _dateTo=new Date(_date);
+		const _dateFrom=new Date();
+		const diffInMs = _dateTo - _dateFrom; // Difference in milliseconds
+		const diffInDays = parseInt(diffInMs / (1000 * 60 * 60 * 24)); // Convert to days
+		const diffInHours = parseInt(diffInMs / (1000 * 60 * 60 ));
+		const diffInMin = parseInt(diffInMs / (1000 * 60  )); 
+
+		if(diffInMs<0) return null;
+		return diffInDays>1 ? diffInDays +" days": diffInHours? 1 ? diffInHours+" hours" : diffInMin+" minutes": "a few seconds";
+}
+
+
 /*
 *   Clipboard
 */

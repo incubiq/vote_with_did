@@ -10,8 +10,14 @@ import BottomNav from '../components/BottomNav';
 import Dialog from '../components/dialog.jsx';
 import DialogPublishBallot from '../components/publishBallot.jsx';
 import { srv_postCreateBallot, srv_getBallots, srv_getBallot, srv_patchBallot, srv_publishBallot } from '../utils/rpc_ballot';
+import { getHowLongUntil } from '../utils/misc';
 
 import styles from '../styles/Base.module.css';
+
+const PANEL_CREATION = "creation";
+const PANEL_REGISTRATION = "registration";
+const PANEL_VOTING = "voting";
+const PANEL_VOTED = "voted";
 
 const BallotsPage = () => {
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -21,6 +27,8 @@ const BallotsPage = () => {
 	const [aBallotInCreation, setABallotInCreation] = useState([]);
 	const [aBallotInRegistration, setABallotInRegistration] = useState([]);
 	const [aBallotInVoting, setABallotInVoting] = useState([]);
+	const [aBallotVoted, setABallotVoted] = useState([]);
+	const [panel, setPanel] = useState(PANEL_CREATION);
 	const [currentBallot, setCurrentBallot] = useState(null);
 	const [questionValidityCheck, setQuestionValidityCheck] = useState({
 			isValid: true,
@@ -43,22 +51,29 @@ const BallotsPage = () => {
 					let _aInCreation = [];
 					let _aInRegistration = [];
 					let _aInVoting = [];
+					let _aVoted = [];
 					_data.data.forEach(_ballot => {
-						if(_ballot.is_openedToVote && !_ballot.is_closedToVote) {
-								_aInVoting.push(_ballot);
+						if(_ballot.is_closedToVote) {
+							_aVoted.push(_ballot);
 						}
 						else {
-							if((_ballot.is_openedToRegistration && !_ballot.is_closedToRegistration) || _ballot.published_at!=null) {
-								_aInRegistration.push(_ballot);
+							if(_ballot.is_openedToVote && !_ballot.is_closedToVote) {
+									_aInVoting.push(_ballot);
 							}
 							else {
-								_aInCreation.push(_ballot);
+								if((_ballot.is_openedToRegistration && !_ballot.is_closedToRegistration) || _ballot.published_at!=null) {
+									_aInRegistration.push(_ballot);
+								}
+								else {
+									_aInCreation.push(_ballot);
+								}
 							}
 						}
 					})
 					setABallotInCreation(_aInCreation);
 					setABallotInRegistration(_aInRegistration);
 					setABallotInVoting(_aInVoting);
+					setABallotVoted(_aVoted);
 				}
 			})
 			.catch(err => {
@@ -122,28 +137,30 @@ const BallotsPage = () => {
 		// now check validity 
 		let bHasContent = true;
 		let bHasTitle = true;
-		let bHasEnoughQuestions = _ballot.aQuestionInFull.length>0;
+		let bHasEnoughQuestions = _ballot.aQuestion.length>0;
 		let bHasEnoughChoices = true;
 		let bHasChoiceText = true;
-		let bIsValid = true;
+		let bIsValid = bHasEnoughQuestions;
 		let iQ=-1;
-		let errorMsg = "OK";
+		let errorMsg = bHasEnoughQuestions? "OK" : "Not enough questions";
 
-		_ballot.aQuestionInFull.forEach((q, _iQ) => {
-			bHasTitle= bHasTitle && (q.title !== "");
-			if(!bHasTitle) {errorMsg = "Question "+(_iQ+1) +" must have a title"}
-			bHasContent= bHasContent && (q.rich_text !== "" && q.rich_text !== "awaiting content");
-			if(!bHasContent) {errorMsg = "Question "+(_iQ+1) +" must have a content"}
-			bHasEnoughChoices= q.aChoice.length>1;
-			if(!bHasEnoughChoices) {errorMsg = "Answers of question "+(_iQ+1) +" must have at least 2 choices"}
-			q.aChoice.forEach((a, _iA) => {
-				bHasChoiceText= bHasChoiceText && a.text!=="";
-				if(!bHasChoiceText) {errorMsg = "Answer "+(_iA+1)+" of question "+(_iQ+1) +" must have a text"}
-			});
+		if(bHasEnoughQuestions) {
+			_ballot.aQuestionInFull.forEach((q, _iQ) => {
+				bHasTitle= bHasTitle && (q.title !== "");
+				if(!bHasTitle) {errorMsg = "Question "+(_iQ+1) +" must have a title"}
+				bHasContent= bHasContent && (q.rich_text !== "" && q.rich_text !== "awaiting content");
+				if(!bHasContent) {errorMsg = "Question "+(_iQ+1) +" must have a content"}
+				bHasEnoughChoices= q.aChoice.length>1;
+				if(!bHasEnoughChoices) {errorMsg = "Answers of question "+(_iQ+1) +" must have at least 2 choices"}
+				q.aChoice.forEach((a, _iA) => {
+					bHasChoiceText= bHasChoiceText && a.text!=="";
+					if(!bHasChoiceText) {errorMsg = "Answer "+(_iA+1)+" of question "+(_iQ+1) +" must have a text"}
+				});
 
-			bIsValid = bHasContent && bHasTitle && bHasEnoughQuestions && bHasEnoughChoices && bHasChoiceText;
-			if(!bIsValid && iQ == -1) {iQ = _iQ}
-		})
+				bIsValid = bHasContent && bHasTitle && bHasEnoughQuestions && bHasEnoughChoices && bHasChoiceText;
+				if(!bIsValid && iQ == -1) {iQ = _iQ}
+			})
+		}
 
 		setQuestionValidityCheck({
 			isValid: bIsValid,
@@ -176,7 +193,10 @@ const BallotsPage = () => {
 	const renderBallotsInCreation = ( )=> {
 		return (
 			<>
-				<h3>In creation...</h3>
+			{panel==PANEL_CREATION ?
+			<>
+			{aBallotInCreation.length>0? 
+
 				<table className={styles.tableBallot}>
 					<thead>
 						<tr>
@@ -222,52 +242,68 @@ const BallotsPage = () => {
 						))}
 					</tbody>
 				</table>
+				:
+				<div className={styles.section}>
+					<p>No ballot in creation yet</p>
+				</div>
+				}
+				<a onClick={()=> setIsCreateDialogOpen(true)}>Create a new Ballot... </a>
+			</>
+				:""}
 			</>
 		)
 	}
 
 	const renderBallotsInRegistration = ( )=> {
-			return (
+		return (				
 				<>
-					<h3>In registration phase...</h3>
+				{panel==PANEL_REGISTRATION ?
+				<>
+				{aBallotInRegistration.length>0? 
+
 					<table className={styles.tableBallot}>
-					<thead>
-						<tr>
-						<th>Name</th>
-						<th>#Q</th>
-						<th>Start</th>
-						<th>Stop</th>
-						<th>Stats</th>
-						</tr>
-					</thead>
-					<tbody>
-						{aBallotInRegistration.map((ballot) => (
-						<tr key={ballot.uid}>
-							<td>
-							<a href={`/ballots/${ballot.id}/questions`}>{ballot.name}</a>
-							</td>
-							<td>{ballot.aQuestion?.length || 0}</td>
+						<thead>
+							<tr>
+							<th>Name</th>
+							<th>#Q</th>
+							<th>When</th>
+							<th>Stats</th>
+							</tr>
+						</thead>
+						<tbody>
+							{aBallotInRegistration.map((ballot) => (
+							<tr key={ballot.uid}>
+								<td>
+								<a href={`/ballots/${ballot.id}/questions`}>{ballot.name}</a>
+								</td>
+								<td>{ballot.aQuestion?.length || 0}</td>
 
-							<td>
-								<span>{ballot.openingRegistration_at}</span>
-							</td>
+								<td>
+									<span>{getHowLongUntil(ballot.openingRegistration_at)!=null ? 
+										"opening in "+getHowLongUntil(ballot.openingRegistration_at)
+										: "closing in "+getHowLongUntil(ballot.closingRegistration_at)
+									}</span>
+								</td>
 
-							<td>
-								<span>{ballot.closingRegistration_at}</span>
-							</td>
-
-							<td>
-								<img src="icons/icons8-stats-50.png" width = "32" height = "32"  
-									onClick={() => {
-									}}
-								/>
-							</td>
+								<td>
+									<img src="icons/icons8-stats-50.png" width = "32" height = "32"  
+										onClick={() => {
+										}}
+									/>
+								</td>
 
 
-						</tr>
-						))}
-					</tbody>
-				</table>
+							</tr>
+							))}
+						</tbody>
+					</table>
+					:
+					<div className={styles.section}>
+						<p>No ballot in registration phase yet</p>
+					</div>
+				}
+				</>
+				:""}
 				</>
 			)
 	}
@@ -275,39 +311,62 @@ const BallotsPage = () => {
 	const renderBallotsInVoting = ( )=> {
 			return (
 				<>
-					<h3>In voting...</h3>
-					TODO
+				{panel==PANEL_VOTING ?
+					<>
+					{aBallotInVoting.length>0? 
+						<div>
+							TODO
+						</div>
+						:
+						<div className={styles.section}>
+							<p>No ballot in voting phase yet</p>
+						</div>
+					}
+					</>
+				:""}
+				</>
+			)
+	}
+	const renderBallotsVoted = ( )=> {
+			return (
+				<>
+				{panel==PANEL_VOTED ?
+					<>
+					{aBallotVoted.length>0? 
+						<div>
+							TODO
+						</div>
+						:
+						<div className={styles.section}>
+							<p>No ballot fully closed yet</p>
+						</div>
+					}
+					</>
+				:""}
 				</>
 			)
 	}
 
 	return (
 		<div className={styles.pageContainer}>
-			<h1 className={styles.title}>Your Ballots</h1>
+			<h1 className={styles.title}>My Ballots</h1>
 			<div className={styles.container}>
-				<div className={styles.section}>
-				{state.ballots.length === 0 ? (
-					<p>No ballot found</p>
-				) : (
 
-					<>
-					{aBallotInCreation.length>0? 
-						renderBallotsInCreation()
-					:""}
+				<a className={panel==PANEL_CREATION? styles.bold_underlined: ""} onClick={() => setPanel(PANEL_CREATION)}>In creation ({aBallotInCreation.length}) </a>
+				&nbsp; - &nbsp;
+				<a className={panel==PANEL_REGISTRATION? styles.bold_underlined: ""} onClick={() => setPanel(PANEL_REGISTRATION)}>In registration ({aBallotInRegistration.length})</a>
+				&nbsp; - &nbsp;
+				<a className={panel==PANEL_VOTING? styles.bold_underlined: ""} onClick={() => setPanel(PANEL_VOTING)}>In voting({aBallotInVoting.length})</a>
+				&nbsp; - &nbsp;
+				<a className={panel==PANEL_VOTED? styles.bold_underlined: ""} onClick={() => setPanel(PANEL_VOTED)}>Closed ({aBallotVoted.length})</a>
 
-					{aBallotInRegistration.length>0? 
-						renderBallotsInRegistration()
-					:""}
+				<br />
+				<br />
 
-					{aBallotInVoting.length>0? 
-						renderBallotsInVoting()
-					:""}
-					</>
-
-				)}
-				</div>
-
-				<a onClick={()=> setIsCreateDialogOpen(true)}>Create a new Ballot... </a>
+				{renderBallotsInCreation()}
+				{renderBallotsInRegistration()}
+				{renderBallotsInVoting()}
+				{renderBallotsVoted()}
 				
 				<Dialog 
 					isVisible = {isCreateDialogOpen}

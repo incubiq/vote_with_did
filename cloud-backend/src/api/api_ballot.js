@@ -180,15 +180,8 @@ class api_ballot extends apiBase {
         }
     }
 
-    async _async_findMyBallot(objParam) {
+    async _async_findBallot(objParam) {
         try {
-            if(!objParam.did) {
-                throw {
-                    data:null,
-                    status: 400,
-                    statusText: "DID required"    
-                }
-            }
 
             let objBallot=await this.dbBallot.async_findBallot({
                 uid: objParam.uid
@@ -212,6 +205,13 @@ class api_ballot extends apiBase {
                 _aQ.push(objQ);
             }
 
+            // check open/close 
+            const now = new Date();
+            objBallot.is_closedToRegistration= new Date(objBallot.closingRegistration_at) < now;
+            objBallot.is_openedToRegistration= !objBallot.is_closedToRegistration && new Date(objBallot.openingRegistration_at) < now;
+            objBallot.is_closedToVote= new Date(objBallot.closingVote_at) < now;
+            objBallot.is_openedToVote= objBallot.is_closedToRegistration && !objBallot.is_closedToVote && new Date(objBallot.openingVote_at) < now;
+
             objBallot.aQuestionInFull = _aQ;
             return objBallot;  
         }
@@ -219,6 +219,28 @@ class api_ballot extends apiBase {
             throw err;
         }
     }
+
+    async _async_findMyBallot(objParam) {
+        try {
+            if(!objParam.did) {
+                throw {
+                    data:null,
+                    status: 400,
+                    statusText: "DID required"    
+                }
+            }
+
+            let objBallot=await this._async_findBallot({
+                uid: objParam.uid
+            });
+
+            return objBallot;  
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
     async async_findMyBallot(objParam) {
         try {
             let objBallot = await this._async_findMyBallot(objParam);
@@ -264,22 +286,19 @@ class api_ballot extends apiBase {
                 did_admin: objParam.did
             }, {}, []);
 
-            // return questions in full
-            for (var iQ=0; iQ<aB.length; iQ++) {
+            // return ballots with all info in full
+            let _aRet=[];
+            for (var iB=0; iB<aB.length; iB++) {
+                
                 // load all questions
-                let _aQ=[];
-                for (var i=0; i<aB[iQ].aQuestion.length; i++) {
-                    const objQ = await this._async_findQuestion({
-                        canAddQuestion: true,
-                        uid:  aB[iQ].aQuestion[i]
-                    })
-                    _aQ.push(objQ);
-                }
-
-                aB[iQ].aQuestionInFull = _aQ;
+                const dataB = await this.async_findMyBallot({
+                    uid: aB[iB].uid,
+                    did: objParam.did
+                })
+                _aRet.push(dataB.data);
             }
 
-            return {data : aB}
+            return {data : _aRet}
         }
         catch(err) {
             throw err;
@@ -299,10 +318,6 @@ class api_ballot extends apiBase {
             let objUpd={
                 published_at: new Date(new Date().toUTCString()),
                 published_id: 1,         // todo
-                is_openedToRegistration: objOpenClose.openingRegistration_at < now,  
-                is_closedToRegistration: objOpenClose.closingRegistration_at < now, 
-                is_openedToVote: objOpenClose.openingVote_at < now,
-                is_closedToVote: objOpenClose.closingVote_at < now
             };
             if(objOpenClose.openingRegistration_at) {objUpd.openingRegistration_at=objOpenClose.openingRegistration_at}
             if(objOpenClose.closingRegistration_at) {objUpd.closingRegistration_at=objOpenClose.closingRegistration_at}
@@ -323,10 +338,18 @@ class api_ballot extends apiBase {
     
     async async_getMatchingBallots(objFilter, aMatch) {
         try {
-            let aB=await this.dbBook.async_getBallots({
+            let aB=await this.dbBallot.async_getBallots({
             }, objFilter, aMatch);
 
-            return {data : aB}
+            let _aRet=[];
+            for (var iB=0; iB<aB.length; iB++) {
+                const objB = await this._async_findBallot({
+                    uid: aB[iB].uid,
+                })
+                _aRet.push(objB);
+            }
+
+            return {data : _aRet}
         }
         catch(err) {
             throw err;
@@ -334,6 +357,7 @@ class api_ballot extends apiBase {
     }
 
     async async_getPubliclyAvailableBallotsForRegistration() {
+        const now = new Date();
         return this.async_getMatchingBallots({
             filterPaging: {
                 limit: 100
@@ -346,7 +370,8 @@ class api_ballot extends apiBase {
             $match: {
                 $expr: {
                     $and : [
-                        { $or: [ { $eq: ["$is_openedToRegistration", true] }, { $eq: ["$is_closedToRegistration", false] } ] },
+                        { $lt: ["$openingRegistration_at", now] }, // opened (past)
+                        { $gt: ["$closingRegistration_at", now] }  // not closed yet (future)
                     ]
                 }
             }
@@ -354,6 +379,7 @@ class api_ballot extends apiBase {
     }
 
     async async_getPubliclyAvailableBallotsForVoting() {
+        const now = new Date();
         return this.async_getMatchingBallots({
             filterPaging: {
                 limit: 100
@@ -366,7 +392,30 @@ class api_ballot extends apiBase {
             $match: {
                 $expr: {
                     $and : [
-                        { $or: [ { $eq: ["$is_openedToVote", true] }, { $eq: ["$is_closedToVote", false] } ] },
+                        { $lt: ["$openingVote_at", now] }, // opened (past)
+                        { $gt: ["$closingVote_at", now] }  // not closed yet (future)
+                    ]
+                }
+            }
+        }]);
+    }
+
+    async async_getPubliclyAvailableBallotsForStats() {
+        const now = new Date();
+        return this.async_getMatchingBallots({
+            filterPaging: {
+                limit: 100
+            }, 
+            filterSort: {
+                sortby: "closingVote_at",
+                sortDirection: -1
+            }
+        }, [{
+            $match: {
+                $expr: {
+                    $and : [
+                        { $eq: ["$published_at", null] },  // not yet published
+                        { $lt: ["$closingVote_at", now] }  // closed 
                     ]
                 }
             }
