@@ -8,7 +8,8 @@ import { useWalletBackend } from '../hooks/useWalletBackend';
 import { useWalletConnection } from '../hooks/useWalletConnection';
 import BottomNav from '../components/BottomNav';
 import Dialog from '../components/dialog.jsx';
-import { srv_postCreateBallot, srv_getBallots, srv_getBallot, srv_patchBallot } from '../utils/rpc_ballot';
+import DialogPublishBallot from '../components/publishBallot.jsx';
+import { srv_postCreateBallot, srv_getBallots, srv_getBallot, srv_patchBallot, srv_publishBallot } from '../utils/rpc_ballot';
 
 import styles from '../styles/Base.module.css';
 
@@ -17,23 +18,48 @@ const BallotsPage = () => {
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
 	const [connectedWallets, setConnectedWallets] = useState([]); // Store connected wallets
+	const [aBallotInCreation, setABallotInCreation] = useState([]);
+	const [aBallotInRegistration, setABallotInRegistration] = useState([]);
+	const [aBallotInVoting, setABallotInVoting] = useState([]);
 	const [currentBallot, setCurrentBallot] = useState(null);
 	const [questionValidityCheck, setQuestionValidityCheck] = useState({
 			isValid: true,
 			firstInvalidQuestion: 0,
 			error : "OK"
 		});
-	const [startPublish, setStartPublish] = useState("now");
-	const [startDelayedPublish, setStartDelayedPublish] = useState(null);
-	const [durationPublish, setDurationPublish] = useState({period: "d", count:4});
-
+	
 	const { state, actions } = useWallet();
     const navigate = useNavigate();
+
+	useEffect(() => {
+		async_loadBallots();
+	}, []);
 
 	const async_loadBallots = async() => {
 		srv_getBallots()
 			.then(_data => {
 				actions.ballotsSet(_data.data);
+				if(_data.data && _data.data.length>0) {
+					let _aInCreation = [];
+					let _aInRegistration = [];
+					let _aInVoting = [];
+					_data.data.forEach(_ballot => {
+						if(_ballot.is_openedToVote && !_ballot.is_closedToVote) {
+								_aInVoting.push(_ballot);
+						}
+						else {
+							if((_ballot.is_openedToRegistration && !_ballot.is_closedToRegistration) || _ballot.published_at!=null) {
+								_aInRegistration.push(_ballot);
+							}
+							else {
+								_aInCreation.push(_ballot);
+							}
+						}
+					})
+					setABallotInCreation(_aInCreation);
+					setABallotInRegistration(_aInRegistration);
+					setABallotInVoting(_aInVoting);
+				}
 			})
 			.catch(err => {
 				toast.error("Could not load all ballots ("+err.message+")");
@@ -82,17 +108,6 @@ const BallotsPage = () => {
 		setIsEditDialogOpen(false);
 	}
 
-	const async_publishBallot = async (_data) => {
-		if(!questionValidityCheck || !questionValidityCheck.isValid) {
-				toast.error("Fix question errors before publishing");
-		}
-		else {
-			// ok we can publish
-
-		}
-		setIsPublishDialogOpen(false);
-	}
-
 	const updateBallot = (_data) => {
 		let objBallot= currentBallot? {...currentBallot} : {};
 		for (const key in _data) {
@@ -137,75 +152,6 @@ const BallotsPage = () => {
 		})
 	}
 
-	const renderPublishBallot = ( ) => {
-		const aHours=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
-		return (
-			<>
-				<div>
-					<label className={styles.prop}>
-						Questions validity check
-					</label>
-					
-					<div className={`${styles.inline} ${styles.bold_underlined} ${questionValidityCheck?.isValid ? "" : styles.error}`} >{questionValidityCheck?.isValid? "OK" : "Error"}</div>
-					<div className={styles.error}>&nbsp; &nbsp; {questionValidityCheck?.isValid? "": questionValidityCheck.error}</div>
-					<br />
-				</div>
-				
-				<div>
-					<label className={styles.prop}>
-						Starts
-					</label>
-
-					<select className={styles.select}
-						onChange={(_e)=> setStartPublish(_e.target.value) }
-					>
-						<option value="now" >Now</option>
-						<option value="delayed" >Delayed</option>
-					</select>
-
-					{startPublish=="now"? "":
-					<input
-						type="text"
-						value={currentBallot? currentBallot.opening_at: ""}
-						onChange={(e) => updateBallot({opening_at: e.target.value})}
-						className={styles.input}
-					/>
-					}
-
-				</div>
-
-				<div>
-					<label className={styles.prop}>
-						Duration
-					</label>
-
-					<select className={styles.select}
-						onChange={(_e)=> setDurationPublish({
-							count: parseInt(_e.target.value),
-							period: durationPublish.period
-						})}
-					>
-						{aHours.map ((_h, _i) => {
-							return (<option key = {_i} value={_h} selected={durationPublish.count === _h}>{_h}</option>)})
-						}
-					</select>
-						&nbsp;
-					<select className={styles.select}
-						onChange={(_e)=> setDurationPublish({
-							count: durationPublish.count,
-							period: _e.target.value
-						})}
-					>
-						<option value="h" selected={durationPublish.period === "h"}>Hour(s)</option>
-						<option value="d" selected={durationPublish.period === "d"}>Day(s)</option>
-						<option value="w" selected={durationPublish.period === "w"}>Week(s)</option>
-					</select>
-
-				</div>
-			</>
-		)
-	}
-
 	const renderEditBallot = ( )=> {
 		return (
 			<>
@@ -227,6 +173,114 @@ const BallotsPage = () => {
 		)
 	}
 
+	const renderBallotsInCreation = ( )=> {
+		return (
+			<>
+				<h3>In creation...</h3>
+				<table className={styles.tableBallot}>
+					<thead>
+						<tr>
+						<th>Name</th>
+						<th>#Q</th>
+						<th>&nbsp;</th>
+						<th>&nbsp;</th>
+						</tr>
+					</thead>
+					<tbody>
+						{aBallotInCreation.map((ballot) => (
+						<tr key={ballot.uid}>
+							<td>
+							<a href={`/ballots/${ballot.id}/questions`}>{ballot.name}</a>
+							</td>
+							<td>{ballot.aQuestion?.length || 0}</td>
+
+							<td>
+								<img src="icons/icons8-settings-30.png" width = "32" height = "32"  
+									onClick={() => {
+										changeCurrentBallot(ballot);
+										setIsEditDialogOpen(true);
+									}}
+								/>
+							</td>
+
+							<td>
+								<img src="icons/icons8-publish-24.png" width = "32" height = "32"  
+									onClick={() => {
+										changeCurrentBallot(ballot);
+										setIsPublishDialogOpen(true);
+									}}
+								/>
+							</td>
+
+							<td>
+								<button className = {styles.button} onClick={() => {
+									changeCurrentBallot(ballot);
+									navigate("/questions?BallotId="+ballot.uid);
+								}}>Questions</button>
+							</td>
+						</tr>
+						))}
+					</tbody>
+				</table>
+			</>
+		)
+	}
+
+	const renderBallotsInRegistration = ( )=> {
+			return (
+				<>
+					<h3>In registration phase...</h3>
+					<table className={styles.tableBallot}>
+					<thead>
+						<tr>
+						<th>Name</th>
+						<th>#Q</th>
+						<th>Start</th>
+						<th>Stop</th>
+						<th>Stats</th>
+						</tr>
+					</thead>
+					<tbody>
+						{aBallotInRegistration.map((ballot) => (
+						<tr key={ballot.uid}>
+							<td>
+							<a href={`/ballots/${ballot.id}/questions`}>{ballot.name}</a>
+							</td>
+							<td>{ballot.aQuestion?.length || 0}</td>
+
+							<td>
+								<span>{ballot.openingRegistration_at}</span>
+							</td>
+
+							<td>
+								<span>{ballot.closingRegistration_at}</span>
+							</td>
+
+							<td>
+								<img src="icons/icons8-stats-50.png" width = "32" height = "32"  
+									onClick={() => {
+									}}
+								/>
+							</td>
+
+
+						</tr>
+						))}
+					</tbody>
+				</table>
+				</>
+			)
+	}
+
+	const renderBallotsInVoting = ( )=> {
+			return (
+				<>
+					<h3>In voting...</h3>
+					TODO
+				</>
+			)
+	}
+
 	return (
 		<div className={styles.pageContainer}>
 			<h1 className={styles.title}>Your Ballots</h1>
@@ -236,72 +290,20 @@ const BallotsPage = () => {
 					<p>No ballot found</p>
 				) : (
 
-					<table className={styles.tableBallot}>
-						<thead>
-							<tr>
-							<th>Name</th>
-							<th># Questions</th>
-							<th>&nbsp;</th>
-							<th>&nbsp;</th>
-							</tr>
-						</thead>
-						<tbody>
-							{state.ballots.map((ballot) => (
-							<tr key={ballot.uid}>
-								<td>
-								<a href={`/ballots/${ballot.id}/questions`}>{ballot.name}</a>
-								</td>
-								<td>{ballot.questions?.length || 0}</td>
+					<>
+					{aBallotInCreation.length>0? 
+						renderBallotsInCreation()
+					:""}
 
-								{!ballot.published_id ?
-									<td>
-										<img src="icons/icons8-settings-30.png" width = "32" height = "32"  
-											onClick={() => {
-												changeCurrentBallot(ballot);
-												setIsEditDialogOpen(true);
-											}}
-										/>
-									</td>
-								:""}
+					{aBallotInRegistration.length>0? 
+						renderBallotsInRegistration()
+					:""}
 
-								{!ballot.published_id ?
-									<td>
-										<img src="icons/icons8-publish-24.png" width = "32" height = "32"  
-											onClick={() => {
-												changeCurrentBallot(ballot);
-												setIsPublishDialogOpen(true);
-											}}
-										/>
-									</td>
-								:""}
+					{aBallotInVoting.length>0? 
+						renderBallotsInVoting()
+					:""}
+					</>
 
-								{ballot.is_opened && !ballot.is_closed ?
-									<td>
-										<span>voting in progress until {ballot.closing_at}</span>
-									</td>
-								:""}
-
-								{ballot.is_closed ?
-									<td>
-										<img src="icons/icons8-stats-50.png" width = "32" height = "32"  
-											onClick={() => {
-											}}
-										/>
-									</td>
-								:""}
-
-								{!ballot.published_id ?
-									<td>
-										<button className = {styles.button} onClick={() => {
-											changeCurrentBallot(ballot);
-											navigate("/questions?BallotId="+ballot.uid);
-										}}>Questions</button>
-									</td>
-								:""}
-							</tr>
-							))}
-						</tbody>
-					</table>
 				)}
 				</div>
 
@@ -330,18 +332,12 @@ const BallotsPage = () => {
 					onUpdate = {(_data) => async_updateBallot(_data)}
 				/>
 
-				<Dialog 
+				<DialogPublishBallot 
 					isVisible = {isPublishDialogOpen}
-					title = {currentBallot? "Publish Ballot " + currentBallot.name: ""}
-					message = ""
-					form = {renderPublishBallot()}
-					type = "form"
-					textCancel = "Cancel"
-					textOK = "Publish"
+					ballot = {currentBallot}
+					validityCheck = {questionValidityCheck}
 					onClose = {( ) => setIsPublishDialogOpen(false)}
-					onUpdate = {(_name) => async_publishBallot(_name)}
 				/>
-
 
 			</div>
 

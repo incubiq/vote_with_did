@@ -334,7 +334,7 @@ export default function QuestionsPage() {
 			<h1 className={styles.title}> Questions for ballot <b>{ballot?.name}</b></h1>
 			<a 
 				onClick = {( ) => {	
-				navigate("/ballots");
+					navigate("/ballots");
 				}
 			}
 			>← Back to Ballots</a>
@@ -362,7 +362,7 @@ export default function QuestionsPage() {
 									{ballot.aQuestionInFull && ballot.aQuestionInFull[idx].aChoice && ballot.aQuestionInFull[idx].aChoice.length>0?
 									<select>
 										 {ballot.aQuestionInFull[idx].aChoice.map((choice, iChoice) => (
-											<option value = {choice.value}>{choice.text}</option>
+											<option key = {iChoice} value = {choice.value}>{choice.text}</option>
 										))}
 									</select>
 									: 

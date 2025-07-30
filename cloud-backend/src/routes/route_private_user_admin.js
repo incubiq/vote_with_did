@@ -73,16 +73,26 @@ router.patch("/ballot/:uid/rules", function(req, res, next) {
   });
 });
 
-// Publish a ballot
+// publish a ballot (set open / close  registration ;  set open /close for voting)
 router.patch("/ballot/:uid/publish", function(req, res, next) {
+  const openingRegistration_at = req.body.openingRegistration_at? new Date(decodeURIComponent(decodeURIComponent(req.body.openingRegistration_at))): null;
+  const closingRegistration_at = req.body.closingRegistration_at? new Date(decodeURIComponent(decodeURIComponent(req.body.closingRegistration_at))): null;
+  const openingVote_at = req.body.openingVote_at? new Date(decodeURIComponent(decodeURIComponent(req.body.openingVote_at))): null;
+  const closingVote_at = req.body.closingVote_at? new Date(decodeURIComponent(decodeURIComponent(req.body.closingVote_at))): null;
   routeUtils.apiPatch(req, res, gConfig.app.apiUserAdmin.async_publishBallot.bind(gConfig.app.apiUserAdmin), {
     canPublishBallot: req.user.canPublishBallot? req.user.canPublishBallot: false,
     uid: req.params.uid? parseInt(req.params.uid) : null,
     did: req.user.did? req.user.did: null
   }, {    
+    openingRegistration_at: openingRegistration_at,
+    closingRegistration_at: closingRegistration_at,
+    openingVote_at: openingVote_at,
+    closingVote_at: closingVote_at,
+    aCreds: req.body.credentials? JSON.parse(req.body.credentials): []
   });
 });
 
+// 
 // add question to a ballot
 router.link("/ballot/:uid_ballot/question/:uid_question", function(req, res, next) {
     routeUtils.apiLink(req, res, gConfig.app.apiBallot.async_linkQuestion.bind(gConfig.app.apiBallot), {

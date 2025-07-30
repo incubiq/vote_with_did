@@ -286,21 +286,33 @@ class api_ballot extends apiBase {
         }
     }
 
-    async async_prepublishBallot(objParam, objVoid) {
+    async async_publishBallot(objParam, objOpenClose) {
         try {
+            const now = new Date();
+
             // get this ballot
             let dataBallot = await this.async_findBallotForDesigner({
                 uid: objParam.uid,
                 did: objParam.did
             });
 
+            let objUpd={
+                published_at: new Date(new Date().toUTCString()),
+                published_id: 1,         // todo
+                is_openedToRegistration: objOpenClose.openingRegistration_at < now,  
+                is_closedToRegistration: objOpenClose.closingRegistration_at < now, 
+                is_openedToVote: objOpenClose.openingVote_at < now,
+                is_closedToVote: objOpenClose.closingVote_at < now
+            };
+            if(objOpenClose.openingRegistration_at) {objUpd.openingRegistration_at=objOpenClose.openingRegistration_at}
+            if(objOpenClose.closingRegistration_at) {objUpd.closingRegistration_at=objOpenClose.closingRegistration_at}
+            if(objOpenClose.openingVote_at) {objUpd.openingVote_at=objOpenClose.openingVote_at}
+            if(objOpenClose.closingVote_at) {objUpd.closingVote_at=objOpenClose.closingVote_at}
+            if(objOpenClose.aCreds) {objUpd.aCreds = objOpenClose.aCreds}
+
             let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: dataBallot.data.uid
-            }, {
-                prepublished_at: new Date(new Date().toUTCString()),
-                is_open: false,  
-                is_closed: false  
-            });
+            }, objUpd);
 
             return  {data: objUpdB}
         }
@@ -309,32 +321,6 @@ class api_ballot extends apiBase {
         }
     }
     
-    async async_publishBallot(objParam, objVoid) {
-        try {
-            // get this ballot
-            let dataBallot = await this.async_findMyBallot({
-                uid: objParam.uid,
-                did: objParam.did
-            });
-
-            let objUpdB=await this.dbBallot.async_updateBallot({
-                uid: dataBallot.data.uid
-            }, {
-                published_at: new Date(new Date().toUTCString()),
-                opening_at: new Date(new Date().toUTCString()),     // todo 
-                closing_at: new Date(new Date().toUTCString()),     // todo 
-                published_id: 1,         // todo
-                is_open: false,  
-                is_closed: false  
-            });
-
-            return  {data: objUpdB}
-        }
-        catch(err) {
-            throw err;
-        }
-    }
-
     async async_getMatchingBallots(objFilter, aMatch) {
         try {
             let aB=await this.dbBook.async_getBallots({
@@ -347,20 +333,40 @@ class api_ballot extends apiBase {
         }
     }
 
-    async async_getPubliclyAvailableBallots() {
+    async async_getPubliclyAvailableBallotsForRegistration() {
         return this.async_getMatchingBallots({
             filterPaging: {
                 limit: 100
             }, 
             filterSort: {
-                sortby: "opening_at",
+                sortby: "openingRegistration_at",
                 sortDirection: -1
             }
         }, [{
             $match: {
                 $expr: {
                     $and : [
-                        { $or: [ { $eq: ["$is_open", true] }, { $eq: ["$is_closed", false] } ] },
+                        { $or: [ { $eq: ["$is_openedToRegistration", true] }, { $eq: ["$is_closedToRegistration", false] } ] },
+                    ]
+                }
+            }
+        }]);
+    }
+
+    async async_getPubliclyAvailableBallotsForVoting() {
+        return this.async_getMatchingBallots({
+            filterPaging: {
+                limit: 100
+            }, 
+            filterSort: {
+                sortby: "openingVote_at",
+                sortDirection: -1
+            }
+        }, [{
+            $match: {
+                $expr: {
+                    $and : [
+                        { $or: [ { $eq: ["$is_openedToVote", true] }, { $eq: ["$is_closedToVote", false] } ] },
                     ]
                 }
             }
@@ -373,12 +379,12 @@ class api_ballot extends apiBase {
                     limit: 100
                 }, 
                 filterSort: {
-                    sortby: "closing_at",
+                    sortby: "closingVote_at",
                     sortDirection: -1
                 }
             }, [{
                 $match: {
-                    $eq: ["$is_closed", true]  
+                    $eq: ["$is_closedToVote", true]  
                 }
             }]
         );

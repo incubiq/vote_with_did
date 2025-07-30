@@ -106,12 +106,12 @@ class api_user_admin extends apiDesigner {
     }
     
     // an admin publishes his ballot
-    async async_publishBallot(objParam) {
+    async async_publishBallot(objFind, objUpd) {
         try {
             return gConfig.app.apiBallot.async_publishBallot({
-                uid: objParam.uid,
-                did: objParam.did
-            })
+                uid: objFind.uid,
+                did: objFind.did
+            }, objUpd)
         }
         catch(err) {
             throw err;

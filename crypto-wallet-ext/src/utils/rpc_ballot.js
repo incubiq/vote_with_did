@@ -57,7 +57,12 @@ export const srv_patchBallotRules= async(objParam, _token) => {
 
 // publish a ballot
 export const srv_publishBallot= async(objParam, _token) => {
-  return srv_patchRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid+"/publish", {    
+  return srv_patchRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid+"/publish", { 
+    openingVote_at: objParam.openingVote_at,
+    closingVote_at: objParam.closingVote_at,
+    openingRegistration_at: objParam.openingRegistration_at,
+    closingRegistration_at: objParam.closingRegistration_at,
+    credentials: objParam.aCreds? JSON.stringify(objParam.aCreds): JSON.stringify([])
   }, _token);
 }
 

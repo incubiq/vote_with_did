@@ -25,6 +25,15 @@
   font-style: italic;
 }
 
+.hidden {
+  display: none;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .button {
   background-color: var(--primary-color);
   color: white;
