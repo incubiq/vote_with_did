@@ -1,0 +1,32 @@
+/* src/styles/Voting.module.css */
+
+
+.dialog_ballot {
+  min-height: 420px;;
+}
+
+.dialog_question {
+  background-color: #fafafa;
+  border: 1px solid #f0f0f0;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.dialog_choices {
+  display: flex;
+  justify-content: center;  /* Horizontal center */
+  align-items: center;      /* Vertical center */
+  min-height: 240px;
+  margin-bottom: 16px;
+}
+
+.radio {
+  width: 100%;
+  display: inline-block;
+  margin: 8px auto;
+  font-size: 120%;
+  text-align: center;
+}
+.radio_control {
+  margin: 0 12px;
+}

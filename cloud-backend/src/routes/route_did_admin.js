@@ -48,7 +48,7 @@ router.post("/entity", function(req, res, next) {
 
  // DEL /entity
 router.delete("/entity/:entity", function(req, res, next) {
-  routeUtils.apiGet(req, res, srvIdentus.async_deleteEntityById, {
+  routeUtils.apiDelete(req, res, srvIdentus.async_deleteEntityById, {
     entity:  req.params.entity? req.params.entity : null,           // id of entity to delete
   });
 });

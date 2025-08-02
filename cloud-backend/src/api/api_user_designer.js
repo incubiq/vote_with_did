@@ -8,7 +8,6 @@ const utilsConnection = require('../utils/util_identus_connections');
 const utilsBlockfrost = require('../utils/util_blockfrost');
 const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
-const { connection } = require('mongoose');
 
 /*   
  *      User / DESIGNER APIs
@@ -57,14 +56,15 @@ class api_user_designer extends apiVoter {
             // create a question 
             const dataQ = gConfig.app.apiBallot.async_createQuestion({
                 type: objQuestion.type,
-                title: gConfig.app.apiBallot.title
+                title: objQuestion.title
             })
 
             return gConfig.app.apiBallot.async_addQuestion({
-                uid: objParam.uid,
+                canAddQuestion: true,
+                uid_ballot: objParam.uid,
+                uid_question: dataQ.data.uid,
                 did: objParam.did
-            }, 
-            dataQ.data.uid);
+            });
 
         }
         catch(err) {

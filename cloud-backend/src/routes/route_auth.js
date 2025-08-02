@@ -35,7 +35,7 @@ router.post("/", function(req, res, next) {
         httpOnly: false,        // true = Prevents JavaScript access to the cookie
         secure:  gConfig.isDebug? false : true,          // Only sent over HTTPS
         sameSite: 'Lax',    // Prevents CSRF attacks
-        maxAge:  72 * 60 * 60 * 1000  // harcoded this one (should change it to the config value)  
+        maxAge: gConfig.maxAge,     // 72h
     });
     return res.json({ data: {
         token: token }

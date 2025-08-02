@@ -1,9 +1,6 @@
-
 const express = require('express');
 const router = express.Router();
 const routeUtils = require('./route_utils');
-const identusUtils = require('../utils/util_identus_utils');
-const srvIdentus = require("../utils/util_identus_identity");
 
 // all routes here start with               api/v1/private/admin/
 
@@ -29,7 +26,7 @@ router.post("/ballot", function(req, res, next) {
     routeUtils.apiPost(req, res, gConfig.app.apiUserAdmin.async_createBallot.bind(gConfig.app.apiUserAdmin), {
       canCreateBallot: req.user.canCreateBallot? req.user.canCreateBallot: false,
       did: req.user.did? req.user.did: null,
-      name: req.body.name? decodeURIComponent(decodeURIComponent(req.body.name)): null
+      name: req.body.name? decodeURIComponent(req.body.name): null
     });
 });
 
@@ -40,10 +37,10 @@ router.patch("/ballot/:uid", function(req, res, next) {
       did: req.user.did? req.user.did: null,
       uid: req.params.uid? parseInt(req.params.uid) : null
     }, {
-      name: req.body.name? decodeURIComponent(decodeURIComponent(req.body.name)): null,
+      name: req.body.name? decodeURIComponent(req.body.name): null,
       opening_at: req.body.opening_at? req.body.opening_at: null,
       closing_at: req.body.closing_at? req.body.closing_at: null,
-      settings: req.body.settings? decodeURIComponent(decodeURIComponent(req.body.settings)): null
+      settings: req.body.settings? decodeURIComponent(req.body.settings): null
     });
 });
 
@@ -69,16 +66,16 @@ router.patch("/ballot/:uid/rules", function(req, res, next) {
     uid: req.params.uid? parseInt(req.params.uid) : null,
     did: req.user.did? req.user.did: null
   }, {
-    rules: req.body.rules? JSON.parse(decodeURIComponent(decodeURIComponent(req.body.rules))) : null,
+    rules: req.body.rules? JSON.parse(decodeURIComponent(req.body.rules)) : null,
   });
 });
 
 // publish a ballot (set open / close  registration ;  set open /close for voting)
 router.patch("/ballot/:uid/publish", function(req, res, next) {
-  const openingRegistration_at = req.body.openingRegistration_at? new Date(decodeURIComponent(decodeURIComponent(req.body.openingRegistration_at))): null;
-  const closingRegistration_at = req.body.closingRegistration_at? new Date(decodeURIComponent(decodeURIComponent(req.body.closingRegistration_at))): null;
-  const openingVote_at = req.body.openingVote_at? new Date(decodeURIComponent(decodeURIComponent(req.body.openingVote_at))): null;
-  const closingVote_at = req.body.closingVote_at? new Date(decodeURIComponent(decodeURIComponent(req.body.closingVote_at))): null;
+  const openingRegistration_at = req.body.openingRegistration_at? new Date(decodeURIComponent(req.body.openingRegistration_at)): null;
+  const closingRegistration_at = req.body.closingRegistration_at? new Date(decodeURIComponent(req.body.closingRegistration_at)): null;
+  const openingVote_at = req.body.openingVote_at? new Date(decodeURIComponent(req.body.openingVote_at)): null;
+  const closingVote_at = req.body.closingVote_at? new Date(decodeURIComponent(req.body.closingVote_at)): null;
   routeUtils.apiPatch(req, res, gConfig.app.apiUserAdmin.async_publishBallot.bind(gConfig.app.apiUserAdmin), {
     canPublishBallot: req.user.canPublishBallot? req.user.canPublishBallot: false,
     uid: req.params.uid? parseInt(req.params.uid) : null,
@@ -118,9 +115,9 @@ router.post("/question", function(req, res, next) {
     routeUtils.apiPost(req, res, gConfig.app.apiBallot.async_createQuestion.bind(gConfig.app.apiBallot), {
       canAddQuestion: req.user.canAddQuestion? req.user.canAddQuestion: false,
       did: req.user.did? req.user.did: null,
-      title: req.body.title? decodeURIComponent(decodeURIComponent(req.body.title)): null,
-      rich_text: req.body.rich_text? decodeURIComponent(decodeURIComponent(req.body.rich_text)): null,
-      link: req.body.link? decodeURIComponent(decodeURIComponent(req.body.link)): null,
+      title: req.body.title? decodeURIComponent(req.body.title): null,
+      rich_text: req.body.rich_text? decodeURIComponent(req.body.rich_text): null,
+      link: req.body.link? decodeURIComponent(req.body.link): null,
       type: req.body.type? req.body.type: "select",
       aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? req.body.aChoice: [],
     });
@@ -141,11 +138,11 @@ router.patch("/question/:uid", function(req, res, next) {
       uid: req.params.uid? parseInt(req.params.uid) : null,
       canAddQuestion: req.user.canAddQuestion? req.user.canAddQuestion: false,
     }, {
-      title: req.body.title? decodeURIComponent(decodeURIComponent(req.body.title)): null,
-      rich_text: req.body.rich_text? decodeURIComponent(decodeURIComponent(req.body.rich_text)): null,
-      link: req.body.link? decodeURIComponent(decodeURIComponent(req.body.link)): null,
+      title: req.body.title? decodeURIComponent(req.body.title): null,
+      rich_text: req.body.rich_text? decodeURIComponent(req.body.rich_text): null,
+      link: req.body.link? decodeURIComponent(req.body.link): null,
       type: req.body.type? req.body.type: "select",
-      aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? JSON.parse(decodeURIComponent(decodeURIComponent(req.body.aChoice))): [],
+      aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? JSON.parse(decodeURIComponent(req.body.aChoice)): [],
     });
 });
 

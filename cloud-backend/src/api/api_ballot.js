@@ -191,7 +191,7 @@ class api_ballot extends apiBase {
                 throw {
                     data: null,
                     status: 404,
-                    statusText: "No ballot with uid "+uid
+                    statusText: "No ballot with uid "+objParam.uid
                 }
             }
 
@@ -450,7 +450,7 @@ class api_ballot extends apiBase {
             // track book delete event
             try{
                 this.dbEvent.async_createEvent({
-                    username: objParam.username,
+                    username: objParam.username? objParam.username : "unknown user",
                     type: cEvents.EVENT_BALLOT_DELETED.value,
                     value: JSON.stringify({
                         name: dataBallot.data.name, 

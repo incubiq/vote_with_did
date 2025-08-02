@@ -30,6 +30,7 @@
 
 .dialog_header {
   display: flex;
+  position: relative;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
@@ -48,6 +49,9 @@
   background: none;
   border: none;
   cursor: pointer;
+  position: absolute;
+  top: -12px;
+  right: -8px;
 }
 
 .close_button:hover {
@@ -119,6 +123,25 @@
   cursor: pointer;
   transition: background-color 0.15s ease-in-out;
 }
+
+.blue_btn {
+  padding: 0.5rem 1rem;
+  margin: 0 1rem;
+  background-color: rgb(37, 104, 204);
+  color: white;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.right {
+  float: right;
+} 
+
+.left {
+  float: left;
+} 
 
 .close_btn:hover {
   background-color: #2563eb;

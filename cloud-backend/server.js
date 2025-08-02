@@ -17,6 +17,7 @@ global.gConfig={
     appName: "vote_with_did",                    // app Name used for naming the cookie
     jwtKey: "mysecretforVotWithDIDJWT_597@015",       // some basic key for encoding cookies 
     authentication_expire: "72h",           // 72 hours expiration of our cookie
+    maxAge:  72 * 60 * 60 * 1000,           // same 72h max age (for cookie)
     cookieSecret: "dsf9826684fc23",
 
     // sender email

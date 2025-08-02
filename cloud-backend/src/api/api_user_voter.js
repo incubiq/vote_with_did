@@ -8,7 +8,6 @@ const utilsConnection = require('../utils/util_identus_connections');
 const utilsBlockfrost = require('../utils/util_blockfrost');
 const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
-const { connection } = require('mongoose');
 
 /*   
  *      User / VOTER APIs
@@ -205,7 +204,7 @@ class api_user_voter extends apiViewer {
                 if(objUser.dateLock && objUser.aProof.length==0) {
                     const now = new Date();
                     const oneMinuteFromLock = new Date(objUser.dateLock.getTime() + 60 * 1000);
-                    if(Math.abs(oneMinuteFromLock.getTime()  - now.getTime() > 0 )) {
+                    if(oneMinuteFromLock.getTime() > now.getTime()) {
                         throw {
                             data: null,
                             status: 400,

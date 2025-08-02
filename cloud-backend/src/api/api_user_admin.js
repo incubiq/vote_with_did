@@ -8,7 +8,6 @@ const utilsConnection = require('../utils/util_identus_connections');
 const utilsBlockfrost = require('../utils/util_blockfrost');
 const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
-const { connection } = require('mongoose');
 
 /*   
  *      User / ADMIN APIs

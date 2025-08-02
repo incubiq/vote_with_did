@@ -16,7 +16,6 @@ const aHours=[0, 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
 
 const DialogPublishBallot = (props) => {
 	
-	const [currentBallot, setCurrentBallot] = useState(null);
 	const [openRegistration_at, setOpenRegistration_at] = useState("now");
 	const [durationRegistration, setDurationRegistration] = useState({period: "d", count:4});
 	const [delayedRegistration, setDelayedRegistration] = useState("");
@@ -232,7 +231,7 @@ const DialogPublishBallot = (props) => {
 		<>
 			<Dialog 
 				isVisible = {props.isVisible}
-				title = {currentBallot? "Publish Ballot " + currentBallot.name: ""}
+				title = {props.ballot? "Publish Ballot " + props.ballot.name: ""}
 				message = ""
 				form = {renderPublishBallot()}
 				type = "form"

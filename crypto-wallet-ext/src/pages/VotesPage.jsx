@@ -7,6 +7,7 @@ import { useWalletBackend } from '../hooks/useWalletBackend';
 import { useWalletConnection } from '../hooks/useWalletConnection';
 import BottomNav from '../components/BottomNav';
 import YesNoDialog from '../components/yesnoDialog';
+import VotingPanel from '../components/votingPanel';
 
 import { srv_getPublicBallots } from '../utils/rpc_ballot';
 import { getHowLongUntil } from '../utils/misc';
@@ -21,6 +22,8 @@ const PANEL_STATS_AVAILABLE = "stats";
 
 const VotesPage = () => {
 	const [isYesNoDialogOpen, setIsYesNoDialogOpen] = useState(false);
+	const [isVotingPanelOpen, setIsVotingPanelOpen] = useState(false);
+	
 	const [connectedWallets, setConnectedWallets] = useState([]); // Store connected wallets
 	const [panel, setPanel] = useState(PANEL_AWAITING_REGISTRATION);
 
@@ -86,6 +89,10 @@ const VotesPage = () => {
 
 	}, []);
 
+	const onHasVoted = (_aAnswer) => {
+		// 
+	}
+
 	const {
 		availableWallets,
 		connecting,
@@ -144,7 +151,7 @@ const VotesPage = () => {
 				<table className={styles.tableBallot}>
 					<thead>
 						<tr>
-						<th>Name</th>
+						<th>Ballot</th>
 						<th>#Q</th>
 						<th>When</th>
 						<th></th>
@@ -200,7 +207,7 @@ const VotesPage = () => {
 				<table className={styles.tableBallot}>
 					<thead>
 						<tr>
-						<th>Name</th>
+						<th>Ballot</th>
 						<th>#Q</th>
 						<th>When</th>
 						<th></th>
@@ -224,6 +231,7 @@ const VotesPage = () => {
 							<td>
 								<div className={styles.button} 
 									onClick={() => {
+										setIsVotingPanelOpen(true);
 									}}
 								>
 									Vote...
@@ -256,7 +264,7 @@ const VotesPage = () => {
 				<table className={styles.tableBallot}>
 					<thead>
 						<tr>
-						<th>Name</th>
+						<th>Ballot</th>
 						<th>#Q</th>
 						<th></th>
 						</tr>
@@ -320,6 +328,13 @@ const VotesPage = () => {
 				message = "Press Yes to Generate a Proof (we will take your cumulated ADA balance of all linked wallets) - The proof will be issued within around 30 secs"
 				onNo = {( ) => setIsYesNoDialogOpen(false)}
 				onYes = {( ) => async_genProofOfVotingPower()}
+			/>
+
+			<VotingPanel 
+				isVisible = {isVotingPanelOpen}
+				onClose = {() => setIsVotingPanelOpen(false)}
+				onHasVoted = {(_aAnswers) => onHasVoted(_aAnswers)}
+				ballot = {aBallotOpenForRegistration[0]}
 			/>
 
 			<BottomNav />
