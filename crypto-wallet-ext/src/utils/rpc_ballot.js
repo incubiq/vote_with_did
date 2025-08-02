@@ -55,6 +55,12 @@ export const srv_patchBallotRules= async(objParam, _token) => {
   }, _token);
 }
 
+// pre-publish a ballot
+export const srv_prepublishBallot= async(objParam, _token) => {
+  return srv_patchRoute(API_PRIVATEROUTE+'designer/ballot/'+objParam.uid+"/prepublish", { 
+  }, _token);
+}
+
 // publish a ballot
 export const srv_publishBallot= async(objParam, _token) => {
   return srv_patchRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid+"/publish", { 
@@ -83,7 +89,7 @@ export const srv_getPublicBallots= async(objParam, _token) => {
 
 // create a question
 export const srv_postCreateQuestion= async(objParam, _token) => {
-  return srv_postRoute(API_PRIVATEROUTE+"admin/question", {
+  return srv_postRoute(API_PRIVATEROUTE+"designer/question", {
     title: objParam.title? encodeURIComponent(encodeURIComponent(objParam.title)): null,
     link: objParam.link? encodeURIComponent(encodeURIComponent(objParam.link)) : null,
     type: objParam.type? objParam.type: null,
@@ -94,14 +100,14 @@ export const srv_postCreateQuestion= async(objParam, _token) => {
 
 // find a question
 export const srv_findQuestion= async(objParam, _token) => {
-  return srv_getRoute(API_PRIVATEROUTE+'admin/question/'+objParam.uid_question, {
+  return srv_getRoute(API_PRIVATEROUTE+'designer/question/'+objParam.uid_question, {
 
   }, _token);
 }
 
 // update a question
 export const srv_patchQuestion= async(objParam, _token) => {
-  return srv_patchRoute(API_PRIVATEROUTE+'admin/question/'+objParam.uid_question, {    
+  return srv_patchRoute(API_PRIVATEROUTE+'designer/question/'+objParam.uid_question, {    
     title: objParam.title? encodeURIComponent(encodeURIComponent(objParam.title)): null,
     link: objParam.link? encodeURIComponent(encodeURIComponent(objParam.link)) : null,
     type: objParam.type? objParam.type: null,
@@ -113,18 +119,18 @@ export const srv_patchQuestion= async(objParam, _token) => {
 
 // delete a question
 export const srv_deleteQuestion= async(objParam, _token) => {
-  return srv_deleteRoute(API_PRIVATEROUTE+'admin/question/'+objParam.uid_question, {    
+  return srv_deleteRoute(API_PRIVATEROUTE+'designer/question/'+objParam.uid_question, {    
   }, _token);
 }
 
 // add a question to a ballot
 export const srv_linkQuestion= async(objParam, _token) => {
-  return srv_linkRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid_ballot+"/question/"+objParam.uid_question, {    
+  return srv_linkRoute(API_PRIVATEROUTE+'designer/ballot/'+objParam.uid_ballot+"/question/"+objParam.uid_question, {    
   }, _token);
 }
 
 // remove a question from a ballot
 export const srv_unlinkQuestion= async(objParam, _token) => {
-  return srv_unlinkRoute(API_PRIVATEROUTE+'admin/ballot/'+objParam.uid_ballot+"/question/"+objParam.uid_question, {    
+  return srv_unlinkRoute(API_PRIVATEROUTE+'designer/ballot/'+objParam.uid_ballot+"/question/"+objParam.uid_question, {    
   }, _token);
 }
