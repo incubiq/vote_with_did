@@ -8,6 +8,7 @@ const utilsConnection = require('../utils/util_identus_connections');
 const utilsBlockfrost = require('../utils/util_blockfrost');
 const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
+const cClaims = require('../const/const_claims');
 
 /*   
  *      User / VOTER APIs
@@ -346,7 +347,7 @@ class api_user_voter extends apiViewer {
             address: objParam.address,
             chain: objParam.chain,
             networkId: objParam.networkId,
-            claim_type: "address_ownership",
+            claim_type: cClaims.CLAIM_ADDRESS_OWNERSHIP.value,
         })        
     }
 
@@ -359,8 +360,34 @@ class api_user_voter extends apiViewer {
                 networkId: objParam.networkId,
                 token: "ADA",
                 value: objAssets.adaAmount,
-                claim_type: "proof_of_fund",
+                claim_type: cClaims.CLAIM_PROOF_OF_FUNDS.value,
             }) 
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_issueProofOfMinimumBalance (objParam) {
+        try {
+            const objAssets = await utilsBlockfrost.async_getWalletAssetsFromAddress(objParam.address)
+            if(objAssets.adaAmount<objParam.requirement_minimum) {
+                throw ({
+                    data: null,
+                    status: 403,
+                    statusText: "Minimum balance requirement not met"
+                })
+            }
+            return this.async_ensureProof(objParam, {
+                address: objParam.address,
+                chain: objParam.chain,
+                networkId: objParam.networkId,
+                token: "ADA",
+                minimum_requirement: objParam.requirement_minimum,
+                requested_by: objParam.did_ballot,
+                accepted: true,
+                claim_type: cClaims.CLAIM_PROOF_OF_MINIMUM_BALANCE.value,
+            })             
         }
         catch(err) {
             throw err;

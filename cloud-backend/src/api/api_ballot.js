@@ -3,6 +3,7 @@ const path = require('path');
 const apiBase = require('./base_publicApi_base');
 const utilServices = require('../utils/util_services');
 const cEvents = require('../const/const_events');
+const cClaims = require('../const/const_claims');
 
 /*   
  *      Ballot APIs
@@ -94,7 +95,6 @@ class api_ballot extends apiBase {
             if(objUpdate.name) {objUpd.name = objUpdate.name}
             if(objUpdate.opening_at) {objUpd.opening_at = objUpdate.opening_at}
             if(objUpdate.closing_at) {objUpd.closing_at = objUpdate.closing_at}
-            if(objUpdate.settings) {objUpd.settings_admin = objUpdate.settings}
 
             let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid
@@ -204,6 +204,7 @@ class api_ballot extends apiBase {
                 })
                 _aQ.push(objQ);
             }
+            objBallot.aQuestionInFull = _aQ;
 
             // check open/close 
             const now = new Date();
@@ -212,7 +213,6 @@ class api_ballot extends apiBase {
             objBallot.is_closedToVote= new Date(objBallot.closingVote_at) < now;
             objBallot.is_openedToVote= objBallot.is_closedToRegistration && !objBallot.is_closedToVote && new Date(objBallot.openingVote_at) < now;
 
-            objBallot.aQuestionInFull = _aQ;
             return objBallot;  
         }
         catch(err) {

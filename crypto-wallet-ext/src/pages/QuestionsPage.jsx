@@ -304,7 +304,7 @@ export default function QuestionsPage() {
 										<label className={styles.prop}  >Value</label>
 										<input 
 										type="text"
-											value={item.value? item.value: ""}
+											value={item.value!==null? item.value: ""}
 											onChange={(e) => updateAnswerPropVal(index, {value: e.target.value})}
 											className={styles.input}
 											placeholder={"Value stored"}

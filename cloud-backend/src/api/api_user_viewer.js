@@ -3,7 +3,7 @@ const utilServices = require('../utils/util_services');
 const cEvents = require('../const/const_events');
 
 /*   
- *      User / VIEVER APIs
+ *      User / VIEWER APIs
  */
 
 class api_user_viewer extends apiBase {

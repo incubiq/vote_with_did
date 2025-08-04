@@ -1,7 +1,6 @@
 // src/components/BottomNav.jsx
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
-import Dialog from '../components/dialog.jsx';
 
 import styles from '../styles/Base.module.css';
 import stylesDialog from '../styles/Dialogs.module.css';

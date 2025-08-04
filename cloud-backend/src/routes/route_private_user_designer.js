@@ -68,9 +68,9 @@ router.post("/question", function(req, res, next) {
     routeUtils.apiPost(req, res, gConfig.app.apiBallot.async_createQuestion.bind(gConfig.app.apiBallot), {
       canAddQuestion: req.user.canAddQuestion? req.user.canAddQuestion: false,
       did: req.user.did? req.user.did: null,
-      title: req.body.title? decodeURIComponent(req.body.title): null,
-      rich_text: req.body.rich_text? decodeURIComponent(req.body.rich_text): null,
-      link: req.body.link? decodeURIComponent(req.body.link): null,
+      title: req.body.title? decodeURIComponent(decodeURIComponent(req.body.title)): null,
+      rich_text: req.body.rich_text? decodeURIComponent(decodeURIComponent(req.body.rich_text)): null,
+      link: req.body.link? decodeURIComponent(decodeURIComponent(req.body.link)): null,
       type: req.body.type? req.body.type: "select",
       aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? req.body.aChoice: [],
     });
@@ -91,11 +91,11 @@ router.patch("/question/:uid", function(req, res, next) {
       uid: req.params.uid? parseInt(req.params.uid) : null,
       canAddQuestion: req.user.canAddQuestion? req.user.canAddQuestion: false,
     }, {
-      title: req.body.title? decodeURIComponent(req.body.title): null,
-      rich_text: req.body.rich_text? decodeURIComponent(req.body.rich_text): null,
-      link: req.body.link? decodeURIComponent(req.body.link): null,
+      title: req.body.title? decodeURIComponent(decodeURIComponent(req.body.title)): null,
+      rich_text: req.body.rich_text? decodeURIComponent(decodeURIComponent(req.body.rich_text)): null,
+      link: req.body.link? decodeURIComponent(decodeURIComponent(req.body.link)): null,
       type: req.body.type? req.body.type: "select",
-      aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? JSON.parse(decodeURIComponent(req.body.aChoice)): [],
+      aChoice: req.body.type=="bool"? [{text: "yes", value: true}, {text: "no", value: false}]: req.body.aChoice? JSON.parse(decodeURIComponent(decodeURIComponent(req.body.aChoice))): [],
     });
 });
 

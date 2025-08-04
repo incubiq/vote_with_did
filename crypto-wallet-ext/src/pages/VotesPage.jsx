@@ -8,6 +8,7 @@ import { useWalletConnection } from '../hooks/useWalletConnection';
 import BottomNav from '../components/BottomNav';
 import YesNoDialog from '../components/yesnoDialog';
 import VotingPanel from '../components/votingPanel';
+import VoterSelfRegistrationPanel from '../components/voterSelfRegistrationPanel';
 
 import { srv_getPublicBallots } from '../utils/rpc_ballot';
 import { getHowLongUntil } from '../utils/misc';
@@ -23,6 +24,7 @@ const PANEL_STATS_AVAILABLE = "stats";
 const VotesPage = () => {
 	const [isYesNoDialogOpen, setIsYesNoDialogOpen] = useState(false);
 	const [isVotingPanelOpen, setIsVotingPanelOpen] = useState(false);
+	const [isVoterSelfRegistrationPanelOpen, setIsVoterSelfRegistrationPanelOpen] = useState(false);
 	
 	const [connectedWallets, setConnectedWallets] = useState([]); // Store connected wallets
 	const [panel, setPanel] = useState(PANEL_AWAITING_REGISTRATION);
@@ -175,6 +177,7 @@ const VotesPage = () => {
 							<td>
 								<div className={styles.button} 
 									onClick={() => {
+										setIsVoterSelfRegistrationPanelOpen(true);
 									}}
 								>
 									Register...
@@ -231,7 +234,12 @@ const VotesPage = () => {
 							<td>
 								<div className={styles.button} 
 									onClick={() => {
-										setIsVotingPanelOpen(true);
+										if(aBallotOpenForVote.length>0) {
+											setIsVotingPanelOpen(true);
+										}
+										else {
+										toast.error("No ballot open for vote yet.")
+										}
 									}}
 								>
 									Vote...
@@ -330,11 +338,18 @@ const VotesPage = () => {
 				onYes = {( ) => async_genProofOfVotingPower()}
 			/>
 
+			<VoterSelfRegistrationPanel 
+				isVisible = {isVoterSelfRegistrationPanelOpen}
+				onClose = {() => setIsVoterSelfRegistrationPanelOpen(false)}
+				onHasSelfRegistered = {(_data) => onHasSelfRegistered(_data)}
+				ballot = {aBallotOpenForRegistration[0]}
+			/>
+
 			<VotingPanel 
 				isVisible = {isVotingPanelOpen}
 				onClose = {() => setIsVotingPanelOpen(false)}
 				onHasVoted = {(_aAnswers) => onHasVoted(_aAnswers)}
-				ballot = {aBallotOpenForRegistration[0]}
+				ballot = {aBallotOpenForVote[0]}
 			/>
 
 			<BottomNav />

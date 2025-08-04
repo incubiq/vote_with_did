@@ -25,7 +25,7 @@ const ProfilePage = () => {
     try {
       actions.authorizationSet(_profile);   // will set profile auth to backend and reload Ballots
       const objPr = await storage.async_saveProfile(_profile);
-      return _data.data;
+      return _profile;
     }
     catch (err) {
       return null;

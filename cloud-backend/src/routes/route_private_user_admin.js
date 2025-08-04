@@ -40,7 +40,6 @@ router.patch("/ballot/:uid", function(req, res, next) {
       name: req.body.name? decodeURIComponent(req.body.name): null,
       opening_at: req.body.opening_at? req.body.opening_at: null,
       closing_at: req.body.closing_at? req.body.closing_at: null,
-      settings: req.body.settings? decodeURIComponent(req.body.settings): null
     });
 });
 
@@ -59,17 +58,6 @@ router.get("/ballot/:uid", function(req, res, next) {
   });
 });
 
-// Define voting rules for a ballot
-router.patch("/ballot/:uid/rules", function(req, res, next) {
-  routeUtils.apiPatch(req, res, gConfig.app.apiUserAdmin.async_updateBallotRules.bind(gConfig.app.apiUserAdmin), {
-    canEditBallot: req.user.canEditBallot? req.user.canEditBallot: false,
-    uid: req.params.uid? parseInt(req.params.uid) : null,
-    did: req.user.did? req.user.did: null
-  }, {
-    rules: req.body.rules? JSON.parse(decodeURIComponent(req.body.rules)) : null,
-  });
-});
-
 // publish a ballot (set open / close  registration ;  set open /close for voting)
 router.patch("/ballot/:uid/publish", function(req, res, next) {
   const openingRegistration_at = req.body.openingRegistration_at? new Date(decodeURIComponent(req.body.openingRegistration_at)): null;
@@ -79,7 +67,8 @@ router.patch("/ballot/:uid/publish", function(req, res, next) {
   routeUtils.apiPatch(req, res, gConfig.app.apiUserAdmin.async_publishBallot.bind(gConfig.app.apiUserAdmin), {
     canPublishBallot: req.user.canPublishBallot? req.user.canPublishBallot: false,
     uid: req.params.uid? parseInt(req.params.uid) : null,
-    did: req.user.did? req.user.did: null
+    did: req.user.did? req.user.did: null,
+    username: req.user.username? req.user.username: null
   }, {    
     openingRegistration_at: openingRegistration_at,
     closingRegistration_at: closingRegistration_at,

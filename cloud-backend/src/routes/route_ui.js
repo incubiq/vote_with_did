@@ -52,7 +52,7 @@ const cCookie = require('../const/const_cookie');
     // read the details inside the cookie
     async function async_getInfoFromCookie (req, secret) {
         try {
-            let token=getSecretsFromCookie(req, getCookieName());
+            let token=getSecretsFromCookie(req, cCookie.getCookieName());
             if(!token) {
                 return {
                     data: null,
@@ -313,7 +313,7 @@ router.post("/static/entity_create", function(req, res, next) {
             if (data.data) {
                 async_addSecretToCookie(req, data.data.id_entity, data.data.key)
                 .then(_cookie => {
-                    res.cookie(getCookieName(), _cookie, cCookie.getCookieOptions());       // store this cookie
+                    res.cookie(cCookie.getCookieName(), _cookie, cCookie.getCookieOptions());       // store this cookie
                     res.redirect("/static/entity/"+data.data.id_entity);            
                 })
                 .catch(err => {throw err})
@@ -339,7 +339,7 @@ router.post("/static/entity/:id/secret", function(req, res, next) {
         if (data.data.length>0) {
             async_addSecretToCookie(req, req.params.id, req.body.secret)
             .then(_cookie => {
-                res.cookie(getCookieName(), _cookie, cCookie.getCookieOptions());       // store this cookie
+                res.cookie(cCookie.getCookieName(), _cookie, cCookie.getCookieOptions());       // store this cookie
                 res.redirect("/static/entity/"+req.params.id);            
             })
             .catch(err => {throw err})

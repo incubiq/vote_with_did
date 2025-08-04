@@ -252,6 +252,64 @@ const async_updateAndPublishDid = async function (objFind, objUpdate) {
     }
 }
 
+const async_createAndPublishDidForBallot = async function (objBallot){
+    try {
+        // create did
+        let doc={"documentTemplate": {
+            "publicKeys": [
+              {
+                "id": "ballot-key", 
+                "purpose":  ["authentication", "assertionMethod"],
+              }
+            ],
+            "services": [{
+                id: "ballot-metadata",
+                type: "overview", 
+                serviceEndpoint: {
+                    uri: gConfig.origin+"ballot/"+objBallot.uid,
+                    ballotInfo: {
+                        title: objBallot.title,
+                        closingRegistration_at: objBallot.closingRegistration_at,
+                        closingVote_at: objBallot.closingVote_at,
+                        openingRegistration_at:objBallot.openingRegistration_at,
+                        openingVote_at: objBallot.openingVote_at
+                    }
+                }
+            }, {
+                id: "ballot-questions",
+                type: "questions", 
+                serviceEndpoint: {
+                    uri: gConfig.origin+"ballot/"+objBallot.uid,
+                    aQ: objBallot.aQ
+                }
+            }, {
+                id: "ballot-requirements",
+                type: "requirements", 
+                serviceEndpoint: {
+                    uri: gConfig.origin+"ballot/"+objBallot.uid,
+                    aReq: objBallot.aReq
+                }
+            }]
+          }
+        };
+        let responseDid = await srvIdentusUtils.async_simplePost("did-registrar/dids/", objParam.key, doc)
+
+        // now publish
+        let responsePub = await srvIdentusUtils.async_simplePost("did-registrar/dids/"+responseDid.data.longFormDid+"/publications", objParam.key, {})
+
+        return {
+            data: {
+                longDid: responseDid.data.longFormDid,
+                wasPublished: true
+            }
+        }
+    }
+    catch(err)  {
+        throw err;
+    }
+}
+
+
 const async_getDidForEntity = async function (objParam){
     try {
         if(objParam.did) {
