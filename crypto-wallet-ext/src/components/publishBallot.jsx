@@ -6,6 +6,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import { useWallet } from '../state/WalletContext.jsx';
 import { useWalletBackend } from '../hooks/useWalletBackend.jsx';
 import { useWalletConnection } from '../hooks/useWalletConnection.jsx';
+import { useRequirements } from '../state/SettingsContext.jsx';
+
 import BottomNav from './BottomNav.jsx';
 import Dialog from './dialog.jsx';
 import {  srv_publishBallot } from '../utils/rpc_ballot.js';
@@ -23,7 +25,11 @@ const DialogPublishBallot = (props) => {
 	const [durationVoting, setDurationVoting] = useState({period: "d", count:4});
 	const [delayedVoting, setDelayedVoting] = useState("");
 
+	const { state, actions } = useRequirements();
+	const aAllRequirements = actions.getRequirements();
+
 	const [credsRequirement, setCredsRequirement] = useState("none");
+	const [extraChecks, setExtraChecks] = useState([]);
 	
 	const async_publishBallot = async (_data) => {
 		if(!props.validityCheck || !props.validityCheck.isValid) {
@@ -50,7 +56,8 @@ const DialogPublishBallot = (props) => {
 				closingRegistration_at: closingRegistration_at.toISOString(),
 				openingVote_at: openingVote_at.toISOString(),
 				closingVote_at: closingVote_at.toISOString(),
-				aCreds: [credsRequirement]
+				requirement: credsRequirement,
+				extra: extraChecks,
 			})
 			.then(_data => {
 				if(_data.data==null) {
@@ -67,6 +74,19 @@ const DialogPublishBallot = (props) => {
 		}
 	}
 
+	const onChangeRequirement = (_value)=> {
+		const req = actions.getRequirementByValue(_value);
+		setCredsRequirement(_value);
+		setExtraChecks(req.aRequirement);
+	}
+
+	const onChangeExtra = (_prop, _value) => {
+		let _a=[...extraChecks];
+		const i=_a.findIndex(function (x) {return x.property===_prop});
+		_a[i].value=_value;
+		setExtraChecks(_a);
+	}
+
 	const renderConditions = ( )=> {
 		return (
 			<>
@@ -76,11 +96,43 @@ const DialogPublishBallot = (props) => {
 					</label>
 
 					<select className={styles.select}
-						onChange={(_e)=> setCredsRequirement(_e.target.value) }
+						defaultValue = {aAllRequirements[0].value}
+						onChange={(_e)=> onChangeRequirement(_e.target.value) }
 					>
-						<option value="none" >None</option>
-						<option value="proof_of_fund" >Proof of Funds</option>
+						{aAllRequirements.map((objReq, iReq) => (
+							<option 
+								key = {iReq} 
+								value={objReq.value} >{objReq.text}
+							</option>
+						))}
 					</select>
+
+					<br />
+					<div className={extraChecks.length!==0? styles.shift_right : styles.hidden}>
+						{extraChecks.map((objX, iX) => (
+							<div key = {iX} >
+								<label className={styles.prop}>
+									{objX.property}
+								</label>
+
+								{Array.isArray(objX.value) ?
+									<select className={styles.select}
+										onChange={(_e)=> onChangeExtra(objX.property, _e.target.value) }
+									>
+									<option 
+										key = {iX} 
+										value={objX.value} >{objX.value}
+									</option>
+									</select>
+								:
+									<input 
+										value = {objX.value}
+										onChange={(_e)=> onChangeExtra(objX.property, _e.target.value) }
+									/>
+								}
+							</div>
+						))}
+					</div>
 				</div>
 			</>
 		)

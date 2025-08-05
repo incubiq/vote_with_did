@@ -323,8 +323,12 @@ class api_ballot extends apiBase {
             if(objOpenClose.closingRegistration_at) {objUpd.closingRegistration_at=objOpenClose.closingRegistration_at}
             if(objOpenClose.openingVote_at) {objUpd.openingVote_at=objOpenClose.openingVote_at}
             if(objOpenClose.closingVote_at) {objUpd.closingVote_at=objOpenClose.closingVote_at}
-            if(objOpenClose.aCreds) {objUpd.aCreds = objOpenClose.aCreds}
-
+            if(objOpenClose.requirement) {
+                let aExtra = objOpenClose.extra? objOpenClose.extra : [];
+                objUpd.aCreds={
+                    type: objOpenClose.requirement,
+                    extra: aExtra 
+                }}
             let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: dataBallot.data.uid
             }, objUpd);

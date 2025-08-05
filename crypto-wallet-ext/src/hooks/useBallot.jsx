@@ -1,6 +1,6 @@
 // src/hooks/useWalletBackend.js
 import { useState, useCallback } from 'react';
-import { srv_getBallots } from "../utils/rpc_ballot";
+import { srv_getBallots, srv_getRequirements } from "../utils/rpc_ballot";
 
 export const useBallot = () => {
   const [loading, setLoading] = useState(false);
@@ -16,8 +16,19 @@ export const useBallot = () => {
     }
   }, []);
 
+  const getRequirements = useCallback(async () => {
+    try {
+      const response = await srv_getRequirements();
+      return response.data;
+    } catch (err) {
+      setError("Could not get ballot requirements");
+      throw err;
+    }
+  }, []);
+
 
   return {
     fetchBallots,
+    getRequirements,
   };
 };

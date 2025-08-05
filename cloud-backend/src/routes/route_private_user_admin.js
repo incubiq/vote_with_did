@@ -74,7 +74,8 @@ router.patch("/ballot/:uid/publish", function(req, res, next) {
     closingRegistration_at: closingRegistration_at,
     openingVote_at: openingVote_at,
     closingVote_at: closingVote_at,
-    aCreds: req.body.credentials? JSON.parse(req.body.credentials): []
+    requirement: req.body.requirement? req.body.requirement: null,
+    extra: req.body.extra? JSON.parse(req.body.extra): []
   });
 });
  

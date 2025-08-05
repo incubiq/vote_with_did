@@ -68,7 +68,8 @@ export const srv_publishBallot= async(objParam, _token) => {
     closingVote_at: objParam.closingVote_at,
     openingRegistration_at: objParam.openingRegistration_at,
     closingRegistration_at: objParam.closingRegistration_at,
-    credentials: objParam.aCreds? JSON.stringify(objParam.aCreds): JSON.stringify([])
+    requirement: objParam.requirement? requirement: null,
+    extra: objParam.extra? JSON.stringify(objParam.extra): JSON.stringify([])
   }, _token);
 }
 
@@ -82,6 +83,14 @@ export const srv_getPublicBallots= async(objParam, _token) => {
   }, _token);
 }
 
+/*
+ *    REQUIREMENTS
+ */
+
+// find a question
+export const srv_getRequirements= async() => {
+  return srv_getRoute(API_PUBLICROUTE+'viewer/ballot/requirements', {}, null);
+}
 
 /*
  *    QUESTIONS

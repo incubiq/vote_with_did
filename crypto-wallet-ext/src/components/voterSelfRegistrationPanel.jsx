@@ -1,28 +1,18 @@
 // src/components/BottomNav.jsx
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
+import { useRequirements } from '../state/SettingsContext';
 
 import styles from '../styles/Base.module.css';
 import stylesDialog from '../styles/Dialogs.module.css';
 import stylesVoting from '../styles/Voting.module.css';
 
-const getRequirementInClear =(_type) => {
-    switch(_type) {
-      case "proof_of_funds":
-        return "Proof of Funds";
-      case "proof_of_min":
-        return "Proof of Minimum Balance";
-      case "address_ownership":
-        return "Proof of ownership";
-      default:
-        return "Unknown";
-    }
-}
-
 const VoterSelfRegistrationPanel = (props) => {
   const [aRequirement, setARequirement] = useState([]);
   const [iRequirement, setIRequirement] = useState(0);
   const [aCertif, setACertif] = useState([]);
+  const { state, actions } = useRequirements();
+  const aAllRequirements = actions.getRequirements();
 
   useEffect(() => {
     if(props.ballot && props.ballot.aCreds) {
@@ -43,16 +33,20 @@ const VoterSelfRegistrationPanel = (props) => {
       <div className={stylesVoting.dialog_requirements}>
         {aRequirement.map((req, iReq) => (
           <div key={iReq} className={` ${styles.inline} ${stylesDialog.property_row} ${stylesVoting.dialog_choices} `} >              
+          {actions.getRequirementInClear(req.type)?
+          <>
               <div className={` ${styles.bold_underlined} `}>
-                {getRequirementInClear(req.type)}
+                {actions.getRequirementInClear(req.type)}
               </div>
+
               <button
                 onClick={(_data) => async_selfRegister(_data)}
                 className={`${stylesDialog.green_btn} `}
               >
                 Request certificate
               </button>
-
+          </>
+          :""}
           </div>
         ))}
       </div>
@@ -82,8 +76,7 @@ const VoterSelfRegistrationPanel = (props) => {
             <div className="">             
 
               <button
-                onClick={( )=> {
-                }}
+                onClick={props.onClose}
                 className={`${stylesDialog.red_btn} ${stylesDialog.right} `}
               >
                 Close

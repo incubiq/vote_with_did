@@ -60,7 +60,7 @@ export const getHowLongUntil = (_date)=>  {
 		const diffInMin = parseInt(diffInMs / (1000 * 60  )); 
 
 		if(diffInMs<0) return null;
-		return diffInDays>1 ? diffInDays +" days": diffInHours? 1 ? diffInHours+" hours" : diffInMin+" minutes": "a few seconds";
+		return diffInDays>1 ? diffInDays +" days": diffInHours> 1 ? diffInHours+" hours" : diffInMin>1? diffInMin+" minutes": "a few seconds";
 }
 
 
