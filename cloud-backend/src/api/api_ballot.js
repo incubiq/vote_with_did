@@ -1,9 +1,13 @@
+const crypto = require('crypto');
+const {ed25519} = require('@noble/curves/ed25519');
 const fs = require("fs");
 const path = require('path');
 const apiBase = require('./base_publicApi_base');
 const utilServices = require('../utils/util_services');
 const cEvents = require('../const/const_events');
+const cUsers = require('../const/const_users');
 const cClaims = require('../const/const_claims');
+const {async_createAndPublishDidForBallot} = require('../utils/util_identus_identity');
 
 /*   
  *      Ballot APIs
@@ -280,6 +284,25 @@ class api_ballot extends apiBase {
         }
     }
 
+    async async_findBallotForVoter(objParam) {
+        try {
+            let objBallot = await this._async_findBallot(objParam);
+
+            // needs to be open for vote
+            if(!objBallot.is_openedToVote) {
+                throw {
+                    data: null,
+                    status: 403,
+                    statusText: "Ballot not opened for vote"
+                }
+            }
+            return {data: objBallot};
+        }   
+        catch(err) {
+            throw err;
+        }
+    }
+
     async async_getMyBallots(objParam) {
         try {
             let aB=await this.dbBallot.async_getBallots({
@@ -305,9 +328,21 @@ class api_ballot extends apiBase {
         }
     }
 
+    getUniqueBallotKeys(objParam) {
+        const keyUser=cUsers.getUserFromDid(objParam.did);
+        const info = `ballot:${objParam.uid_ballot}:${objParam.published_at}`;
+        const hmac = crypto.createHmac('sha256', keyUser);
+        hmac.update(info);
+        const seed = hmac.digest();
+        const priv = seedBallot.slice(0, 32);
+        return {
+            private: priv,
+            public: ed25519.getPublicKey(priv)
+        };
+    }
+
     async async_publishBallot(objParam, objOpenClose) {
         try {
-            const now = new Date();
 
             // get this ballot
             let dataBallot = await this.async_findBallotForDesigner({
@@ -333,7 +368,54 @@ class api_ballot extends apiBase {
                 uid: dataBallot.data.uid
             }, objUpd);
 
-            return  {data: objUpdB}
+            // get it with all extra data
+            const objB = await this._async_findMyBallot({
+                uid: objParam.uid,
+                did: objParam.did
+            });
+
+            // now publish as DID
+            const ballotKeys=this.getUniqueBallotSeed({
+                did: objParam.did,
+                uid_ballot: objParam.uid,
+                published_at: objUpdB.published_at
+            })
+
+            // get questions anon data
+            let _aQ=[];
+            objB.aQuestionInFull.forEach(q => {
+                _aQ.push({
+                    title: q.title,
+                    content: q.rich_text.substring(0, 30)+(q.rich_text.length>30? "...": ""),
+                    aChoice: q.aChoice
+                })
+            });
+
+            // now create a DID with those keys, and set the services            
+            const pubBallot = await async_createAndPublishDidForBallot({
+                title: objB.title,
+                closingRegistration_at: objB.closingRegistration_at,
+                closingVote_at: objB.closingVote_at,
+                openingRegistration_at: objB.openingRegistration_at,
+                openingVote_at: objB.openingVote_at,
+                aQ: _aQ,
+                aReq: objB.aCreds
+            }) 
+            
+            // store longDID as ballot published ID
+            objUpdB=await this.dbBallot.async_updateBallot({
+                uid: dataBallot.data.uid
+            }, {
+                published_id: pubBallot.data.longDid
+            });
+
+            // get it with all extra data
+            objB = await this._async_findMyBallot({
+                uid: objParam.uid,
+                did: objParam.did
+            });
+
+            return  {data: objB}
         }
         catch(err) {
             throw err;

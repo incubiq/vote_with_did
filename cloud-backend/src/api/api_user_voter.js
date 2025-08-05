@@ -338,8 +338,7 @@ class api_user_voter extends apiViewer {
             catch(err) {
                 throw err;
             }
-        }
-
+    }
         
     async async_ensureProofOfOwnership(objParam) {
 
@@ -394,6 +393,50 @@ class api_user_voter extends apiViewer {
         }
     }
 
+/* 
+ *      VOTE
+ */
+    async async_vote(objParam) {
+        try {
+            // get ballot 
+            const dataBallot=await gConfig.app.apiBallot.async_findBallotForVoter({
+                uid: objParam.uid
+            });
+
+            // check what claims we have to provide
+            let bShowedEnoughProof = true;
+            let bHasVoted = false;
+            for (var i=0; i<dataBallot.data.aCreds.length; i++) {
+                const _claim = dataBallot.data.aCreds[i].type;
+                
+                // check if we can fulfill this claim
+                if(_claim && _claim!=="none") {
+
+                    bShowedEnoughProof=false;
+                }
+            }
+
+            if(!bShowedEnoughProof) {
+                //
+                throw {
+                    data: null,
+                    status: 401,
+                    statusText: "Not enough credentials to prove eligibility."
+                }
+            }
+
+            // now vote 
+            bHasVoted=true;
+
+            return {data: {
+                hasShownEnoughProof: bShowedEnoughProof,
+                hasVoted: bHasVoted
+            }}
+        }
+        catch(err) {
+            throw err;
+        }
+    }
 /* 
  *      BALLOTS
  */

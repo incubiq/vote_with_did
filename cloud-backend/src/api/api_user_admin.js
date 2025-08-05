@@ -1,6 +1,4 @@
 const jwtDecode = require('jwt-decode');
-const crypto = require('crypto');
-const {ed25519} = require('@noble/curves/ed25519');
 
 const apiDesigner = require('./api_user_designer');
 const utilServices = require('../utils/util_services');
@@ -94,46 +92,16 @@ class api_user_admin extends apiDesigner {
         }
     }
     
-    getUniqueBallotKeys(objParam) {
-        const keyUser=cUsers.getUser(objParam.username);
-        const info = `ballot:${objParam.uid_ballot}:${objParam.published_at}`;
-        const hmac = crypto.createHmac('sha256', keyUser);
-        hmac.update(info);
-        const seed = hmac.digest();
-        const priv = seedBallot.slice(0, 32);
-        return {
-            private: priv,
-            public: ed25519.getPublicKey(priv)
-        };
-    }
-
     // an admin publishes his ballot
     async async_publishBallot(objFind, objUpd) {
         try {
-            const keyUser=cUsers.getUser(objFind.username);
 
             const dataPublished=await gConfig.app.apiBallot.async_publishBallot({
                 uid: objFind.uid,
                 did: objFind.did
             }, objUpd);
 
-            const ballotKeys=this.getUniqueBallotSeed({
-                username: objFind.username,
-                uid_ballot: objFind.uid,
-                published_at: dataPublished.data.published_at
-            })
-
-            // now create a DID with those keys, and set the services
-            const pubBallot = await async_createAndPublishDidForBallot({
-                title: dataPublished.data.title,
-                closingRegistration_at: dataPublished.data.closingRegistration_at,
-                closingVote_at: dataPublished.data.closingVote_at,
-                openingRegistration_at: dataPublished.data.openingRegistration_at,
-                openingVote_at: dataPublished.data.openingVote_at,
-                aQ: [],
-                aReq: dataPublished.data.aCreds
-            }) 
-
+            return dataPublished;
 
         }
         catch(err) {

@@ -71,6 +71,14 @@ const getUser = (_username) =>  {
     return aUser[iUser];
 }
 
+const getUserFromDid = (_did) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.did===_did});
+    if(iUser==-1) {
+        return null;
+    }
+    return getUser(aUser[iUser].username);
+}
+
 const getUserFromKey = (_key) =>  {
     const iUser = aUser.findIndex(function (x) {return x.key===_key});
     if(iUser==-1) {
@@ -91,6 +99,7 @@ module.exports = {
     aUser,
     addUser,
     getUser,
+    getUserFromDid,
     getUserFromKey,
     checkUser,
     addDidToUser,

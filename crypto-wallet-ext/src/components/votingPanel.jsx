@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 
+import {  srv_postVote } from '../utils/rpc_ballot.js';
+
 import styles from '../styles/Base.module.css';
 import stylesDialog from '../styles/Dialogs.module.css';
 import stylesVoting from '../styles/Voting.module.css';
@@ -41,11 +43,17 @@ const VotingPanel = (props) => {
 
   const async_vote = async ( )=> {
     // vote on chain
+    srv_postVote(props.ballot.uid, [], [], null)
+    .then((dataVoted) => {
+      if(!dataVoted.data) {throw dataVoted}
+      toast.success("Your vote was successfully and anonymously cast");
+      props.onHasVoted(answers);
+      props.onClose();
+    })
+    .catch((err) => {
+      toast.error("Vote not cast ("+err.message+")");
+    })
     // TODO
-
-    toast.success("Your vote was successfully and anonymously cast");
-    props.onHasVoted(answers);
-    props.onClose();
   }
 
   const renderUpToThreeChoices = (_q) => {

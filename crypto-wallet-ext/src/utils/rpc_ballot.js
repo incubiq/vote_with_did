@@ -143,3 +143,15 @@ export const srv_unlinkQuestion= async(objParam, _token) => {
   return srv_unlinkRoute(API_PRIVATEROUTE+'designer/ballot/'+objParam.uid_ballot+"/question/"+objParam.uid_question, {    
   }, _token);
 }
+
+/*
+ *    VOTE
+ */
+
+// Vote on a ballot
+export const srv_postVote= async(_uid, aProof, aVote, _token) => {
+  return srv_postRoute(API_PRIVATEROUTE+'voter/ballot/'+_uid, {
+    aProof: aProof,
+    aVote: aVote
+  }, _token);
+}
