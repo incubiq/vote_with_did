@@ -68,7 +68,7 @@ export const srv_publishBallot= async(objParam, _token) => {
     closingVote_at: objParam.closingVote_at,
     openingRegistration_at: objParam.openingRegistration_at,
     closingRegistration_at: objParam.closingRegistration_at,
-    requirement: objParam.requirement? requirement: null,
+    requirement: objParam.requirement? objParam.requirement: null,
     extra: objParam.extra? JSON.stringify(objParam.extra): JSON.stringify([])
   }, _token);
 }
@@ -147,6 +147,13 @@ export const srv_unlinkQuestion= async(objParam, _token) => {
 /*
  *    VOTE
  */
+
+// can user vote (requirements met)?
+export const srv_canVote= async(_uid, aProof, _token) => {
+  return srv_getRoute(API_PRIVATEROUTE+'voter/ballot/'+_uid+"/canvote", {
+    aProof: aProof,
+  }, _token);
+}
 
 // Vote on a ballot
 export const srv_postVote= async(_uid, aProof, aVote, _token) => {

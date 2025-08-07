@@ -68,7 +68,6 @@ router.patch("/ballot/:uid/publish", function(req, res, next) {
     canPublishBallot: req.user.canPublishBallot? req.user.canPublishBallot: false,
     uid: req.params.uid? parseInt(req.params.uid) : null,
     did: req.user.did? req.user.did: null,
-    username: req.user.username? req.user.username: null
   }, {    
     openingRegistration_at: openingRegistration_at,
     closingRegistration_at: closingRegistration_at,

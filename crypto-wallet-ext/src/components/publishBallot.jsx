@@ -63,7 +63,7 @@ const DialogPublishBallot = (props) => {
 				if(_data.data==null) {
 					throw _data;
 				}
-				toast.success("Ballot "+currentBallot.name+" is now published");
+				toast.success("Ballot "+props.ballot.name+" is now published");
 				props.onClose();
 			})
 			.catch(err => {

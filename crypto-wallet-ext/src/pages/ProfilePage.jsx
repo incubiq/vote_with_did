@@ -6,7 +6,6 @@ import { useWallet } from '../state/WalletContext';
 import BottomNav from '../components/BottomNav';
 import DIDPanel from '../components/DIDs';
 import PropValControl from '../components/propvalControl';
-import { srv_postAccessRight } from '../utils/rpc_identity';
 import { storage } from '../utils/storage';
 
 import styles from '../styles/Base.module.css';

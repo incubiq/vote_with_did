@@ -95,7 +95,13 @@ class api_user_admin extends apiDesigner {
     // an admin publishes his ballot
     async async_publishBallot(objFind, objUpd) {
         try {
-
+            if(objFind.canPublishBallot!==true) {
+                throw {
+                    data: null,
+                    status: 403,
+                    statusText: "Insufficient credentials to publish this ballot"
+                }
+            }
             const dataPublished=await gConfig.app.apiBallot.async_publishBallot({
                 uid: objFind.uid,
                 did: objFind.did

@@ -4,6 +4,7 @@
  */
 
 const srvCardano = require("./util_cardano");
+const isEqual = require ("lodash/isEqual");
 const srvIdentusUtils = require("./util_identus_utils");
 const crypto = require('crypto');
 const HASH_ALGORITHM = "sha256"; // NOTE: must match the algorithm in api auth2admin
@@ -89,6 +90,42 @@ const async_findOrCreateIdentityWallet = async function (objParam){
     }
 }
 
+const async_findOrCreateEntity = async function (objParam) {
+    try {
+        // does the entity exist?
+        try {
+            if(objParam.id_entity==null) {throw null}
+            let responseE = await srvIdentusUtils.async_simpleGet("iam/entities/"+objParam.id_entity, null);
+            if(responseE.data.id) {
+                return {
+                    data: responseE.data
+                }
+            }
+            else {throw null}       // id was set by default creation, first call, wallet does not exist yet
+        }
+        catch(err)  {
+            // create entity
+            const dataE = await srvIdentusUtils.async_simplePost("iam/entities/", null, {
+                id: objParam.id_entity,               // id of the entity (UUID)
+                name: objParam.name + " ("+objParam.role+")",
+                walletId: objParam.id_wallet
+            });
+
+            // register auth key
+            await srvIdentusUtils.async_simplePost("iam/apikey-authentication/", null, {
+                entityId: dataE.data.id,
+                apiKey: objParam.key,
+            });
+
+            return dataE;
+        }
+    
+    }    
+    catch(err)  {
+        throw err;
+    }
+}
+
 const _generateUUIDFromSeed = function(_seed) {
     // Hash the seed using SHA-256
     const hash = crypto.createHash('sha256').update(_seed).digest('hex');
@@ -115,16 +152,16 @@ const getIdentusIdsFromSeed = function (_seed) {
 
 const async_createEntityWithAuthForRole = async function (objParam){
     try {
-        // get Cardano wallet keys...
-        let objKeys=await srvCardano.getWalletDetails({
-            mnemonic: objParam.mnemonic
-        });
-        
+        // get Cardano wallet keys... 
+        const objKeys=await srvCardano.getWalletDetails({
+            mnemonic: objParam.mnemonic? objParam.mnemonic : null,      // will use either this one 
+            seed: objParam.seed? objParam.seed : null                   // or this one (if no mnemonic)
+        });  
         const objIDs=getIdentusIdsFromSeed(objKeys.data.seed);
-
+        
         // create Identity wallet  / or find existing one
         let responseW = await async_findOrCreateIdentityWallet({
-            id_wallet: objParam.id_wallet? objParam.id_wallet: objIDs.id_wallet,            // optional (to seach if exist, otherwise we create)
+            id_wallet: objIDs.id_wallet,            // optional (to seach if exist, otherwise we create)
             seed: objKeys.data.seed,
             name: objParam.name
         }, {
@@ -132,21 +169,19 @@ const async_createEntityWithAuthForRole = async function (objParam){
         });
         
         // we have a wallet (new or old), now create entity for the role 
-        let responseE = await srvIdentusUtils.async_simplePost("iam/entities/", null, {
-            id: objIDs.id_entity,               // id of the entity (UUID)
-            name: objParam.name + " ("+objParam.role+")",
-            walletId: responseW.data.id
-        });
-
-        // register auth key
-        let responseK = await srvIdentusUtils.async_simplePost("iam/apikey-authentication/", null, {
-            entityId: responseE.data.id,
-            apiKey: objIDs.key,
-        });
+        let responseE = await async_findOrCreateEntity({
+            id_entity: objIDs.id_entity,
+            id_wallet: responseW.data.id,
+            name: objParam.name,
+            role: objParam.role,
+            key: objIDs.key,
+        })
 
         // we create a did for Auth
         let dataDID = await async_createAndPublishDid({
-            purpose: DID_PURPOSE_AUTH,
+            canAuth: objParam.canAuth==true,
+            canIssue: objParam.canIssue==true,
+            services: objParam.services? objParam.services: [],
             key: objIDs.key
         })
 
@@ -174,15 +209,18 @@ const async_createEntityWithAuth = async function (objParam){
     try {
         // make a random double long seed for this entity
         let mnemonic=objParam.mnemonic;
-        if(!mnemonic) {
+        if(!mnemonic && !objParam.seed) {
             mnemonic = (await srvCardano.generateSeedPhrase()).data.mnemonic;
         }
 
         let dataRet = await async_createEntityWithAuthForRole({
-            mnemonic: mnemonic,                 // case new wallet
-            id_wallet: objParam.id_wallet,      // case existing wallet
+            mnemonic: mnemonic? mnemonic: null,                 // case new wallet
+            seed: objParam.seed? objParam.seed: null,                 // case new wallet
             name: objParam.name,
-            role: objParam.role
+            role: objParam.role,
+            canAuth: true,
+            canIssue: objParam.canIssue==true,
+            services: objParam.services? objParam.services: []
         })
         
         return dataRet;    
@@ -195,24 +233,102 @@ const async_createEntityWithAuth = async function (objParam){
 // note : objparam.id (a short string...) is required if publishing other than the first authentication related DID
 const async_createAndPublishDid = async function (objParam){
     try {
+
+        // check similarity of service (but remove id (which changes after Doc creation/publication))
+        const _isSimilar = (_a, _b) => {
+            if (_a.length!=_b.length) {return false}
+            if (_a.length==0 && _b.length==0) {return true}
+            const  _dupA= JSON.parse(JSON.stringify(_a));
+            const  _dupB= JSON.parse(JSON.stringify(_b));
+            for (var i=0; i<_dupA.length; i++) {
+                delete _dupA[i].id;
+                delete _dupB[i].id;
+                if(JSON.stringify(_dupA[i])!=JSON.stringify(_dupB[i])) {return false}
+            }
+            return true;
+        }
+
+        // did exist??
+        let responseDid = await srvIdentusUtils.async_simpleGet("did-registrar/dids/", objParam.key);
+        if(responseDid.data && responseDid.data.length>0) {
+            // loop all DIDs and checkl if one matches our requested one
+            for (var i=0; i<responseDid.data.length ; i++) {
+                const did=responseDid.data[i].did;
+                const longFormDid=responseDid.data[i].longFormDid;
+                const status=responseDid.data[i].status;
+
+                switch(status) {
+                    case "PUBLISHED":
+                        // get detasils to check if it s this one
+                        let thisDid = await srvIdentusUtils.async_simpleGet("dids/"+did, objParam.key);
+                        if(thisDid?.data?.didDocument?.service) {
+                            // we have a proper did, but is it this one (does it include our services)?
+                            if(_isSimilar(thisDid.data.didDocument.service, objParam.services)) {
+                                return {
+                                    data: {
+                                        did: did,
+                                        longDid: null,
+                                        wasPublished: true
+                                    }
+                                }
+                            }
+                        }                    
+                        break;
+
+                    case "CREATED": 
+                        // get detasils to check if it s this one
+                        let thisLongDid = await srvIdentusUtils.async_simpleGet("dids/"+longFormDid, objParam.key);
+                        if(thisLongDid?.data?.didDocument?.service) {
+                            // we have a proper did, but is it this one (does it include our services)?
+                            if(_isSimilar(thisLongDid.data.didDocument.service, objParam.services)) {
+                                // publish it but do not await 
+                                srvIdentusUtils.async_simplePost("did-registrar/dids/"+longFormDid+"/publications", objParam.key, {})
+                                return {
+                                    data: {
+                                        did: null,
+                                        longDid: longFormDid,
+                                        wasPublished: true
+                                    }
+                                }
+                            }
+                        }                    
+                        break;
+
+                    default: 
+                        break;
+                }
+            }
+        }
+
+        // keys
+        let aKey=[{
+                "id": objParam.id? objParam.id : "key-auth",          // this field has severe undocumented length restriction 
+                "purpose": "authentication" 
+        }];
+        if(objParam.canIssue) {
+            aKey.push({
+                "id": "key-issue",          // this field has severe undocumented length restriction 
+                "purpose": "assertionMethod" 
+            })
+        }
+
+        // services 
+
         // create did
         let doc={"documentTemplate": {
-            "publicKeys": [
-              {
-                "id": objParam.id? objParam.id : "key-1",          // this field has severe undocumented length restriction 
-                "purpose": objParam.purpose === DID_PURPOSE_AUTH? "authentication" : objParam.purpose === DID_PURPOSE_ISSUANCE? "assertionMethod" : "unknown"
-              }
-            ],
-            "services": []
+            "publicKeys": aKey,
+            "services": objParam.services? objParam.services: []
           }
         };
-        let responseDid = await srvIdentusUtils.async_simplePost("did-registrar/dids/", objParam.key, doc)
+
+        responseDid = await srvIdentusUtils.async_simplePost("did-registrar/dids/", objParam.key, doc)
 
         // now publish
         let responsePub = await srvIdentusUtils.async_simplePost("did-registrar/dids/"+responseDid.data.longFormDid+"/publications", objParam.key, {})
 
         return {
             data: {
+                did: null,
                 longDid: responseDid.data.longFormDid,
                 wasPublished: true
             }
@@ -252,64 +368,6 @@ const async_updateAndPublishDid = async function (objFind, objUpdate) {
     }
 }
 
-const async_createAndPublishDidForBallot = async function (objBallot){
-    try {
-        // create did
-        let doc={"documentTemplate": {
-            "publicKeys": [
-              {
-                "id": "ballot-key", 
-                "purpose":  ["authentication", "assertionMethod"],
-              }
-            ],
-            "services": [{
-                id: "ballot-metadata",
-                type: "overview", 
-                serviceEndpoint: {
-                    uri: gConfig.origin+"ballot/"+objBallot.uid,
-                    ballotInfo: {
-                        title: objBallot.title,
-                        closingRegistration_at: objBallot.closingRegistration_at,
-                        closingVote_at: objBallot.closingVote_at,
-                        openingRegistration_at:objBallot.openingRegistration_at,
-                        openingVote_at: objBallot.openingVote_at
-                    }
-                }
-            }, {
-                id: "ballot-questions",
-                type: "questions", 
-                serviceEndpoint: {
-                    uri: gConfig.origin+"ballot/"+objBallot.uid,
-                    aQ: objBallot.aQ
-                }
-            }, {
-                id: "ballot-requirements",
-                type: "requirements", 
-                serviceEndpoint: {
-                    uri: gConfig.origin+"ballot/"+objBallot.uid,
-                    aReq: objBallot.aReq
-                }
-            }]
-          }
-        };
-        let responseDid = await srvIdentusUtils.async_simplePost("did-registrar/dids/", objParam.key, doc)
-
-        // now publish
-        let responsePub = await srvIdentusUtils.async_simplePost("did-registrar/dids/"+responseDid.data.longFormDid+"/publications", objParam.key, {})
-
-        return {
-            data: {
-                longDid: responseDid.data.longFormDid,
-                wasPublished: true
-            }
-        }
-    }
-    catch(err)  {
-        throw err;
-    }
-}
-
-
 const async_getDidForEntity = async function (objParam){
     try {
         if(objParam.did) {
@@ -343,5 +401,5 @@ module.exports = {
     async_createAndPublishDid,
     async_updateAndPublishDid,
     async_getDidForEntity,
-    async_deleteEntityById
+    async_deleteEntityById,
 }

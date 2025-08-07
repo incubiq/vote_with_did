@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const {ed25519} = require('@noble/curves/ed25519');
 const fs = require("fs");
 const path = require('path');
 const apiBase = require('./base_publicApi_base');
@@ -7,7 +6,7 @@ const utilServices = require('../utils/util_services');
 const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
 const cClaims = require('../const/const_claims');
-const {async_createAndPublishDidForBallot} = require('../utils/util_identus_identity');
+const {getIdentusIdsFromSeed, async_createEntityWithAuth, async_createAndPublishDidForBallot} = require('../utils/util_identus_identity');
 
 /*   
  *      Ballot APIs
@@ -330,15 +329,13 @@ class api_ballot extends apiBase {
 
     getUniqueBallotKeys(objParam) {
         const keyUser=cUsers.getUserFromDid(objParam.did);
-        const info = `ballot:${objParam.uid_ballot}:${objParam.published_at}`;
-        const hmac = crypto.createHmac('sha256', keyUser);
+        const info = `ballot:${objParam.uid_ballot}:${objParam.created_at}`;
+        const hmac = crypto.createHmac('sha512', keyUser.key);
         hmac.update(info);
-        const seed = hmac.digest();
-        const priv = seedBallot.slice(0, 32);
-        return {
-            private: priv,
-            public: ed25519.getPublicKey(priv)
-        };
+        const seed = hmac.digest('hex');
+        const _objId = getIdentusIdsFromSeed(seed);
+        _objId.seed = seed
+        return _objId;
     }
 
     async async_publishBallot(objParam, objOpenClose) {
@@ -350,40 +347,24 @@ class api_ballot extends apiBase {
                 did: objParam.did
             });
 
-            let objUpd={
-                published_at: new Date(new Date().toUTCString()),
-                published_id: 1,         // todo
-            };
-            if(objOpenClose.openingRegistration_at) {objUpd.openingRegistration_at=objOpenClose.openingRegistration_at}
-            if(objOpenClose.closingRegistration_at) {objUpd.closingRegistration_at=objOpenClose.closingRegistration_at}
-            if(objOpenClose.openingVote_at) {objUpd.openingVote_at=objOpenClose.openingVote_at}
-            if(objOpenClose.closingVote_at) {objUpd.closingVote_at=objOpenClose.closingVote_at}
-            if(objOpenClose.requirement) {
-                let aExtra = objOpenClose.extra? objOpenClose.extra : [];
-                objUpd.aCreds={
-                    type: objOpenClose.requirement,
-                    extra: aExtra 
-                }}
-            let objUpdB=await this.dbBallot.async_updateBallot({
-                uid: dataBallot.data.uid
-            }, objUpd);
-
-            // get it with all extra data
-            const objB = await this._async_findMyBallot({
-                uid: objParam.uid,
-                did: objParam.did
-            });
-
-            // now publish as DID
-            const ballotKeys=this.getUniqueBallotSeed({
+            // get ballot Entity + key
+            const ballotKeys=this.getUniqueBallotKeys({
                 did: objParam.did,
                 uid_ballot: objParam.uid,
-                published_at: objUpdB.published_at
-            })
+                created_at: dataBallot.data.created_at
+            });
+
+            let objNewExtra = {};
+            if(objOpenClose.requirement) {
+                let aExtra = objOpenClose.extra? objOpenClose.extra : [];
+                for (var e=0; e<aExtra.length; e++) {
+                    objNewExtra[aExtra[e].property]=aExtra[e].value;
+                }
+            }
 
             // get questions anon data
             let _aQ=[];
-            objB.aQuestionInFull.forEach(q => {
+            dataBallot.data.aQuestionInFull.forEach(q => {
                 _aQ.push({
                     title: q.title,
                     content: q.rich_text.substring(0, 30)+(q.rich_text.length>30? "...": ""),
@@ -391,26 +372,69 @@ class api_ballot extends apiBase {
                 })
             });
 
-            // now create a DID with those keys, and set the services            
-            const pubBallot = await async_createAndPublishDidForBallot({
-                title: objB.title,
-                closingRegistration_at: objB.closingRegistration_at,
-                closingVote_at: objB.closingVote_at,
-                openingRegistration_at: objB.openingRegistration_at,
-                openingVote_at: objB.openingVote_at,
-                aQ: _aQ,
-                aReq: objB.aCreds
-            }) 
-            
-            // store longDID as ballot published ID
-            objUpdB=await this.dbBallot.async_updateBallot({
-                uid: dataBallot.data.uid
+            const services=[/*{
+                id: "ballot-metadata",
+                type: "CredentialService", 
+                serviceEndpoint: {
+                    origins: ["https://identity.votewithdid.com/"+"ballot/metadata/"+dataBallot.data.uid],
+                    name: dataBallot.data.name,
+                }
             }, {
-                published_id: pubBallot.data.longDid
-            });
+                id: "ballot-registration",
+                type: "CredentialService", 
+                serviceEndpoint: {
+                    origins: ["https://identity.votewithdid.com/"+"ballot/metadata/"+dataBallot.data.uid],
+                    opening_at:objOpenClose.openingRegistration_at,
+                    closing_at: objOpenClose.closingRegistration_at,
+                }
+            }, {
+                id: "ballot-vote",
+                type: "CredentialService", 
+                serviceEndpoint: {
+                    origins: ["https://identity.votewithdid.com/"+"ballot/metadata/"+dataBallot.data.uid],
+                    opening_at: objOpenClose.openingVote_at,
+                    closing_at: objOpenClose.closingVote_at,
+                }
+            }, */{
+                id: "ballot-requirement",
+                type: "CredentialService", 
+                serviceEndpoint: {
+                    origins: ["https://identity.votewithdid.com/"+"ballot/metadata/"+dataBallot.data.uid],
+                    type: objOpenClose.requirement,
+                    uid: objParam.uid
+                }
+            }];
 
+            // now create a DID with those keys, and set the services            
+            const dataEntity = await async_createEntityWithAuth({
+                id_wallet: ballotKeys.id_wallet,
+                seed: ballotKeys.seed,
+                name: dataBallot.data.name,
+                role: "ballot",
+                canIssue: true,
+                services: services
+            });
+            
+            // upd ballot (publish it)
+            const now = new Date(new Date().toUTCString());
+            let objUpd={
+                published_at: now,
+                published_id: dataEntity.data.didAuth? dataEntity.data.didAuth: dataEntity.data.longDid,        // store Did or longDID as ballot published ID
+                openingRegistration_at: objOpenClose.openingRegistration_at? objOpenClose.openingRegistration_at : null,
+                closingRegistration_at: objOpenClose.closingRegistration_at? objOpenClose.closingRegistration_at : null,
+                openingVote_at: objOpenClose.openingVote_at? objOpenClose.openingVote_at : null,
+                closingVote_at: objOpenClose.closingVote_at? objOpenClose.closingVote_at : null,
+                aCreds:{
+                    type: objOpenClose.requirement,
+                    extra: objNewExtra 
+                },
+            };
+            await this.dbBallot.async_updateBallot({
+                uid: dataBallot.data.uid
+            }, objUpd);
+            
             // get it with all extra data
-            objB = await this._async_findMyBallot({
+            const objB = await this._async_findMyBallot({
                 uid: objParam.uid,
                 did: objParam.did
             });

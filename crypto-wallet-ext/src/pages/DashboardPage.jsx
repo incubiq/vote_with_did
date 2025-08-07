@@ -1,4 +1,5 @@
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../state/WalletContext';
 import { useBallot } from '../hooks/useBallot';
@@ -10,6 +11,7 @@ import styles from '../styles/Base.module.css';
 
 const WalletDashboard = () => {
   const { state, actions } = useWallet();
+  const [role, setRole] = useState(state.authorization);
   const [availableBallots] = useState([]); // Placeholder for future ballot functionality
   const initializationRef = useRef(false);
   const navigate = useNavigate();
@@ -72,6 +74,13 @@ const WalletDashboard = () => {
     }
   }, [connectWallet]);
 
+  useEffect(() => {
+    if(role != state.authorization) {
+      setRole(state.authorization);
+      toast.success("Your role was changed to "+state.authorization);
+    }
+  }, [state.authorization]);
+    
   // Initialize user session and load data
   React.useEffect(() => {
     if (state.status !== 'ready' || !state.wallet) {
@@ -140,6 +149,8 @@ const WalletDashboard = () => {
       )}
 
       <BottomNav />
+      <ToastContainer />
+      
     </div>
   );
 };

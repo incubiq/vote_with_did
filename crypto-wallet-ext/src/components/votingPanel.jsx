@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 
-import {  srv_postVote } from '../utils/rpc_ballot.js';
+import {  srv_postVote, srv_canVote } from '../utils/rpc_ballot.js';
 
 import styles from '../styles/Base.module.css';
 import stylesDialog from '../styles/Dialogs.module.css';
@@ -11,6 +11,8 @@ import stylesVoting from '../styles/Voting.module.css';
 const VotingPanel = (props) => {
   const [question, setQuestion] = useState(props.ballot?.aQuestionInFull?.length>0? props.ballot?.aQuestionInFull[0]: null);
   const [iQuestion, setIQuestion] = useState(0);
+  const [canVote, setCanVote] = useState(false);
+  const [showRequirement, setShowRequirement] = useState(false);
   const [answers, setAnswers] = useState([]);
 
   useEffect(() => {
@@ -21,12 +23,20 @@ const VotingPanel = (props) => {
       _a[iQuestion]=props.ballot?.aQuestionInFull[iQuestion].aChoice[0].value;
       setAnswers(_a);
     }
+    if(props.ballot) {
+      srv_canVote(props.ballot.uid, [])
+      .then(dataCanVote => {
+        setCanVote(dataCanVote.data.canVote);
+      })
+      .catch((err) => {})
+    }
   }, [iQuestion, props.ballot]);
 
   // start at question 0 
   useEffect(() => {
     if(props.isVisible) {
       setIQuestion(0);
+      setShowRequirement(true);
     }
   }, [props.isVisible]);
 
@@ -156,6 +166,32 @@ const VotingPanel = (props) => {
     )
   }
 
+  const renderVotingRequirements = ( ) => {
+    return (
+      <div className={stylesVoting.dialog_ballot}>
+          <div className={stylesDialog.dialog_header}>
+              <h3 className={stylesDialog.dialog_title}>Requirements</h3>
+              <div
+                onClick={props.onClose}
+                className={stylesDialog.close_button}
+              >
+                ×
+              </div>
+          </div>
+          {canVote? 
+            <div>You are eligible to vote on this ballot</div>
+          : 
+          <>
+            <div>You do not fulfill requirements for voting eligibility</div>
+            {props.ballot.aCreds.map((aCred, iCred) => (
+              <div key={iCred}> {aCred["type"]} </div>
+            ))}
+          </>
+          }
+      </div>
+    )    
+  }
+
   return (
     <div >
       <div className={`${stylesDialog.dialog_overlay} ${props.isVisible? "" : styles.hidden} `}>
@@ -163,7 +199,8 @@ const VotingPanel = (props) => {
             className={stylesDialog.dialog_content}
           >
   
-          {props.ballot? renderVotingPanel(props?.ballot?.aQuestionInFull[iQuestion]): null}
+          {props.ballot && !showRequirement? renderVotingPanel(props?.ballot?.aQuestionInFull[iQuestion]): ""}
+          {showRequirement? renderVotingRequirements(): ""}
           
           <div className="">
             <button
@@ -171,8 +208,11 @@ const VotingPanel = (props) => {
                 if(iQuestion>0) {
                   setIQuestion(iQuestion-1)
                 }
+                else {
+                    setShowRequirement(true);
+                }
               }}
-              className={`${stylesDialog.blue_btn} ${stylesDialog.left} ${iQuestion==0? styles.disabled: ""}`}
+              className={`${stylesDialog.blue_btn} ${stylesDialog.left} ${showRequirement? styles.hidden: ""}`}
             >
               &lt;&lt; Prev
             </button>
@@ -181,17 +221,31 @@ const VotingPanel = (props) => {
             <button
               onClick={( )=> {
                 if(iQuestion<props?.ballot?.aQuestionInFull.length-1) {
-                  setIQuestion(iQuestion+1)
+                  if(showRequirement) {
+                    setShowRequirement(false);
+                  }
+                  else {  
+                    setIQuestion(iQuestion+1)                
+                  }
                 }
               }}
-              className={`${stylesDialog.blue_btn} ${stylesDialog.right} ${iQuestion==props?.ballot?.aQuestionInFull.length-1? styles.hidden: ""}`}
+              className={`${stylesDialog.blue_btn} ${stylesDialog.right} ${iQuestion==props?.ballot?.aQuestionInFull.length-1 || !canVote? styles.hidden: ""}`}
             >
               Next &gt; &gt; 
             </button>
 
             <button
+              onClick={( )=> {
+                props.onClose()
+              }}
+              className={`${stylesDialog.red_btn} ${stylesDialog.right} ${canVote? styles.hidden: ""}`}
+            >
+              Close 
+            </button>
+
+            <button
               onClick={(_data) => async_vote(_data)}
-              className={`${stylesDialog.green_btn} ${stylesDialog.right} ${iQuestion!=props?.ballot?.aQuestionInFull.length-1? styles.hidden: ""} `}
+              className={`${stylesDialog.green_btn} ${stylesDialog.right} ${iQuestion==props?.ballot?.aQuestionInFull.length-1? "": styles.hidden} `}
             >
               Cast Vote
             </button>

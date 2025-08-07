@@ -6,6 +6,7 @@ const utilsProof = require('../utils/util_identus_proof');
 const utilsIdentity = require('../utils/util_identus_identity');
 const utilsConnection = require('../utils/util_identus_connections');
 const utilsBlockfrost = require('../utils/util_blockfrost');
+const srvIdentusProof = require("../utils/util_identus_proof");
 const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
 const cClaims = require('../const/const_claims');
@@ -247,8 +248,8 @@ class api_user_voter extends apiViewer {
 
                 if(!dataConnect.data || dataConnect.data.length==0) {
                     dataConnect = await utilsConnection.async_createCustodialConnection({
-                        keyPeer1: gConfig.vwd.key,
-                        namePeer1: "VoteWithDID (admin)",
+                        keyPeer1: objParam.key_issuer,
+                        namePeer1: objParam.name_issuer,
                         keyPeer2: objUser.key,
                         namePeer2: objUser.username
                     })
@@ -268,7 +269,7 @@ class api_user_voter extends apiViewer {
 
                 // get the connection from ADMIN point of view (via THID)
                 dataConnect = await utilsConnection.async_getAllConnectionsForEntity({
-                    key: gConfig.vwd.key,
+                    key: objParam.key_issuer,
                     thid: connection.thid
                 });
 
@@ -302,9 +303,9 @@ class api_user_voter extends apiViewer {
                 if(!vc) {
                     const dataCreds = await utilsCreds.async_createCustodialCredential({
                         connection:  connection.connectionId,    
-                        keyPeer1: gConfig.vwd.key,
+                        keyPeer1: objParam.key_issuer,
                         keyPeer2: objUser.key,
-                        didPeer1:  gConfig.vwd.did,          // published short DID of issuer
+                        didPeer1:  objParam.did_issuer,          // published short DID of issuer
                         didPeer2:  objUser.did,              // published short DID of holder
                         validity:  gConfig.identus.validity,           // 30d by default
                         claims: objClaim,             
@@ -317,7 +318,7 @@ class api_user_voter extends apiViewer {
                 // now we generate a proof for this claim
                 const dataProof = await utilsProof.async_createCustodialProof({
                     noDuplicate: true,
-                    keyPeer1: gConfig.vwd.key,
+                    keyPeer1: objParam.key_issuer,
                     keyPeer2: objUser.key,
                     connection: connection.connectionId,
                     claim_type: objClaim.claim_type,
@@ -341,26 +342,43 @@ class api_user_voter extends apiViewer {
     }
         
     async async_ensureProofOfOwnership(objParam) {
+        // issuer is VwD
+        if(!objParam.key_issuer) {objParam.key_issuer=gConfig.vwd.key;}
+        if(!objParam.did_issuer) {objParam.did_issuer=gConfig.vwd.did;}
+        if(!objParam.name_issuer) {objParam.name_issuer="VoteWithDID (admin)";}
 
-        return this.async_ensureProof(objParam, {
+        let objClaim = {
             address: objParam.address,
             chain: objParam.chain,
             networkId: objParam.networkId,
             claim_type: cClaims.CLAIM_ADDRESS_OWNERSHIP.value,
-        })        
+        }
+        if(objParam.delegatedAuthority) {
+            objClaim.delegatedAuthority=objParam.delegatedAuthority;
+        }
+        return this.async_ensureProof(objParam, objClaim);
     }
 
     async async_issueProofOfFunds (objParam) {
         try {
+            // issuer is VwD
+            if(!objParam.key_issuer) {objParam.key_issuer=gConfig.vwd.key;}
+            if(!objParam.did_issuer) {objParam.did_issuer=gConfig.vwd.did;}
+            if(!objParam.name_issuer) {objParam.name_issuer="VoteWithDID (admin)";}
+
             const objAssets = await utilsBlockfrost.async_getWalletAssetsFromAddress(objParam.address)
-            return this.async_ensureProof(objParam, {
+            let objClaim = {
                 address: objParam.address,
                 chain: objParam.chain,
                 networkId: objParam.networkId,
-                token: "ADA",
+                token: objParam.token? objParam.token: "ADA",
                 value: objAssets.adaAmount,
                 claim_type: cClaims.CLAIM_PROOF_OF_FUNDS.value,
-            }) 
+            }
+            if(objParam.delegatedAuthority) {
+                objClaim.delegatedAuthority=objParam.delegatedAuthority;
+            }
+            return this.async_ensureProof(objParam, objClaim); 
         }
         catch(err) {
             throw err;
@@ -369,6 +387,11 @@ class api_user_voter extends apiViewer {
 
     async async_issueProofOfMinimumBalance (objParam) {
         try {
+            // issuer is VwD
+            if(!objParam.key_issuer) {objParam.key_issuer=gConfig.vwd.key;}
+            if(!objParam.did_issuer) {objParam.did_issuer=gConfig.vwd.did;}
+            if(!objParam.name_issuer) {objParam.name_issuer="VoteWithDID (admin)";}
+
             const objAssets = await utilsBlockfrost.async_getWalletAssetsFromAddress(objParam.address)
             if(objAssets.adaAmount<objParam.requirement_minimum) {
                 throw ({
@@ -377,16 +400,20 @@ class api_user_voter extends apiViewer {
                     statusText: "Minimum balance requirement not met"
                 })
             }
-            return this.async_ensureProof(objParam, {
+            let objClaim = {
                 address: objParam.address,
                 chain: objParam.chain,
                 networkId: objParam.networkId,
-                token: "ADA",
+                token: objParam.token? objParam.token: "ADA",
                 minimum_requirement: objParam.requirement_minimum,
-                requested_by: objParam.did_ballot,
+                requested_by: objParam.did_issuer,
                 accepted: true,
                 claim_type: cClaims.CLAIM_PROOF_OF_MINIMUM_BALANCE.value,
-            })             
+            }
+            if(objParam.delegatedAuthority) {
+                objClaim.delegatedAuthority=objParam.delegatedAuthority;
+            }
+            return this.async_ensureProof(objParam, objClaim);
         }
         catch(err) {
             throw err;
@@ -394,9 +421,9 @@ class api_user_voter extends apiViewer {
     }
 
 /* 
- *      VOTE
+ *      VOTE (prep + vote)
  */
-    async async_vote(objParam) {
+    async async_issueCreds(objParam) {
         try {
             // get ballot 
             const dataBallot=await gConfig.app.apiBallot.async_findBallotForVoter({
@@ -404,8 +431,94 @@ class api_user_voter extends apiViewer {
             });
 
             // check what claims we have to provide
+            for (var i=0; i<dataBallot.data.aCreds.length; i++) {
+                const _claim = dataBallot.data.aCreds[i].type;
+                
+                const _chain = dataBallot.data.aCreds[i].extra.blockchain? dataBallot.data.aCreds[i].extra.blockchain: "cardano";
+                const  _networkId= dataBallot.data.aCreds[i].extra.blockchain? dataBallot.data.aCreds[i].extra.networdId: 1;
+                // check if we can fulfill this claim
+                let _aProof=[];
+                switch(_claim) {
+                    case null:
+                    case undefined:
+                    case cClaims.CLAIM_NONE:
+                        break;
+
+                    case cClaims.CLAIM_ADDRESS_OWNERSHIP.value:
+                        try {
+                            let dataProofOfFunds = await this.async_ensureProofOfOwnership({
+                                key_issuer: gConfig.vwd.key,            // no other choice, issued by super admin (delegation)
+                                did_issuer: gConfig.vwd.did,            // did of super admin 
+                                name_issuer: "Ballot - "+dataBallot.data.title,     // at least we can put name of ballot here
+                                address: objParam.address,
+                                chain: _chain,
+                                networkId: _networkId,
+                                delegatedAuthority: dataBallot.data.published_id
+                            })
+                            if(dataProofOfFunds.data) {
+                                _aProof.push(dataProofOfFunds.data);
+                            }
+                        }
+                        catch(err){}
+                        break;
+
+                    case cClaims.CLAIM_PROOF_OF_FUNDS.value:
+                        try {
+                            let dataProofOfFunds = await this.async_issueProofOfFunds({
+                                key_issuer: gConfig.vwd.key,            // no other choice, issued by super admin (delegation)
+                                did_issuer: gConfig.vwd.did,            // did of super admin 
+                                name_issuer: "Ballot - "+dataBallot.data.title,     // at least we can put name of ballot here
+                                address: objParam.address,
+                                chain: _chain,
+                                networkId: _networkId,
+                                delegatedAuthority: dataBallot.data.published_id
+                            })
+                            if(dataProofOfFunds.data) {
+                                _aProof.push(dataProofOfFunds.data);
+                            }
+                        }
+                        catch(err){}
+                        break;
+
+                    case cClaims.CLAIM_PROOF_OF_MINIMUM_BALANCE.value:
+                        const  _reqMin= dataBallot.data.aCreds[i].extra["minimum balance"]? dataBallot.data.aCreds[i].extra["minimum balance"]: 20;
+                        try {                        
+                            let dataProofOfMinB = await this.async_issueProofOfFunds({
+                                key_issuer: gConfig.vwd.key,            // no other choice, issued by super admin (delegation)
+                                did_issuer: gConfig.vwd.did,            // did of super admin 
+                                name_issuer: "Ballot - "+dataBallot.data.title,     // at least we can put name of ballot here
+                                address: objParam.address,
+                                chain: _chain,
+                                networkId: _networkId,
+                                requirement_minimum: _reqMin,
+                                delegatedAuthority: dataBallot.data.published_id
+                            })
+                            if(dataProofOfMinB.data) {
+                                _aProof.push(dataProofOfMinB.data);
+                            }
+                        }
+                        catch(err){}
+                        break;                                     
+                }
+
+                return {data: _aProof}
+            }
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_canVote(objParam) {
+        try {
+            // get ballot 
+            const dataBallot=await gConfig.app.apiBallot.async_findBallotForVoter({
+                uid: objParam.uid
+            });
+
+            // check what claims we have to provide
+            const objUser=cUsers.getUserFromDid(objParam.did);
             let bShowedEnoughProof = true;
-            let bHasVoted = false;
             for (var i=0; i<dataBallot.data.aCreds.length; i++) {
                 const _claim = dataBallot.data.aCreds[i].type;
                 
@@ -416,7 +529,36 @@ class api_user_voter extends apiViewer {
                 }
             }
 
-            if(!bShowedEnoughProof) {
+            // check creds
+                        // look if the proof was created before
+            const dataProofs= await utilsProof.async_getAllVCPresentationRequests({
+                key: objUser.key,
+                claim_type: objParam.claim_type,
+                status: utilsProof.STATUS_PROVER_PROOF_SENT
+            });
+
+            return {
+                data: {
+                    ballot: dataBallot.data,
+                    user: objParam.did,
+                    canVote: bShowedEnoughProof
+                }
+            }
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_vote(objParam) {
+        try {
+            // get ballot 
+            const dataCanVote=await this.async_canVote({
+                uid: objParam.uid,
+                did: objParam.did,
+            });
+
+            if(!dataCanVote.data.canVote) {
                 //
                 throw {
                     data: null,
@@ -437,6 +579,7 @@ class api_user_voter extends apiViewer {
             throw err;
         }
     }
+
 /* 
  *      BALLOTS
  */

@@ -104,6 +104,15 @@ router.get("/ballots", function(req, res, next) {
   });
 });
 
+// check if voter can vote on ballot (meet all requirements)
+router.get("/ballot/:uid/canvote", function(req, res, next) {
+  routeUtils.apiGet(req, res, gConfig.app.apiUserVoter.async_canVote.bind(gConfig.app.apiUserVoter), {
+    did: req.user.did? req.user.did: null,
+    uid: req.params.uid? parseInt(req.params.uid): null,
+    aProof: req.body.aProof? req.body.aProof: [],         // all VC Proofs the user has provided to validate the vote
+  });
+});
+
 // Cast a vote on a ballot    !!!! TODO - likely do this via DAPP (not cloud backend)
 router.post("/ballot/:uid", function(req, res, next) {
   routeUtils.apiPost(req, res, gConfig.app.apiUserVoter.async_vote.bind(gConfig.app.apiUserVoter), {

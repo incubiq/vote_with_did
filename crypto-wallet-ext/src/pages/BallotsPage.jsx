@@ -247,7 +247,8 @@ const BallotsPage = () => {
 					<p>No ballot in creation yet</p>
 				</div>
 				}
-				<a onClick={()=> setIsCreateDialogOpen(true)}>Create a new Ballot... </a>
+				<br />
+				<div className = {`${styles.button} `} onClick={()=> setIsCreateDialogOpen(true)}>Create a new Ballot... </div>
 			</>
 				:""}
 			</>

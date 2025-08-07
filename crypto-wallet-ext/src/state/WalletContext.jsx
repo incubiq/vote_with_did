@@ -274,7 +274,7 @@ export function WalletProvider({ children }) {
       srv_postAccessRight({
           authorization: authorization
       })
-        .then(_data => {
+        .then(_data => {            
             if(authorization=="admin") {
               srv_getBallots()
                 .then(_data => {

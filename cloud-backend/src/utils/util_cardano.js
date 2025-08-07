@@ -19,9 +19,8 @@ let harden = function (num) {
 
 // check here: https://forum.cardano.org/t/using-emurgo-cardano-serialization-lib-nodejs-for-creating-and-signing-transaction/88864 
 
-const getKeyDetails = (_mnemonic) => {
-    const seed = Bip39.mnemonicToSeedSync(_mnemonic, "")
-    const rootKey = CardanoWasm.Bip32PrivateKey.from_bip39_entropy(seed, Buffer.from (""));
+const getKeyDetailsFromSeed = (_seed) => {
+    const rootKey = CardanoWasm.Bip32PrivateKey.from_bip39_entropy(_seed, Buffer.from (""));
     const privateKey = rootKey.to_raw_key();
     const publicKey = rootKey.to_public().to_raw_key();
     const accountKey = rootKey
@@ -38,12 +37,17 @@ const getKeyDetails = (_mnemonic) => {
         .to_public();
 
     return { 
-        seed: seed,
+        seed: _seed,
         privateKey: privateKey, 
         publicKey: publicKey, 
         utxoPubKey: utxoPubKey, 
         stakeKey: stakeKey 
     }
+}
+
+const getKeyDetails = (_mnemonic) => {
+    const seed = Bip39.mnemonicToSeedSync(_mnemonic, "");
+    return getKeyDetailsFromSeed(seed);
 }
 
 const getBaseAddress = (objKey) => {
@@ -78,7 +82,7 @@ const generateSeedPhrase = async function (){
 
 const getWalletDetails = async function (objParam){
     try {
-        if(!objParam.mnemonic) {
+        if(!objParam.mnemonic && !objParam.seed) {
             throw {
                 data:null,
                 status: 400,
@@ -86,7 +90,13 @@ const getWalletDetails = async function (objParam){
             }
         }
 
-        let objKey = getKeyDetails(objParam.mnemonic);
+        let objKey=null;
+        if(objParam.mnemonic) {
+            objKey = getKeyDetails(objParam.mnemonic);
+        }
+        else {
+            objKey = getKeyDetailsFromSeed(objParam.seed);
+        }
         let baseAddr = getBaseAddress(objKey).to_address().to_bech32();
         return {
             data: {
