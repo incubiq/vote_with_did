@@ -18,6 +18,8 @@ const DetailDialog = (props) => {
   }, []);
 
   const renderNice = (_text) => {
+    if(_text===true) {return "true"}
+    if(_text===false) {return "false"}
     if(_text.length>20) {
       return _text.substring(0,8) + "..."+_text.substring(_text.length, _text.length-8);
     }
@@ -60,7 +62,7 @@ const DetailDialog = (props) => {
                      <div className="text-right">
                        {Object.entries(value).map(([nestedKey, nestedValue]) => (
                          <div key={nestedKey} className={styles.property_key}>
-                           <span className={styles.property_value}>{nestedKey}:</span> {nestedValue}
+                           <span className={styles.property_value}>{nestedKey}:</span> {renderNice(nestedValue)}
                          </div>
                        ))}
                      </div>

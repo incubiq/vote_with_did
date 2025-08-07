@@ -375,9 +375,16 @@ class api_user_voter extends apiViewer {
                 value: objAssets.adaAmount,
                 claim_type: cClaims.CLAIM_PROOF_OF_FUNDS.value,
             }
-            if(objParam.delegatedAuthority) {
-                objClaim.delegatedAuthority=objParam.delegatedAuthority;
+            
+            // delegated??
+            if(objParam.uid_ballot) {
+                const dataBallot =  await gConfig.app.apiBallot.async_findBallotForVoter({
+                    uid: objParam.uid_ballot,
+                    mustBeOpenToVote: false
+                })
+                objClaim.delegatedAuthority= dataBallot.data.published_id;
             }
+
             return this.async_ensureProof(objParam, objClaim); 
         }
         catch(err) {
@@ -392,7 +399,7 @@ class api_user_voter extends apiViewer {
             if(!objParam.did_issuer) {objParam.did_issuer=gConfig.vwd.did;}
             if(!objParam.name_issuer) {objParam.name_issuer="VoteWithDID (admin)";}
 
-            const objAssets = await utilsBlockfrost.async_getWalletAssetsFromAddress(objParam.address)
+            const objAssets = await utilsBlockfrost.async_getAllWalletAssets(objParam.address)
             if(objAssets.adaAmount<objParam.requirement_minimum) {
                 throw ({
                     data: null,
@@ -406,13 +413,20 @@ class api_user_voter extends apiViewer {
                 networkId: objParam.networkId,
                 token: objParam.token? objParam.token: "ADA",
                 minimum_requirement: objParam.requirement_minimum,
-                requested_by: objParam.did_issuer,
                 accepted: true,
+                requested_by: objParam.did_issuer,
                 claim_type: cClaims.CLAIM_PROOF_OF_MINIMUM_BALANCE.value,
             }
-            if(objParam.delegatedAuthority) {
-                objClaim.delegatedAuthority=objParam.delegatedAuthority;
+
+            // delegated??
+            if(objParam.uid_ballot) {
+                const dataBallot =  await gConfig.app.apiBallot.async_findBallotForVoter({
+                    uid: objParam.uid_ballot,
+                    mustBeOpenToVote: false
+                })
+                objClaim.delegatedAuthority= dataBallot.data.published_id;
             }
+
             return this.async_ensureProof(objParam, objClaim);
         }
         catch(err) {
@@ -421,94 +435,9 @@ class api_user_voter extends apiViewer {
     }
 
 /* 
- *      VOTE (prep + vote)
+ *      VOTE 
  */
-    async async_issueCreds(objParam) {
-        try {
-            // get ballot 
-            const dataBallot=await gConfig.app.apiBallot.async_findBallotForVoter({
-                uid: objParam.uid
-            });
-
-            // check what claims we have to provide
-            for (var i=0; i<dataBallot.data.aCreds.length; i++) {
-                const _claim = dataBallot.data.aCreds[i].type;
-                
-                const _chain = dataBallot.data.aCreds[i].extra.blockchain? dataBallot.data.aCreds[i].extra.blockchain: "cardano";
-                const  _networkId= dataBallot.data.aCreds[i].extra.blockchain? dataBallot.data.aCreds[i].extra.networdId: 1;
-                // check if we can fulfill this claim
-                let _aProof=[];
-                switch(_claim) {
-                    case null:
-                    case undefined:
-                    case cClaims.CLAIM_NONE:
-                        break;
-
-                    case cClaims.CLAIM_ADDRESS_OWNERSHIP.value:
-                        try {
-                            let dataProofOfFunds = await this.async_ensureProofOfOwnership({
-                                key_issuer: gConfig.vwd.key,            // no other choice, issued by super admin (delegation)
-                                did_issuer: gConfig.vwd.did,            // did of super admin 
-                                name_issuer: "Ballot - "+dataBallot.data.title,     // at least we can put name of ballot here
-                                address: objParam.address,
-                                chain: _chain,
-                                networkId: _networkId,
-                                delegatedAuthority: dataBallot.data.published_id
-                            })
-                            if(dataProofOfFunds.data) {
-                                _aProof.push(dataProofOfFunds.data);
-                            }
-                        }
-                        catch(err){}
-                        break;
-
-                    case cClaims.CLAIM_PROOF_OF_FUNDS.value:
-                        try {
-                            let dataProofOfFunds = await this.async_issueProofOfFunds({
-                                key_issuer: gConfig.vwd.key,            // no other choice, issued by super admin (delegation)
-                                did_issuer: gConfig.vwd.did,            // did of super admin 
-                                name_issuer: "Ballot - "+dataBallot.data.title,     // at least we can put name of ballot here
-                                address: objParam.address,
-                                chain: _chain,
-                                networkId: _networkId,
-                                delegatedAuthority: dataBallot.data.published_id
-                            })
-                            if(dataProofOfFunds.data) {
-                                _aProof.push(dataProofOfFunds.data);
-                            }
-                        }
-                        catch(err){}
-                        break;
-
-                    case cClaims.CLAIM_PROOF_OF_MINIMUM_BALANCE.value:
-                        const  _reqMin= dataBallot.data.aCreds[i].extra["minimum balance"]? dataBallot.data.aCreds[i].extra["minimum balance"]: 20;
-                        try {                        
-                            let dataProofOfMinB = await this.async_issueProofOfFunds({
-                                key_issuer: gConfig.vwd.key,            // no other choice, issued by super admin (delegation)
-                                did_issuer: gConfig.vwd.did,            // did of super admin 
-                                name_issuer: "Ballot - "+dataBallot.data.title,     // at least we can put name of ballot here
-                                address: objParam.address,
-                                chain: _chain,
-                                networkId: _networkId,
-                                requirement_minimum: _reqMin,
-                                delegatedAuthority: dataBallot.data.published_id
-                            })
-                            if(dataProofOfMinB.data) {
-                                _aProof.push(dataProofOfMinB.data);
-                            }
-                        }
-                        catch(err){}
-                        break;                                     
-                }
-
-                return {data: _aProof}
-            }
-        }
-        catch(err) {
-            throw err;
-        }
-    }
-
+   
     async async_canVote(objParam) {
         try {
             // get ballot 

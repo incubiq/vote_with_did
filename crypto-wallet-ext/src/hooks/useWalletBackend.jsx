@@ -1,6 +1,6 @@
 // src/hooks/useWalletBackend.js
 import { useState, useCallback } from 'react';
-import { srv_getDid, srv_getCredsProofs, srv_postAuth, srv_linkWallet, srv_linkAssets } from "../utils/rpc_identity";
+import { srv_getDid, srv_getCredsProofs, srv_postAuth, srv_linkWallet, srv_linkAssets, srv_linkBalanceForEnablingVoting } from "../utils/rpc_identity";
 import { srv_postWalletType } from "../utils/rpc_settings";
 
 export const useWalletBackend = () => {
@@ -58,14 +58,10 @@ export const useWalletBackend = () => {
       // Don't throw - this seems non-critical
     }
   }, []);
-
+ 
   const linkWallet = useCallback(async (walletData) => {
     try {
-      return await srv_linkWallet({
-        address: walletData.address,
-        chain: walletData.chain,
-        networkId: walletData.networkId
-      });
+      return await srv_linkWallet(walletData);
     } catch (err) {
       setError("Could not link wallet");
       throw err;
@@ -74,13 +70,18 @@ export const useWalletBackend = () => {
 
   const linkAssets = useCallback(async (walletData) => {
     try {
-      return await srv_linkAssets({
-        address: walletData.address,
-        chain: walletData.chain,
-        networkId: walletData.networkId
-      });
+      return await srv_linkAssets(walletData);
     } catch (err) {
-      setError("Could not link wallet");
+      setError("Could not link wallet assets");
+      throw err;
+    }
+  }, []);
+
+  const linkMinBalance = useCallback(async (_data) => {
+    try {
+      return await srv_linkBalanceForEnablingVoting(_data);
+    } catch (err) {
+      setError("Could not link wallet min balance");
       throw err;
     }
   }, []);
@@ -93,6 +94,7 @@ export const useWalletBackend = () => {
     fetchVCs,
     registerWalletType,
     linkWallet,
-    linkAssets
+    linkAssets,
+    linkMinBalance,
   };
 };

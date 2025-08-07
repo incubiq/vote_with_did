@@ -7,6 +7,8 @@ const cEvents = require('../const/const_events');
 const cUsers = require('../const/const_users');
 const cClaims = require('../const/const_claims');
 const {getIdentusIdsFromSeed, async_createEntityWithAuth, async_createAndPublishDidForBallot} = require('../utils/util_identus_identity');
+const srvIdentusUtils = require('../utils/util_identus_utils');
+
 
 /*   
  *      Ballot APIs
@@ -237,6 +239,36 @@ class api_ballot extends apiBase {
                 uid: objParam.uid
             });
 
+            // if ballot is published, ensure we have the published DID
+            if((objBallot.is_openedToRegistration || objBallot.is_openedToVote) && objBallot.published_id.length> 80) {
+                // 
+                const ballotKeys=this.getUniqueBallotKeys({
+                    did: objParam.did,
+                    uid_ballot: objParam.uid,
+                    created_at: objBallot.created_at
+                });
+                let myDIDs = await srvIdentusUtils.async_simpleGet("did-registrar/dids/", ballotKeys.key);
+                if(myDIDs.data && myDIDs.data.length>0) {
+                    for (var i=0; i<myDIDs.data.length; i++) {
+                        if(objBallot.published_id==myDIDs.data[i].longFormDid && myDIDs.data[i].status=="CREATED") {
+                            // need to republish ans wait until next time we see it
+                            srvIdentusUtils.async_simplePost("did-registrar/dids/"+objBallot.published_id+"/publications", ballotKeys.key, {})
+                        }
+                        else {
+                            // only a matter of upda in DB
+                            if(myDIDs.data[i].did && objBallot.published_id.includes(myDIDs.data[i].did) && myDIDs.data[i].status=="PUBLISHED") {
+                                objBallot = await this.dbBallot.async_updateBallot({
+                                    uid: objBallot.uid
+                                }, {
+                                    published_id: myDIDs.data[i].did
+                                });
+                            }
+                        }
+                    }
+                }                
+            }
+
+
             return objBallot;  
         }
         catch(err) {
@@ -288,7 +320,7 @@ class api_ballot extends apiBase {
             let objBallot = await this._async_findBallot(objParam);
 
             // needs to be open for vote
-            if(!objBallot.is_openedToVote) {
+            if(!objBallot.is_openedToVote && objParam.mustBeOpenToVote) {
                 throw {
                     data: null,
                     status: 403,

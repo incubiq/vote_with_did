@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import { useRequirements } from '../state/SettingsContext';
+import { useWallet } from '../state/WalletContext';
+import { useWalletBackend } from '../hooks/useWalletBackend';
 
 import styles from '../styles/Base.module.css';
 import stylesDialog from '../styles/Dialogs.module.css';
@@ -11,8 +13,13 @@ const VoterSelfRegistrationPanel = (props) => {
   const [aRequirement, setARequirement] = useState([]);
   const [iRequirement, setIRequirement] = useState(0);
   const [aCertif, setACertif] = useState([]);
+  const [selProof, setSelProof] = useState(null);
   const { state, actions } = useRequirements();
   const aAllRequirements = actions.getRequirements();
+
+  const {
+      linkMinBalance
+    } = useWalletBackend();
 
   useEffect(() => {
     if(props.ballot && props.ballot.aCreds) {
@@ -20,31 +27,87 @@ const VoterSelfRegistrationPanel = (props) => {
     }
   }, [props.ballot]);
 
-  const async_selfRegister = async (_data)=> {
+  useEffect(() => {
+    if (props.aVC?.length > 0) {
+      setSelProof(props.aVC[0]); 
+    }
+  }, [props.aVC]);
+
+  const async_selfRegister = async ()=> {
     // TODO
 
-    toast.success("Your certificate for allowing you to vote was issued");
-    props.onHasSelfRegistered(_data);
+    if(!selProof) {
+      toast.success("Could not find proof of ownership certificate to issue your proof of minimum balance");
+      return;
+    }
+
+    linkMinBalance({
+        address: selProof.claims.address,
+        chain: selProof.claims.chain,
+        networkId: selProof.claims.networkId,
+        minimum: aRequirement[iRequirement].extra["minimum balance"],
+        uid_ballot: props.ballot.uid
+      })
+      .then(_data => {
+        if(!_data.data) {throw _data}
+        props.onHasSelfRegistered(_data);
+        toast.success("Your certificate for allowing you to vote was issued");
+      })
+      .catch(err => {
+        toast.error("Could not produce certificate "+"("+err.message+")");
+      })
+
+    toast.success("Your certificate will be issued in a moment...");
     props.onClose();
   }
 
   const renderCertificateIssuancePanel = ()=> {
     return (
-      <div className={stylesVoting.dialog_requirements}>
+      <div className={` ${stylesVoting.dialog_requirements} ${stylesDialog.property_row} ${stylesVoting.dialog_choices}`}>
         {aRequirement.map((req, iReq) => (
-          <div key={iReq} className={` ${styles.inline} ${stylesDialog.property_row} ${stylesVoting.dialog_choices} `} >              
+          <div key={iReq} className={` ${styles.inline}  `} >              
           {actions.getRequirementInClear(req.type)?
           <>
-              <div className={` ${styles.bold_underlined} `}>
-                {actions.getRequirementInClear(req.type)}
-              </div>
+            <div className={styles.halfWidth}>              
+                <div className={` ${styles.bold_underlined} `}>
+                  {actions.getRequirementInClear(req.type)}
+                </div>
 
+                {req.extra?
+                  <div>
+                    {req.extra.blockchain? <div className={styles.smaller}>Chain: {req.extra.blockchain} </div>: ""}
+                    {req.extra.coin? <div className={styles.smaller}>Coin: {req.extra.coin} </div>: ""}
+                    {req.extra["minimum balance"]? <div className={styles.smaller}>Minimum balance: {req.extra["minimum balance"]} </div>: ""}
+                  </div>
+                :""}
+            </div>
+            <div className={styles.halfWidth}>
+              <div className={styles.smaller}>
+                Issue Certificate from 
+              </div>
+              {props.aVC && props.aVC.length>0?
+              <select className={stylesVoting.comboCerts}
+                onClick={(e) => {setSelProof(props.aVC[parseInt(e.target.value)])}}
+              >
+                {props.aVC.map((vc, iVC) => (
+                  <option key={iVC} value={iVC}>
+                    {vc.claims.chain + " - "+ vc.claims.address.substring(0,16) +"..."}
+                  </option>
+                ))}
+              </select>
+              :""}
+              
               <button
-                onClick={(_data) => async_selfRegister(_data)}
+                onClick={(_data) => {
+                  setIRequirement(iReq);
+                  async_selfRegister();
+                }}
                 className={`${stylesDialog.green_btn} `}
               >
                 Request certificate
               </button>
+            </div>
+
           </>
           :""}
           </div>
@@ -55,7 +118,7 @@ const VoterSelfRegistrationPanel = (props) => {
 
   return (
     <div >
-      <div className={`${stylesDialog.dialog_overlay} ${props.isVisible? "" : styles.hidden} `}>
+      <div className={`  ${stylesDialog.dialog_overlay} ${props.isVisible? "" : styles.hidden} `}>
           <div 
             className={stylesDialog.dialog_content}
           >

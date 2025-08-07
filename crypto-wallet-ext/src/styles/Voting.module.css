@@ -34,3 +34,8 @@
 .radio_control {
   margin: 0 12px;
 }
+
+.comboCerts {
+  min-height: 32px;
+  margin: 4px 0 12px 0;
+}

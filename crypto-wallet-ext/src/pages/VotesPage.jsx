@@ -32,8 +32,7 @@ const VotesPage = () => {
 	const [aBallotOpenForRegistration, setABallotOpenForRegistration] = useState([]);
 	const [aBallotOpenForVote, setABallotOpenForVote] = useState([]);
 	const [aBallotOpenForStats, setABallotOpenForStats] = useState([]);
-
-	const { state } = useWallet();
+	const { state, actions } = useWallet();
 
 	const {
 		loading: backendLoading,
@@ -343,6 +342,7 @@ const VotesPage = () => {
 				onClose = {() => setIsVoterSelfRegistrationPanelOpen(false)}
 				onHasSelfRegistered = {(_data) => onHasSelfRegistered(_data)}
 				ballot = {aBallotOpenForRegistration[0]}
+				aVC = {state.vcs.filter(item => item.claims?.claim_type === "address_ownership")}
 			/>
 
 			<VotingPanel 

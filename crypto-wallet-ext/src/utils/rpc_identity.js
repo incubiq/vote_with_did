@@ -64,14 +64,19 @@ export const srv_postEntity= async(objParam, _token) => {
  *    VCs
  */
 
-// Create Proof of wallet ownership
+// Create VC Proof of wallet ownership
 export const srv_linkWallet= async(objParam, _token) => {
-  return srv_linkRoute(API_PRIVATEROUTE+'voter/wallet?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
+  return srv_linkRoute(API_PRIVATEROUTE+'voter/proof/wallet?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
 }
 
-// Create Entity-wallet-DID for new user
+// Create VC Proof of funds
 export const srv_linkAssets= async(objParam, _token) => {
-  return srv_linkRoute(API_PRIVATEROUTE+'voter/assets?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
+  return srv_linkRoute(API_PRIVATEROUTE+'voter/proof/assets?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address, {token: _token});
+}
+
+// Create VC Proof of minimum balance for a specific ballot
+export const srv_linkBalanceForEnablingVoting= async(objParam, _token) => {
+  return srv_linkRoute(API_PRIVATEROUTE+'voter/proof/minbalance?chain='+objParam.chain+"&networkId="+objParam.networkId+"&address="+objParam.address+"&minimum="+objParam.minimum+"&uid_ballot="+objParam.uid_ballot, {token: _token});
 }
 
 // Get User VC proofs (we get the proof from VwD admin, we do not pass key )

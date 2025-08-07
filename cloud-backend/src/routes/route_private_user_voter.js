@@ -70,18 +70,33 @@ router.get("/proofs", function(req, res, next) {
   });
 });
 
-// issue a VC/Proof of funds
-router.link("/assets", function(req, res, next) {
+/* VC issuance */
+
+// issue a VC : Proof of funds
+router.link("/proof/assets", function(req, res, next) {
   routeUtils.apiLink(req, res, gConfig.app.apiUserVoter.async_issueProofOfFunds.bind(gConfig.app.apiUserVoter), {
     address: req.query.address? req.query.address: null,
     chain: req.query.chain? req.query.chain: null,
     networkId: req.query.networkId? parseInt(req.query.networkId): 0,
+    uid_ballot: req.query.uid_ballot? parseInt(req.query.uid_ballot): null,   // used when issuing for registering creds for a ballot before voting opens
+    key: req.user && req.user.key? req.user.key: null
+  });
+});
+
+// issue a VC : Proof of Minimum Balance
+router.link("/proof/minbalance", function(req, res, next) {
+  routeUtils.apiLink(req, res, gConfig.app.apiUserVoter.async_issueProofOfMinimumBalance.bind(gConfig.app.apiUserVoter), {
+    address: req.query.address? req.query.address: null,
+    chain: req.query.chain? req.query.chain: null,
+    networkId: req.query.networkId? parseInt(req.query.networkId): 0,
+    requirement_minimum: req.query.minimum? parseInt(req.query.minimum): 0,
+    uid_ballot: req.query.uid_ballot? parseInt(req.query.uid_ballot): null,   // used when issuing for registering creds for a ballot before voting opens
     key: req.user && req.user.key? req.user.key: null
   });
 });
 
 // issue a Proof of wallet ownership (when user confirms owning a wallet)
-router.link("/wallet", function(req, res, next) {
+router.link("/proof/wallet", function(req, res, next) {
   routeUtils.apiLink(req, res, gConfig.app.apiUserVoter.async_ensureProofOfOwnership.bind(gConfig.app.apiUserVoter), {
     address: req.query.address? req.query.address: null,
     chain: req.query.chain? req.query.chain: null,

@@ -65,6 +65,7 @@ const async_getAllVCPresentationRequests = async function (objParam) {
                 const _claims = getDecodedProof(item, objParam.claim_type, _filterStatus);
                 _aRet.push({
                     claims: _claims,
+                    claim_type: JSON.parse(item.requestData)?.options?.challenge,
                     proof: item.data && item.data.length==1? item.data[0]: null,   
                     thid: item.thid,
                     presentationId: item.presentationId,
@@ -218,17 +219,35 @@ const async_createCustodialProof = async function (objParam) {
             catch(err) {}
         }
 
-        // we don t have any existing one.. so we request it
-        let dataPresReqAsVerifier = await async_createVCPresentationRequest({
-            key: objParam.keyPeer1,
-            connection: objParam.connection,
-            challenge: objParam.claim_type,
-            domain: objParam.domain, 
-        });
+        // is it already there but not accepted yet?
+        let dataAPresReqAsHolder = await async_getAllVCPresentationRequests({
+            key: objParam.keyPeer2,
+            claim_type: objParam.claim_type,
+            status: STATUS_PROVER_PROOF_REQRECEIVED
+        })
 
-        // F@@# Identus will fail if called within less than 4, 5, or 6 secs after this call... oh my... we slow it down
-        await srvIdentusUtils.wait(gConfig.identus.delay);
-        
+        let dataPresReqAsVerifier=null;
+        if(dataAPresReqAsHolder.data.length>0) {
+            dataAPresReqAsHolder.data.forEach(_p => {
+                if(_p.claim_type==objParam.claim_type) {
+                    dataPresReqAsVerifier={data: _p};
+                }
+            })
+        }        
+
+        // we don t have any existing one.. so we request it
+        if(!dataPresReqAsVerifier) {
+            dataPresReqAsVerifier = await async_createVCPresentationRequest({
+                key: objParam.keyPeer1,
+                connection: objParam.connection,
+                challenge: objParam.claim_type,
+                domain: objParam.domain, 
+            });
+
+            // F@@# Identus will fail if called within less than 4, 5, or 6 secs after this call... oh my... we slow it down
+            await srvIdentusUtils.wait(gConfig.identus.delay);
+        }
+
         let dataPresReqAsHolder = await async_getAllVCPresentationRequests({
             key: objParam.keyPeer2,
             thid: dataPresReqAsVerifier.data.thid,
