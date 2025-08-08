@@ -18,8 +18,34 @@ const DetailDialog = (props) => {
   }, []);
 
   const renderNice = (_text) => {
+    // bool?
     if(_text===true) {return "true"}
     if(_text===false) {return "false"}
+
+    // number ? 
+    if(!isNaN(_text) && !isNaN(parseFloat(_text))) {
+      return _text;
+    }
+
+    // empty array ? 
+    if(Array.isArray(_text) ) {
+      if(_text.length==0) {return "none"}
+    }
+
+    // date?
+    if(typeof _text === "string") {
+      const date = new Date(_text);
+      if(!isNaN(date.getTime())) {
+        const formatted = new Intl.DateTimeFormat('en-GB', {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        }).format(date);
+
+        return formatted;
+      }
+    }
+
+    // text?
     if(_text.length>20) {
       return _text.substring(0,8) + "..."+_text.substring(_text.length, _text.length-8);
     }
@@ -58,7 +84,7 @@ const DetailDialog = (props) => {
                    {key.replace(/([A-Z])/g, ' $1').trim()}:
                  </span>
                  <span className={styles.property_value}>
-                   {typeof value === 'object' && value !== null ? (
+                   {typeof value === 'object' && value !== null && value.length!=0? (
                      <div className="text-right">
                        {Object.entries(value).map(([nestedKey, nestedValue]) => (
                          <div key={nestedKey} className={styles.property_key}>

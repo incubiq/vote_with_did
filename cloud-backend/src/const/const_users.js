@@ -11,6 +11,7 @@ const addUser = (_username, _seed) =>  {
             did: null,
             dateLock: null,
             aProof: [],
+            aVote: [],          // array of UIDs where we know user has voted (avoid too many checks of certif)
 
             // user rights
             canAddQuestion: false,
@@ -27,6 +28,15 @@ const addProofToUser = (_username, _proof) =>  {
         return null;
     }
     aUser[iUser].aProof.push(_proof);
+    return aUser[iUser];
+}
+
+const addBallotVoteToUser = (_username, _uid) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.username===_username});
+    if(iUser==-1) {
+        return null;
+    }
+    aUser[iUser].aVote.push(_uid);
     return aUser[iUser];
 }
 
@@ -95,6 +105,14 @@ const checkUser = (_username, _seed) =>  {
     return true;
 }
 
+const hasVoted = (_username, _uid) =>  {
+    const iUser = aUser.findIndex(function (x) {return x.username===_username});
+    if(iUser==-1) {
+        return false;
+    }
+    return aUser[iUser].aVote.includes(_uid);
+}
+
 module.exports = {
     aUser,
     addUser,
@@ -106,4 +124,6 @@ module.exports = {
     addProofToUser,
     addProcessLockToUser,
     addAccessRightToUser,
+    addBallotVoteToUser,
+    hasVoted,
 }

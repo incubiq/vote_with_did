@@ -13,7 +13,7 @@ const VoterSelfRegistrationPanel = (props) => {
   const [aRequirement, setARequirement] = useState([]);
   const [iRequirement, setIRequirement] = useState(0);
   const [aCertif, setACertif] = useState([]);
-  const [selProof, setSelProof] = useState(null);
+  const [selProofOfOwnership, setSelProofOfOwnership] = useState(null);
   const { state, actions } = useRequirements();
   const aAllRequirements = actions.getRequirements();
 
@@ -28,23 +28,23 @@ const VoterSelfRegistrationPanel = (props) => {
   }, [props.ballot]);
 
   useEffect(() => {
-    if (props.aVC?.length > 0) {
-      setSelProof(props.aVC[0]); 
+    if (props.aVC_ownership?.length > 0) {
+      setSelProofOfOwnership(props.aVC_ownership[0]); 
     }
-  }, [props.aVC]);
+  }, [props.aVC_ownership]);
 
   const async_selfRegister = async ()=> {
     // TODO
 
-    if(!selProof) {
+    if(!selProofOfOwnership) {
       toast.success("Could not find proof of ownership certificate to issue your proof of minimum balance");
       return;
     }
 
     linkMinBalance({
-        address: selProof.claims.address,
-        chain: selProof.claims.chain,
-        networkId: selProof.claims.networkId,
+        address: selProofOfOwnership.claims.address,
+        chain: selProofOfOwnership.claims.chain,
+        networkId: selProofOfOwnership.claims.networkId,
         minimum: aRequirement[iRequirement].extra["minimum balance"],
         uid_ballot: props.ballot.uid
       })
@@ -85,11 +85,11 @@ const VoterSelfRegistrationPanel = (props) => {
               <div className={styles.smaller}>
                 Issue Certificate from 
               </div>
-              {props.aVC && props.aVC.length>0?
+              {props.aVC_ownership && props.aVC_ownership.length>0?
               <select className={stylesVoting.comboCerts}
-                onClick={(e) => {setSelProof(props.aVC[parseInt(e.target.value)])}}
+                onClick={(e) => {setSelProofOfOwnership(props.aVC_ownership[parseInt(e.target.value)])}}
               >
-                {props.aVC.map((vc, iVC) => (
+                {props.aVC_ownership.map((vc, iVC) => (
                   <option key={iVC} value={iVC}>
                     {vc.claims.chain + " - "+ vc.claims.address.substring(0,16) +"..."}
                   </option>

@@ -254,6 +254,7 @@ export class siwc_connect  extends siww_connect {
     async _async_getAllWalletAssets(stakeAddress) {
 
         const hexToUtf8 = (hex) => {
+          if(hex=="") {return ""}
           const cleanHex = hex.replace(/[^0-9a-fA-F]/g, '');
           const bytes = new Uint8Array(cleanHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
           return new TextDecoder('utf-8').decode(bytes);

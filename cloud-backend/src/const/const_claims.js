@@ -41,17 +41,26 @@ const CLAIM_ADDRESS_OWNERSHIP={
     }]
 };
 
+const CLAIM_PROOF_OF_VOTE={
+    value: "proof_of_vote",
+    text: "Proof of Vote",
+    aRequirement: []
+};
+
+
 const aClaim = [
     CLAIM_NONE,
+    CLAIM_ADDRESS_OWNERSHIP,
     CLAIM_PROOF_OF_FUNDS,
     CLAIM_PROOF_OF_MINIMUM_BALANCE,
-    CLAIM_ADDRESS_OWNERSHIP
+    CLAIM_PROOF_OF_VOTE,
 ]
 
 const getClaimInFull = (_type) => {
     if(_type==CLAIM_NONE.value) {return CLAIM_NONE}
     if(_type==CLAIM_PROOF_OF_FUNDS.value) {return CLAIM_PROOF_OF_FUNDS}
     if(_type==CLAIM_PROOF_OF_MINIMUM_BALANCE.value) {return CLAIM_PROOF_OF_MINIMUM_BALANCE}
+    if(_type==CLAIM_PROOF_OF_VOTE.value) {return CLAIM_PROOF_OF_VOTE}
     if(_type==CLAIM_ADDRESS_OWNERSHIP.value) {return CLAIM_ADDRESS_OWNERSHIP}
     return null;
 }
@@ -64,6 +73,7 @@ module.exports = {
     CLAIM_NONE,
     CLAIM_PROOF_OF_FUNDS,
     CLAIM_PROOF_OF_MINIMUM_BALANCE,
+    CLAIM_PROOF_OF_VOTE,
     CLAIM_ADDRESS_OWNERSHIP,
     aClaim,
     getClaimInFull,

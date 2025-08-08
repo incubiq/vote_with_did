@@ -61,16 +61,19 @@ const async_getAllVCPresentationRequests = async function (objParam) {
         let _aRet=[];
         let _filterStatus = objParam.status? objParam.status : STATUS_PROVER_PROOF_SENT;     
         dataRet.data.forEach(item => {
-            if(item.status == _filterStatus) {
-                const _claims = getDecodedProof(item, objParam.claim_type, _filterStatus);
-                _aRet.push({
-                    claims: _claims,
-                    claim_type: JSON.parse(item.requestData)?.options?.challenge,
-                    proof: item.data && item.data.length==1? item.data[0]: null,   
-                    thid: item.thid,
-                    presentationId: item.presentationId,
-                    status: item.status     
-                });    
+            if(item.status == _filterStatus || _filterStatus=="*") {
+                const challenge = JSON.parse(item.requestData)?.options?.challenge;
+                if(!objParam.claim_type || objParam.claim_type=="*" || objParam.claim_type==challenge)  {
+                    const _claims = getDecodedProof(item, objParam.claim_type, _filterStatus);
+                    _aRet.push({
+                        claims: _claims,
+                        claim_type: challenge,
+                        proof: item.data && item.data.length==1? item.data[0]: null,   
+                        thid: item.thid,
+                        presentationId: item.presentationId,
+                        status: item.status     
+                    });    
+                }
             }
         })
         return {data: _aRet}

@@ -109,7 +109,8 @@ const async_getFirstHolderVCMatchingType = async function (objParam) {
                 _cVCAccepted++;
 
                 // happy with the challenge requested?
-                if(item.claims && item.claims.claim_type &&  item.claims.claim_type==objParam.claim_type) {
+                if((item.claims && item.claims.claim_type &&  item.claims.claim_type==objParam.claim_type) && 
+                    (objParam.delegatedAuthority==null || objParam.delegatedAuthority==item.claims.delegatedAuthority)) {
                     _recId=item.recordId;
                     _thid=item.thid;
                     _status = item.protocolState;

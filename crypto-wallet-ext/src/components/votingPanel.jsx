@@ -12,8 +12,10 @@ const VotingPanel = (props) => {
   const [question, setQuestion] = useState(props.ballot?.aQuestionInFull?.length>0? props.ballot?.aQuestionInFull[0]: null);
   const [iQuestion, setIQuestion] = useState(0);
   const [canVote, setCanVote] = useState(false);
+  const [hasVoted, sethasVoted] = useState(false);
   const [showRequirement, setShowRequirement] = useState(false);
   const [answers, setAnswers] = useState([]);
+  const [aEligibleThid, setAEligibleThid] = useState([]);
 
   useEffect(() => {
     setQuestion(props.ballot?.aQuestionInFull[iQuestion]);
@@ -23,14 +25,28 @@ const VotingPanel = (props) => {
       _a[iQuestion]=props.ballot?.aQuestionInFull[iQuestion].aChoice[0].value;
       setAnswers(_a);
     }
+  }, [iQuestion, props.ballot]);
+
+  useEffect(() => {
     if(props.ballot) {
-      srv_canVote(props.ballot.uid, [])
+      srv_canVote(props.ballot.uid, aEligibleThid)
       .then(dataCanVote => {
         setCanVote(dataCanVote.data.canVote);
+        sethasVoted(dataCanVote.data.hasVoted);
       })
       .catch((err) => {})
     }
-  }, [iQuestion, props.ballot]);
+  }, [props.ballot]);
+  
+  useEffect(() => {
+    if(props?.aVC_eligibility?.length>0) {
+      let _aRet=[];
+      props.aVC_eligibility.forEach(item => {
+        _aRet.push(item.thid);
+      })
+      setAEligibleThid(_aRet);
+    }
+  }, [props.aVC_eligibility]);
 
   // start at question 0 
   useEffect(() => {
@@ -53,7 +69,7 @@ const VotingPanel = (props) => {
 
   const async_vote = async ( )=> {
     // vote on chain
-    srv_postVote(props.ballot.uid, [], [], null)
+    srv_postVote(props.ballot.uid, aEligibleThid, [/* votes */], null)
     .then((dataVoted) => {
       if(!dataVoted.data) {throw dataVoted}
       toast.success("Your vote was successfully and anonymously cast");
@@ -178,7 +194,10 @@ const VotingPanel = (props) => {
                 ×
               </div>
           </div>
-          {canVote? 
+          {hasVoted? 
+            <div>🗳️ You have already cast your vote on this ballot</div>
+          : 
+          canVote? 
             <div>You are eligible to vote on this ballot</div>
           : 
           <>

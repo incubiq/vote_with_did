@@ -9,17 +9,23 @@ const VCPanel = (props) => {
   const [selectedProof, setSelectedProof] = useState(null);
 
   const renderProofOrOffer = (_proof, _index) => {
-    const _strDateTo = _proof.claims.expire_at? new Date(_proof.claims.expire_at).toLocaleDateString() : new Date(_proof.createdAt).toLocaleDateString();
+    const _strDateTo = _proof.claims.expire_at? new Date(_proof.claims.expire_at).toLocaleDateString() : null;
     return (
       <li key={_index} className={styles.listCreds} onClick={() => openDialog(_proof)}>
         <>
-          <p className={styles.date}>valid until {_strDateTo}</p>
+          {_strDateTo? 
+            <p className={styles.date}>valid until {_strDateTo }</p>
+            : 
+          <div> 
+              <br /><br />
+          </div>}
           <img className={styles.credsImage} src="/images/creds.png" />
           <div className={styles.pin_proof}>Proof Received</div>
 
           {_proof.claims.claim_type == "address_ownership"?   <img src="/images/wallet_ownership.png" width="64px" height="64px" /> :
           _proof.claims.claim_type == "proof_of_fund"?   <img src="/images/proof_of_fund.png" width="64px" height="64px" /> :
           _proof.claims.claim_type == "proof_of_min"?   <img src="/images/proof_of_min.png" width="64px" height="64px" /> :
+          _proof.claims.claim_type == "proof_of_vote"?   <img src="/images/proof_of_vote.png" width="64px" height="64px" /> :
           <div>"Unknown type"</div>
           }
 

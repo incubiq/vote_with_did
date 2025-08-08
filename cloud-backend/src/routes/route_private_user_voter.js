@@ -105,6 +105,16 @@ router.link("/proof/wallet", function(req, res, next) {
     });
 });
 
+// issue a VC : Proof of Vote
+router.link("/proof/vote", function(req, res, next) {
+  routeUtils.apiLink(req, res, gConfig.app.apiUserVoter.async_issueProofOfVote.bind(gConfig.app.apiUserVoter), {
+    a_thid_eligibility: req.query.thids? req.query.thids: [],           // ALL VC Proofs (thids) that gave user eligibility to vote
+    uid_ballot: req.query.uid_ballot? parseInt(req.query.uid_ballot): null,   
+    key: req.user && req.user.key? req.user.key: null
+  });
+});
+
+
 /*
  *      voter routes
  */
@@ -124,13 +134,14 @@ router.get("/ballot/:uid/canvote", function(req, res, next) {
   routeUtils.apiGet(req, res, gConfig.app.apiUserVoter.async_canVote.bind(gConfig.app.apiUserVoter), {
     did: req.user.did? req.user.did: null,
     uid: req.params.uid? parseInt(req.params.uid): null,
-    aProof: req.body.aProof? req.body.aProof: [],         // all VC Proofs the user has provided to validate the vote
+    aProof: req.query.aProof? JSON.parse(decodeURIComponent(decodeURIComponent(req.query.aProof))): [],         // all VC Proofs the user has provided to validate the vote
   });
 });
 
 // Cast a vote on a ballot    !!!! TODO - likely do this via DAPP (not cloud backend)
 router.post("/ballot/:uid", function(req, res, next) {
   routeUtils.apiPost(req, res, gConfig.app.apiUserVoter.async_vote.bind(gConfig.app.apiUserVoter), {
+    key: req.user && req.user.key? req.user.key: null,
     did: req.user.did? req.user.did: null,
     uid: req.params.uid? parseInt(req.params.uid): null,
     aProof: req.body.aProof? req.body.aProof: [],         // all VC Proofs the user has provided to validate the vote

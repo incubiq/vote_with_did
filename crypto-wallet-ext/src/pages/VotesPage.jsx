@@ -10,7 +10,7 @@ import YesNoDialog from '../components/yesnoDialog';
 import VotingPanel from '../components/votingPanel';
 import VoterSelfRegistrationPanel from '../components/voterSelfRegistrationPanel';
 
-import { srv_getPublicBallots } from '../utils/rpc_ballot';
+import { srv_getPublicBallots, srv_canVote } from '../utils/rpc_ballot';
 import { getHowLongUntil } from '../utils/misc';
 
 import styles from '../styles/Base.module.css';
@@ -31,7 +31,9 @@ const VotesPage = () => {
 
 	const [aBallotOpenForRegistration, setABallotOpenForRegistration] = useState([]);
 	const [aBallotOpenForVote, setABallotOpenForVote] = useState([]);
+	const [iBallotOpenForVote, setIBallotOpenForVote] = useState(0);
 	const [aBallotOpenForStats, setABallotOpenForStats] = useState([]);
+	const [aProofOfVote, setAProofOfVote] = useState([]);
 	const { state, actions } = useWallet();
 
 	const {
@@ -49,7 +51,20 @@ const VotesPage = () => {
 	useEffect(() => {
 			async_loadPublicBallots();
 	}, []);
-	
+
+	useEffect(() => {
+		if(aBallotOpenForVote.length>0) {
+			let _aPoV=[];
+			for  (var i=0; i<aBallotOpenForVote.length; i++ ) {
+				const _aProofOfVote= state.vcs.filter(item => item.claims?.claim_type === "proof_of_vote" && item.claims?.delegatedAuthority === aBallotOpenForVote[i].published_id);
+				if(_aProofOfVote.length>0) {
+					_aPoV.push(_aProofOfVote[0]);
+				}
+			}
+			setAProofOfVote(_aPoV);
+		}
+	}, [state.vcs, aBallotOpenForVote]);
+
 	const async_loadPublicBallots = async() => {
 		srv_getPublicBallots({
 			isOpenForRegistration: true,
@@ -142,6 +157,25 @@ const VotesPage = () => {
 		)
 	}
 
+	const onHasSelfRegistered = (_data) => {
+		// not sure we should do anything?
+	}
+
+	const hasSelfRegistered = (_didBallot) => {
+		const aReg = state.vcs.filter(item => item.claims?.delegatedAuthority === _didBallot)
+		return aReg.length>0;
+	}
+
+	const hasVoted = (_id)=> {
+		let _bHasVoted=false;
+		aProofOfVote.forEach(item => {
+			if(item.claims.delegatedAuthority==_id) {
+				_bHasVoted=true;
+			}
+		})
+		return _bHasVoted;
+	}
+
 	const renderBallotsAwaitingRegistration = ( )=> {
 		return (				
 			<>
@@ -174,6 +208,11 @@ const VotesPage = () => {
 							</td>
 
 							<td>
+								{hasSelfRegistered(ballot.published_id) ?
+								<div className={styles.italic}>
+									✅ self-registered
+								</div>
+								:
 								<div className={styles.button} 
 									onClick={() => {
 										setIsVoterSelfRegistrationPanelOpen(true);
@@ -181,6 +220,7 @@ const VotesPage = () => {
 								>
 									Register...
 								</div>
+								}
 							</td>
 
 
@@ -216,7 +256,7 @@ const VotesPage = () => {
 						</tr>
 					</thead>
 					<tbody>
-						{aBallotOpenForVote.map((ballot) => (
+						{aBallotOpenForVote.map((ballot, iBallot) => (
 						<tr key={ballot.uid}>
 							<td>
 							{ballot.name}
@@ -231,9 +271,15 @@ const VotesPage = () => {
 							</td>
 
 							<td>
+								{hasVoted(ballot.published_id)? 
+								<div className={styles.italic}>
+									✅ Voted
+								</div>
+								:
 								<div className={styles.button} 
 									onClick={() => {
 										if(aBallotOpenForVote.length>0) {
+											setIBallotOpenForVote(iBallot);
 											setIsVotingPanelOpen(true);
 										}
 										else {
@@ -242,7 +288,7 @@ const VotesPage = () => {
 									}}
 								>
 									Vote...
-								</div>
+								</div>}
 							</td>
 
 
@@ -342,7 +388,7 @@ const VotesPage = () => {
 				onClose = {() => setIsVoterSelfRegistrationPanelOpen(false)}
 				onHasSelfRegistered = {(_data) => onHasSelfRegistered(_data)}
 				ballot = {aBallotOpenForRegistration[0]}
-				aVC = {state.vcs.filter(item => item.claims?.claim_type === "address_ownership")}
+				aVC_ownership = {state.vcs.filter(item => item.claims?.claim_type === "address_ownership")}
 			/>
 
 			<VotingPanel 
@@ -350,6 +396,7 @@ const VotesPage = () => {
 				onClose = {() => setIsVotingPanelOpen(false)}
 				onHasVoted = {(_aAnswers) => onHasVoted(_aAnswers)}
 				ballot = {aBallotOpenForVote[0]}
+				aVC_eligibility = {state.vcs.filter(item => {item.claims?.claim_type === "proof_of_min" && aBallotOpenForVote.length>0 && item.claims?.delegatedAuthority === aBallotOpenForVote[iBallotOpenForVote].published_id})}
 			/>
 
 			<BottomNav />
