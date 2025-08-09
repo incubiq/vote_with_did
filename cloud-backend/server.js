@@ -45,11 +45,18 @@ global.gConfig={
         key: null,
     },
     blockfrost: {
-        key: null,
+        key: null,        
         url: 'https://cardano-mainnet.blockfrost.io/api/v0',
+        key_preview: null,
+        url_preview: 'https://cardano-preview.blockfrost.io/api/v0',
     },
     webapp: {
         origin: "http://localhost:3000", 
+    },
+
+    serviceWallet: {        // max 50 ADA service wallet for auto commit of (hourly) transactions 
+        address: null,
+        privateKey: null,
     },
 
     // misc
@@ -67,9 +74,11 @@ _setParams = function(_config) {
     if(_config.JWT_SECRET) {gConfig.jwtKey=_config.JWT_SECRET; }
     console.log("JWT_SECRET was set");
     if(_config.IDENTUS_ADMIN) {gConfig.identus.adminKey=_config.IDENTUS_ADMIN;}
-    console.log("BLOCKFROST_APIKEY was set");
-    if(_config.BLOCKFROST_APIKEY) {gConfig.blockfrost.key=_config.BLOCKFROST_APIKEY;}
     console.log("IDENTUS ADMIN KEY WAS SET");
+    if(_config.BLOCKFROST_APIKEY) {gConfig.blockfrost.key=_config.BLOCKFROST_APIKEY;}
+    console.log("BLOCKFROST_APIKEY (prod) was set");
+    if(_config.BLOCKFROST_APIKEY_PREVIEW) {gConfig.blockfrost.key_preview=_config.BLOCKFROST_APIKEY_PREVIEW;}    
+    console.log("BLOCKFROST_APIKEY (preview) was set");
     if(_config.IDENTUS_HOST) {gConfig.identus.host=_config.IDENTUS_HOST;}
     console.log("IDENTUS HOST WAS SET TO "+_config.IDENTUS_HOST);
     if(_config.TUNNEL) {gConfig.tunnel=_config.TUNNEL;}
@@ -93,6 +102,11 @@ _setParams = function(_config) {
     if(_config.VWD_SEED) {gConfig.vwd.seed=_config.VWD_SEED;}
     console.log("VWD Admin SEED WAS SET");
 
+    if(_config.CARDANO_SERVICE_WALLET_ADDRESS) {gConfig.serviceWallet.address=_config.CARDANO_SERVICE_WALLET_ADDRESS;}
+    console.log("Service Wallet ADDRESS WAS SET");
+    if(_config.CARDANO_SERVICE_WALLET_PRIVATEKEY) {gConfig.serviceWallet.privateKey=_config.CARDANO_SERVICE_WALLET_PRIVATEKEY}
+    console.log("Service Wallet PRIVATE KEY WAS SET");
+    
     if(_config.EXTRA) {
         return _config.EXTRA;
     }

@@ -30,6 +30,11 @@ const _Schema = new Schema({
     name: {type: String, required: true},                     // name of ballot
     aQuestion: {type: Array, required: true, default: []},                         // all questions in this ballot
 
+// vote encrypt / decrypt
+    key: {type: String, required: false},
+
+// results
+    results: {type: Object, required: false},               // the tally result object
 });
 
 _Schema.set('toJSON', { getters: true, virtuals: true });

@@ -8,6 +8,7 @@ const cUsers = require('../const/const_users');
 const cClaims = require('../const/const_claims');
 const {getIdentusIdsFromSeed, async_createEntityWithAuth, async_createAndPublishDidForBallot} = require('../utils/util_identus_identity');
 const srvIdentusUtils = require('../utils/util_identus_utils');
+const AnonymousVoting = require('../engines/anon_voting');
 
 
 /*   
@@ -24,6 +25,13 @@ class api_ballot extends apiBase {
 
         const classDBQuestion = require('../dbaccess/db_question');
         this.dbQuestion=new classDBQuestion({stdTTL: 864000});   // 10 day cache...
+
+        this.anonVotingInstance = new AnonymousVoting({
+            ballotManagerWallet: { address: 'TODO your_wallet_address' },
+            batchInterval: 60 * 60 * 1000 // 1 hour
+        });
+
+//        this.anonVotingInstance.async_testTransaction();
     }
 
 /*   
@@ -100,6 +108,7 @@ class api_ballot extends apiBase {
             if(objUpdate.name) {objUpd.name = objUpdate.name}
             if(objUpdate.opening_at) {objUpd.opening_at = objUpdate.opening_at}
             if(objUpdate.closing_at) {objUpd.closing_at = objUpdate.closing_at}
+            if(objUpdate.key) {objUpd.key = objUpdate.key}
 
             let objUpdB=await this.dbBallot.async_updateBallot({
                 uid: objParam.uid
@@ -185,6 +194,28 @@ class api_ballot extends apiBase {
         }
     }
 
+    // get key (securely separate from all other calls ; used by voting)
+    async _async_getBallotKey(objParam) {
+        try {
+
+            let objBallot=await this.dbBallot.async_findBallot({
+                uid: objParam.uid
+            });
+            if(!objBallot) {
+                throw {
+                    data: null,
+                    status: 404,
+                    statusText: "No ballot with uid "+objParam.uid
+                }
+            }
+
+            return objBallot.key;
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
     async _async_findBallot(objParam) {
         try {
 
@@ -218,6 +249,7 @@ class api_ballot extends apiBase {
             objBallot.is_closedToVote= new Date(objBallot.closingVote_at) < now;
             objBallot.is_openedToVote= objBallot.is_closedToRegistration && !objBallot.is_closedToVote && new Date(objBallot.openingVote_at) < now;
 
+            delete objBallot.key;       // never show key to outsider
             return objBallot;  
         }
         catch(err) {
@@ -267,7 +299,6 @@ class api_ballot extends apiBase {
                     }
                 }                
             }
-
 
             return objBallot;  
         }
@@ -456,6 +487,7 @@ class api_ballot extends apiBase {
                 closingRegistration_at: objOpenClose.closingRegistration_at? objOpenClose.closingRegistration_at : null,
                 openingVote_at: objOpenClose.openingVote_at? objOpenClose.openingVote_at : null,
                 closingVote_at: objOpenClose.closingVote_at? objOpenClose.closingVote_at : null,
+                key: ballotKeys.key,
                 aCreds:{
                     type: objOpenClose.requirement,
                     extra: objNewExtra 
@@ -757,8 +789,345 @@ class api_ballot extends apiBase {
     }
 
 /*
- *  Public APIs   
+ *  Public APIs   / VOTING
  */
+
+    async async_encryptVote (plainVote, uid_ballot) {
+        try {
+            const _key=await this._async_getBallotKey({
+                uid: uid_ballot,
+            });
+
+            // Create a random IV for each encryption
+            const iv = crypto.randomBytes(16);
+            
+            // Create cipher using AES-256-CBC
+            const cipher = crypto.createCipher('aes-256-cbc', _key);
+            
+            // Encrypt the vote
+            let encrypted = cipher.update(JSON.stringify(plainVote), 'utf8', 'hex');
+            encrypted += cipher.final('hex');
+            
+            // Combine IV and encrypted data
+            return iv.toString('hex') + ':' + encrypted;
+            
+        } catch (error) {
+            throw {
+                data:null,
+                status: 400,
+                statusText: "Encryption of vote failed"    
+            }
+        }
+    }
+
+    async async_decryptVote (encryptedVote, uid_ballot) {
+        try {
+            const _key=await this._async_getBallotKey({
+                uid: uid_ballot,
+            });
+
+            // Split IV and encrypted data
+            const [ivHex, encrypted] = encryptedVote.split(':');
+            const iv = Buffer.from(ivHex, 'hex');
+            
+            // Create decipher
+            const decipher = crypto.createDecipher('aes-256-cbc', _key);
+            
+            // Decrypt the vote
+            let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+            decrypted += decipher.final('utf8');
+            
+            // Parse back to object
+            return JSON.parse(decrypted);
+            
+        } catch (error) {
+            throw {
+                data:null,
+                status: 400,
+                statusText: "Decryption of vote failed"    
+            }
+        }
+    }
+
+    // Create deterministic one way hash from the anonymous proof data
+    generateZKProof = (aProof) => {
+        // for each proof, extract the claim without the address
+        let _aP=[];
+        aProof.forEach(item => {
+            delete item.address;
+            _aP.push(item);
+        })
+        const proofData = {aProof: _aP};
+        const proofString = JSON.stringify(proofData, Object.keys(proofData).sort());
+        return crypto.createHash('sha256').update(proofString).digest('hex');
+    }
+
+    verifyVoterEligibility(storedZkProof, aProof) {
+        const expectedProof = this.generateZKProof(aProof);
+        return storedZkProof === expectedProof; // Hash comparison
+    }
+
+    // Generate pseudonym from ZK proof WITHOUT revealing voter identity
+    generateAnonymousPseudonym (zkProof) {
+        return crypto.createHash('sha256').update(zkProof).digest('hex').substring(0, 16);
+    }
+
+    async async_vote(objParam, aProof, aVote) {
+        try {
+            const dataBallot = await this.async_findBallotForVoter({
+                uid: objParam.uid,
+            });
+
+            // Generate ZK proof of eligibility for ballot participation
+            const zkProof = this.generateZKProof(aProof);
+
+            // encrypt vote
+            const encryptedVote = await async_encryptVote(JSON.stringify(aVote), objParam.uid);
+
+            // Generate anonymous pseudonym
+            const anonymousPseudonym = this.generateAnonymousPseudonym(zkProof);
+
+            // commit vote
+            const voteRecord = {
+                did_ballot: dataBallot.data.published_id,
+                encryptedVote: encryptedVote,
+                zkProof: zkProof,
+                pseudonym: anonymousPseudonym,
+            };
+
+            // commit Vote;
+            this.anonVotingInstance.commitVote(voteRecord);
+
+            return {
+                data: {
+                    hasVoted: true,
+                    voteCommitted: true, 
+                    pendingBlockchainCommit: true
+                }
+            }
+
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+/*
+ *  Public APIs   / AUDITING / TALLYING VOTES
+ */
+    // for tallying votes, we need to understand the structure we are counting votes for...
+    initializeTallyStructure(aQuestion) {
+        const tally = [];        
+        aQuestion.forEach((question, questionIndex) => {
+            const questionTally = {
+                questionIndex: questionIndex,
+                questionType: question.type,
+                choices: {}
+            };
+            
+            // Initialize all possible choices with count 0
+            question.aChoice.forEach(choice => {
+                questionTally.choices[choice.value] = {
+                    text: choice.text,
+                    value: choice.value,
+                    count: 0
+                };
+            });            
+            tally.push(questionTally);
+        });
+        
+        return tally;
+    }
+
+    countVoteInTally(vote, aQuestion, tallyResults) {
+            try {
+            vote.forEach((answer, questionIndex) => {
+                if (questionIndex >= tallyResults.length) {
+                    throw {
+                        data: null,
+                        status: 400,
+                        statusText: "Vote has more answers than questions"
+                    };
+                }
+                
+                const questionTally = tallyResults[questionIndex];
+                const questionChoices = aQuestion[questionIndex].aChoice;
+                
+                if (Array.isArray(answer)) {
+                    // Multi-select answer: ["multi1", "multi3"] or [123, 567]
+                    answer.forEach(selectedValue => {
+                        if (questionTally.choices[selectedValue]) {
+                            questionTally.choices[selectedValue].count++;
+                        } else {
+                            throw {
+                                data: null,
+                                status: 400,
+                                statusText: "Unknown choice value"
+                            };
+                        }
+                    });
+                } else {
+                    // Single answer: true, "abc", 123
+                    if (questionTally.choices[answer] !== undefined) {
+                        questionTally.choices[answer].count++;
+                    } else {
+                        throw {
+                            data: null,
+                            status: 400,
+                            statusText: "Unknown choice value"
+                        };
+                    }
+                }
+            });
+        }
+         catch(err) {
+            throw err;
+        }
+    }
+
+    async async_tallyVote(objParam) {
+        try {
+            const dataBallot = await this.async_findBallotForVoter({
+                uid: objParam.uid,
+            });
+
+            const dataVotes = await this.anonVotingInstance.async_collectVotesFromBlockchain(dataBallot.data.published_id);            
+            const tallyResults = this.initializeTallyStructure(dataBallot.data.aQuestionInFull);
+
+            // Decrypt and count votes
+            let validVotes = 0;
+            let invalidVotes = 0;            
+            for (var i = 0; i < dataVotes.data.length; i++) {
+                try {
+                    const _encVote = dataVotes.data[i];
+                    const _vote = await this.async_decryptVote(_encVote, objParam.uid);
+                    
+                    // Count this vote
+                    this.countVoteInTally(_vote, dataVotes.data.aQuestionInFull, tallyResults);
+                    validVotes++;
+                    
+                } catch (error) {
+                    console.error(`Failed to decrypt/count vote ${i}:`, error);
+                    invalidVotes++;
+                }
+            }
+            return {
+                data: {
+                    tallyResults: tallyResults,
+                    totalVotes: validVotes,
+                    invalidVotes: invalidVotes,
+                    tallied_at: new Date().toISOString(),
+                    hash: crypto.createHash('sha256').update(JSON.stringify(tallyResults)).digest('hex'),
+                    isClosedToVote: dataBallot.data.is_closedToRegistration && dataBallot.data.isClosedToVote
+                }
+            }
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_publishResults(objParam) {
+        try {
+            const dataBallot = await this.async_findBallotForVoter({
+                uid: objParam.uid,
+            });
+
+            let dataTally = await this.async_tallyVote(objParam);
+            if(!dataTally.data.isClosedToVote) {
+                throw {
+                    data: null,
+                    status: 400,
+                    statusText: "Cannot publish results (ballot still open for vote)"
+                };
+            }
+
+            // now publish those results
+
+            // 1. publish to the cloud struct
+            delete dataTally.data.isClosedToVote;
+            await this.dbBallot.async_updateBallot({
+                uid: dataBallot.data.uid
+            }, {
+                results: dataTally.data
+            });
+
+            // 2. publish onchain
+            const dataOnchain = await this.anonVotingInstance.async_publishFinalResults(dataBallot.data.published_id, dataTally.data, dataBallot.data.did_admin);
+
+            // 3. generate an Identus VC
+
+            //TODO
+
+            return {
+                data: {
+                    wasPublished: true,   
+                    onchainTxHash: dataOnchain.data.txHash
+                }
+            }
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async auditVotes(objParam) {
+        try {
+            const _verifyZKProofStructure = (zkProof) => {
+                // Basic validation - check if it's a valid hash format
+                return /^[a-f0-9]{64}$/i.test(zkProof);
+            }
+
+            const dataBallot = await this.async_findBallotForVoter({
+                uid: objParam.uid,
+            });
+            
+            // Collect all votes
+            const dataVotes = await this.anonVotingInstance.async_collectVotesFromBlockchain(dataBallot.data.published_id);
+            
+            // 2. Verify each vote's ZK proof
+            const auditResults = {
+                totalVotes: dataVotes.data.length,
+                validProofs: 0,
+                invalidProofs: 0,
+                duplicatePseudonyms: 0,
+                voteDetails: []
+            };
+            
+            const seenPseudonyms = new Set();           
+            dataVotes.data.forEach((vote, index) => {
+                const voteAudit = {
+                    index: index,
+                    pseudonym: vote.pseudonym,
+                    zkProofValid: _verifyZKProofStructure(vote.zkProof),
+                    isDuplicate: seenPseudonyms.has(vote.pseudonym),
+                    timestamp: vote.timestamp || 'unknown'
+                };
+                
+                if (voteAudit.zkProofValid) {
+                    auditResults.validProofs++;
+                } else {
+                    auditResults.invalidProofs++;
+                }
+                
+                if (voteAudit.isDuplicate) {
+                    auditResults.duplicatePseudonyms++;
+                }
+                
+                seenPseudonyms.add(vote.pseudonym);
+                auditResults.voteDetails.push(voteAudit);
+            });
+            
+            return {data: auditResults}
+            
+        } catch (error) {
+            throw {
+                data: null,
+                status: 400,
+                statusText: "Could not Audit ballot "+ objParam.uid
+            };
+        }
+    }
 
     async async_findBallotBy(objParam)  {
         try {

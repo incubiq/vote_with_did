@@ -46,6 +46,18 @@ class api_user_admin extends apiDesigner {
         }
     }
 
+    adminSign(data, adminKey) {
+        // Create HMAC signature using admin's master key
+        const hmac = crypto.createHmac('sha512', adminKey);
+        hmac.update(data);
+        return hmac.digest('hex');
+    }
+
+    verifyAdminSignature(signature, data, adminKey) {
+        const expectedSignature = adminSign(data, adminKey);
+        return signature === expectedSignature;
+    }
+
 /*
  *      Ballot creation
  */
@@ -102,10 +114,34 @@ class api_user_admin extends apiDesigner {
                     statusText: "Insufficient credentials to publish this ballot"
                 }
             }
+
+            // we publish the ballot
             const dataPublished=await gConfig.app.apiBallot.async_publishBallot({
                 uid: objFind.uid,
                 did: objFind.did
             }, objUpd);
+            
+            return dataPublished;
+
+        }
+        catch(err) {
+            throw err;
+        }
+    }
+
+    async async_tallyBallot(objFind) {
+        try {
+            if(objFind.canPublishBallot!==true) {
+                throw {
+                    data: null,
+                    status: 403,
+                    statusText: "Insufficient credentials to compute ballot results"
+                }
+            }
+            const dataBallot=await gConfig.app.apiBallot.async_findMyBallot({
+                uid: objFind.uid,
+                did: objFind.did
+            });
 
             return dataPublished;
 
@@ -113,6 +149,7 @@ class api_user_admin extends apiDesigner {
         catch(err) {
             throw err;
         }
+
     }
 
 }

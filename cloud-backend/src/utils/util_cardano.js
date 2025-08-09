@@ -8,6 +8,12 @@ const CardanoWasm = require("@emurgo/cardano-serialization-lib-nodejs");
 const Bip39 = require("bip39");
 const {Buffer} = require('buffer');
 const { Seed } = require('cardano-wallet-js');
+
+const {
+    Bip32PrivateKey,
+    EnterpriseAddress,
+    StakeCredential,
+} = require('@emurgo/cardano-serialization-lib-nodejs');
     
 let harden = function (num) {
     return 0x80000000 + num;
@@ -79,6 +85,54 @@ const generateSeedPhrase = async function (){
     };    
 }
 
+// an alternative to get priv key from seed
+const derivePrivKeyFromSeed = (_seed, accountIndex = 0) => {
+    try {
+        // Convert mnemonic to seed
+        const seed = Bip39.mnemonicToSeedSync(mnemonic);
+        
+        // Create root key from seed
+        const rootKey = Bip32PrivateKey.from_bip39_entropy(
+            seed.slice(0, 32),
+            seed.slice(32, 64)
+        );
+
+        // Cardano derivation path: m/1852'/1815'/account'/0/0
+        const accountKey = rootKey
+            .derive(harden(1852))  // purpose (Shelley)
+            .derive(harden(1815))  // coin type (Cardano)
+            .derive(harden(accountIndex)); // account
+
+        const paymentKey = accountKey
+            .derive(0)  // external chain
+            .derive(0); // address index
+
+        // Get the private key for signing
+        const privateKey = paymentKey.to_raw_key();
+        
+        // Get the public key for address generation
+        const publicKey = privateKey.to_public();
+        
+        // Create payment credential
+        const paymentCred = StakeCredential.from_keyhash(publicKey.hash());
+        
+        // Use EnterpriseAddress (no staking) instead of BaseAddress
+        const enterpriseAddr = EnterpriseAddress.new(
+            0, // Preview testnet network ID
+            paymentCred
+        );
+        
+        return {
+            privateKey: privateKey.to_bech32(),
+            address: enterpriseAddr.to_address().to_bech32(),
+            hex: Buffer.from(privateKey.as_bytes()).toString('hex')
+        };
+        
+    } catch (error) {
+        console.error('Key derivation failed:', error);
+        throw error;
+    }
+}
 
 const getWalletDetails = async function (objParam){
     try {
@@ -109,7 +163,7 @@ const getWalletDetails = async function (objParam){
     }
     catch(err)  {
         throw err;
-    }
+    }    
 }
 
 /*

@@ -69,7 +69,7 @@ const VotingPanel = (props) => {
 
   const async_vote = async ( )=> {
     // vote on chain
-    srv_postVote(props.ballot.uid, aEligibleThid, [/* votes */], null)
+    srv_postVote(props.ballot.uid, aEligibleThid, answers, null)
     .then((dataVoted) => {
       if(!dataVoted.data) {throw dataVoted}
       toast.success("Your vote was successfully and anonymously cast");

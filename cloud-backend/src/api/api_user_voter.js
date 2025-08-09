@@ -1,4 +1,5 @@
 const jwtDecode = require('jwt-decode');
+const crypto = require('crypto');
 const apiViewer = require('./api_user_viewer');
 const utilServices = require('../utils/util_services');
 const utilsCreds = require('../utils/util_identus_credentials');
@@ -585,7 +586,6 @@ class api_user_voter extends apiViewer {
                 }
             }
 
-
             return {
                 data: {
                     ballot: dataBallot.data,
@@ -628,7 +628,11 @@ class api_user_voter extends apiViewer {
             }
 
             // now vote 
-            let bHasVoted=true;
+            await gConfig.app.apiBallot.async_vote({
+                uid: objFind.uid,
+                did: objFind.did
+            }, objParam.aProof, objParam.aVote);
+
 
             // issue certif of vote (do not await)
             const objUser=cUsers.getUserFromDid(objParam.did);
@@ -642,7 +646,7 @@ class api_user_voter extends apiViewer {
             return {
                 data: {
                     hasShownEnoughProof: dataCanVote.data.canVote,
-                    hasVoted: bHasVoted
+                    hasVoted: true
                 }
             }
         }
