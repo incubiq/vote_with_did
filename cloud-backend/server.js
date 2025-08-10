@@ -55,8 +55,12 @@ global.gConfig={
     },
 
     serviceWallet: {        // max 50 ADA service wallet for auto commit of (hourly) transactions 
+        networkId: 0,           // PREVIEW - net
         address: null,
         privateKey: null,
+        privateUTXO: null,
+        stakeKey: null,
+
     },
 
     // misc
@@ -106,6 +110,11 @@ _setParams = function(_config) {
     console.log("Service Wallet ADDRESS WAS SET");
     if(_config.CARDANO_SERVICE_WALLET_PRIVATEKEY) {gConfig.serviceWallet.privateKey=_config.CARDANO_SERVICE_WALLET_PRIVATEKEY}
     console.log("Service Wallet PRIVATE KEY WAS SET");
+    if(_config.CARDANO_SERVICE_WALLET_STAKEKEY) {gConfig.serviceWallet.stakeKey=_config.CARDANO_SERVICE_WALLET_STAKEKEY}
+    console.log("Service Wallet STAKE KEY WAS SET");
+    if(_config.CARDANO_SERVICE_WALLET_PRIVATEUTXO) {gConfig.serviceWallet.privateUTXO=_config.CARDANO_SERVICE_WALLET_PRIVATEUTXO}
+    console.log("Service Wallet PRIVATE UTXO KEY WAS SET");
+    
     
     if(_config.EXTRA) {
         return _config.EXTRA;

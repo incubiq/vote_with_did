@@ -18,6 +18,7 @@ const {
   hash_transaction,
   TransactionHash,
   TransactionInput,
+  StakeCredential,
   Vkeywitness,
   Vkey,
   Ed25519Signature
@@ -25,6 +26,9 @@ const {
 
 const crypto = require('crypto');
 const axios = require('axios');
+const util_cardano = require('../utils/util_cardano');
+
+
 
 /**
  * Anonymous Voting Backend Service for NodeJS
@@ -280,77 +284,81 @@ class AnonymousVoting {
 
     async async_testTransaction() {
         try {
-            console.log('Creating test transaction...');
+            console.log('Creating test transaction...');            
 
             const utxosResponse = await axios.get(
-                `https://cardano-preview.blockfrost.io/api/v0/addresses/${gConfig.serviceWallet.address}/utxos`,
+                gConfig.blockfrost.url_preview+`/addresses/${gConfig.serviceWallet.address}/utxos`,
                 { headers: { 'project_id': gConfig.blockfrost.key_preview} }
             );
 
             const utxos = utxosResponse.data;
             if (utxos.length === 0) throw new Error('No UTXOs - wallet empty');
 
-                        
-            // Create proper transaction builder config
-            const linearFee = LinearFee.new(
-                BigNum.from_str('44'),    // coefficient
-                BigNum.from_str('155381') // constant
+             // --- 1. CONFIGURE THE TRANSACTION BUILDER ---
+            // Get the latest network protocol parameters
+            const protocolParamsResponse = await axios.get(
+                gConfig.blockfrost.url_preview+'/epochs/latest/parameters',
+                { headers: { 'project_id': gConfig.blockfrost.key_preview } }
             );
-
-            // Build transaction
+            const protocolParams = protocolParamsResponse.data;
+    
             const txBuilderConfig = TransactionBuilderConfigBuilder.new()
-            .fee_algo(linearFee)
-            .pool_deposit(BigNum.from_str('500000000'))
-            .key_deposit(BigNum.from_str('2000000'))
-            .max_value_size(5000)
-            .max_tx_size(16384)
-            .coins_per_utxo_byte(BigNum.from_str('4310'))  // testnet value
-            .build();
+                .fee_algo(
+                    LinearFee.new(
+                        BigNum.from_str(protocolParams.min_fee_a.toString()),
+                        BigNum.from_str(protocolParams.min_fee_b.toString())
+                    )                                                
+                ) 
+                .pool_deposit(BigNum.from_str(protocolParams.pool_deposit))
+                .key_deposit(BigNum.from_str(protocolParams.key_deposit))
+                .max_value_size(parseInt(protocolParams.max_val_size))
+                .max_tx_size(protocolParams.max_tx_size)             
+                .coins_per_utxo_byte(BigNum.from_str(protocolParams.coins_per_utxo_size)) // Correct parameter name for recent CSL versions
+                .build(); 
             const txBuilder = TransactionBuilder.new(txBuilderConfig);
+            const senderAddress = Address.from_bech32(gConfig.serviceWallet.address);
 
+            // --- 2. ADD INPUTS ---
+            // For simplicity, we'll use the first UTXO.
             const utxo = utxos[0];
             const txInput = TransactionInput.new(
                 TransactionHash.from_hex(utxo.tx_hash),
                 utxo.output_index
             );
-            const inputValue = Value.new(BigNum.from_str(utxo.amount[0].quantity));
-            txBuilder.add_input(
-                Address.from_bech32(gConfig.serviceWallet.address),
-                txInput,
-                inputValue
-            );
+            const inputValue = BigNum.from_str(utxo.amount.find(a => a.unit === 'lovelace').quantity);
+            txBuilder.add_input(senderAddress, txInput, Value.new(inputValue));
 
-            // Send 2 ADA back to yourself (minus fees)
+            // --- 3. ADD OUTPUTS ---
+            // Send 2 ADA back to the sender's address
             const outputAddress = Address.from_bech32(gConfig.serviceWallet.address);
-            const outputValue = Value.new(BigNum.from_str('2000000')); // 2 ADA
-            const output = TransactionOutput.new(outputAddress, outputValue);
+            const outputValue = BigNum.from_str('2000000'); // 2 ADA in lovelace
+            const output = TransactionOutput.new(outputAddress, Value.new(outputValue));
             txBuilder.add_output(output);
 
-             // Set fee manually (approximately 0.17 ADA)
-            txBuilder.set_fee(BigNum.from_str('170000')); // 0.17 ADA in lovelace
-
-            // Build transaction body
+            // --- 4. CALCULATE FEE AND ADD CHANGE  ---
+            txBuilder.add_change_if_needed(senderAddress);
+            
+             // --- 5. BUILD AND SIGN THE TRANSACTION ---
             const txBody = txBuilder.build();
-            const privateKey = PrivateKey.from_bech32(gConfig.serviceWallet.privateKey);
-            const txHash = hash_transaction(txBody);
-        
-            const vkeyWitness = make_vkey_witness(txHash, privateKey);
-            const vkeyWitnesses = Vkeywitnesses.new();
-            vkeyWitnesses.add(vkeyWitness);
-        
-            const witnessSet = TransactionWitnessSet.new();
-            witnessSet.set_vkeys(vkeyWitnesses);
-        
-            console.log('Transaction created (unsigned)');
 
-            // Create signed transaction
-            const signedTx = Transaction.new(txBody, witnessSet);
-            const txBytes = Buffer.from(signedTx.to_bytes()).toString('hex');
-            
-            console.log('Transaction hash:', txHash);
-            console.log('Transaction created successfully!');
-            
-            
+            const txHash = hash_transaction(txBody);
+            const witnesses = TransactionWitnessSet.new();
+            const vkeyWitnesses = Vkeywitnesses.new();
+
+            const paymentKey = PrivateKey.from_bech32(gConfig.serviceWallet.privateUTXO);
+            vkeyWitnesses.add(make_vkey_witness(txHash, paymentKey));
+
+//            const stakePrivateKey = PrivateKey.from_bech32(gConfig.serviceWallet.stakeKey); 
+//            vkeyWitnesses.add(make_vkey_witness(txHash, stakeRawKey));
+
+            witnesses.set_vkeys(vkeyWitnesses);
+
+            const signedTx = Transaction.new(txBody, witnesses);
+
+            // --- 6. SUBMIT THE TRANSACTION ---
+             // We submit the raw transaction bytes, not a hex string.
+            const txBytes = signedTx.to_bytes();
+    
             const response = await axios.post(gConfig.blockfrost.url_preview+"/tx/submit",
                 Buffer.from(txBytes),
                 {
@@ -365,13 +373,14 @@ class AnonymousVoting {
             console.log('Response:', response.data);
             console.log('Check your Eternl wallet in a few minutes');
             
-            return txHash;
+            return {data: {txHash: txHash}};
             
         } catch (error) {
             console.error('❌ Transaction failed:', error.response?.data || error.message);
             throw error;
         }
     }
+
 }
 
 module.exports = AnonymousVoting;
