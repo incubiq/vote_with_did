@@ -79,6 +79,23 @@ This project is planned to start in August 2024, and be delivered by end July 20
    * Note: the backend requires a VotingWithDID admin (I mean an Identus user allowed to create VCs/Proofs) to issue Offers/Proofs. You can either create one yourself (via Postman) and add it to a local_secret.json at startup. Or ask me for creds of my current test admin user. In the end, there could be as many validating admins as we wish for separation of concerns.
    * run the browser ext (refer to M2 doc)
 
+ M4 (11 August 2025)
+
+- 23min explanation video of M4: https://youtu.be/vBzfF3m3hwQ
+
+  - Development work
+    * backend for creating, updating, publishing, ballot 
+    * issuance of VCs & Proofs for registering to a ballot (rights to vote)
+    * issuance of VCs & Proofs for a proof of vote (vote undisclosed, only proof of vote)
+    * issuance of encrypted votes onchain (cardano ; metadata 90000+)
+    * UI for all ballot activities (as an admin + as an end user)
+    * created a full POSTMAN test env
+
+  - How to test it
+   * run the backend (will on port 8101 and connect on an Identus host on https://identus.opensourceais.com)
+   * Note: the backend requires a VotingWithDID admin (I mean an Identus user allowed to create VCs/Proofs) to issue Offers/Proofs. You can either create one yourself (via Postman) and add it to a local_secret.json at startup. Or ask me for creds of my current test admin user. In the end, there could be as many validating admins as we wish for separation of concerns.
+   * run the browser ext (refer to M2 doc)
+
 
 ## Support
 
