@@ -26,6 +26,8 @@ const {
 
 const crypto = require('crypto');
 const axios = require('axios');
+const fs = require('fs').promises;
+const path = require('path');
 const util_cardano = require('../utils/util_cardano');
 
 
@@ -33,16 +35,23 @@ const util_cardano = require('../utils/util_cardano');
 /**
  * Anonymous Voting Backend Service for NodeJS
  * Handles vote submission, tallying, and results publication to Cardano (testnet)
+ * Puts onchain every X min  (here 5 min)
  */
 
+const batchInterval = 5 * 60 * 1000;  // 5min
+
 class AnonymousVoting {
-  constructor(config) {
-    
-    this.batchInterval = config?.batchInterval || (60 * 60 * 1000); // 1 hour default
-    this.startBatchTimer();
+  constructor() {    
 
     // In-memory storage 
     this.uncommitedVotes = [];
+
+    // on disk storage 
+    this.votesFilePath = path.join(process.cwd(), 'data', 'pending_votes.json');
+    this.ensureDataDirectory();
+    this.loadFromDisk();
+
+    this.startBatchTimer();
   }
 
 /**
@@ -50,14 +59,22 @@ class AnonymousVoting {
  */
 
     startBatchTimer() {
+        // first call, flush all we have within next 5secs
+        setTimeout(async () => {
+            await this.commitAllPendingBatches();
+        }, 5000);
+
+        // looping ever X min
         setInterval(async () => {
             await this.commitAllPendingBatches();
-        }, this.batchInterval || 3600000);
+        }, batchInterval);
     }
 
     async commitAllPendingBatches() {
         if (this.uncommitedVotes.length > 0) {
-    
+        
+            console.log(`🔄 Committing ${this.uncommitedVotes.length} pending votes...`);
+
             // Group votes by ballot
             const votesByBallot = this.groupVotesByBallot(this.uncommitedVotes);
             
@@ -72,10 +89,12 @@ class AnonymousVoting {
                         }
                     }
                 };
-                await this.async_commitToCardano(metadata);
+                await this.async_commitToCardano(metadata);               
             }
             
             this.uncommitedVotes = []; // Clear after commit
+            await this.clearDiskVotes();               
+            console.log('✅ All pending votes committed and cleared from disk');
         }
     }
 
@@ -91,23 +110,180 @@ class AnonymousVoting {
     }
 
 /**
+ * Voting (temp save to /load from disk)
+ */
+
+    async ensureDataDirectory() {
+        try {
+            const dataDir = path.dirname(this.votesFilePath);
+            await fs.mkdir(dataDir, { recursive: true });
+        } catch (error) {
+            throw {
+                data: null,
+                status: 400,
+                statusText: 'Failed to create data directory'
+            };
+        }
+    }
+
+    async saveToDisk() {
+        try {
+            if (this.uncommitedVotes.length === 0) {
+                return; // No votes to save
+            }
+
+            const saveData = {
+                timestamp: new Date().toISOString(),
+                version: '1.0',
+                votes: this.uncommitedVotes,
+                totalCount: this.uncommitedVotes.length
+            };
+
+            await fs.writeFile(
+                this.votesFilePath, 
+                JSON.stringify(saveData, null, 2), 
+                'utf8'
+            );
+
+            console.log(`💾 Saved ${this.uncommitedVotes.length} pending votes to disk`);
+
+        } catch (error) {
+            throw {
+                data: null,
+                status: 400,
+                statusText: 'Failed to save pending votes to disk'
+            };
+        }
+    }
+
+    async loadFromDisk() {
+        try {
+            // Check if file exists
+            await fs.access(this.votesFilePath);
+            
+            const fileContent = await fs.readFile(this.votesFilePath, 'utf8');
+            const saveData = JSON.parse(fileContent);
+
+            // Validate data structure
+            if (!saveData.votes || !Array.isArray(saveData.votes)) {
+                console.warn('⚠️ Invalid votes file structure, starting fresh');
+                this.uncommitedVotes = [];
+                return;
+            }
+
+            this.uncommitedVotes = saveData.votes;
+            
+            console.log(`📁 Loaded ${this.uncommitedVotes.length} pending votes from disk`);
+            console.log(`📅 Last saved: ${saveData.timestamp}`);
+
+            // If we have pending votes, schedule immediate commit
+            if (this.uncommitedVotes.length > 0) {
+                console.log('🚀 Scheduling immediate commit of loaded votes...');
+                setTimeout(() => {
+                    this.commitAllPendingBatches();
+                }, 5000); // Commit after 5 seconds
+            }
+
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                console.log('📝 No existing votes file found, starting fresh');
+                this.uncommitedVotes = [];
+            } else {
+                this.uncommitedVotes = [];
+                throw {
+                    data: null,
+                    status: 400,
+                    statusText: 'Failed to load votes from disk'
+                };
+            }
+        }
+    }
+
+    async clearDiskVotes() {
+        try {
+            await fs.unlink(this.votesFilePath);
+            console.log('🗑️ Cleared votes file after successful commit');
+        } catch (error) {
+            if (error.code !== 'ENOENT') {
+                throw {
+                    data: null,
+                    status: 400,
+                    statusText: 'Failed to clear votes file'
+                };
+            }
+        }
+    }
+
+    async forceSave() {
+        console.log('💾 Force saving pending votes...');
+        await this.saveToDisk();
+    }
+
+    
+/**
  * Voting (commit to mem + to onchain)
  */
 
-  async commitVote(objVote) {
-    this.uncommitedVotes.push(objVote);      
-  }
+    getPendingVotesStatus() {
+        return {
+            pendingCount: this.uncommitedVotes.length,
+            oldestVote: this.uncommitedVotes.length > 0 ? this.uncommitedVotes[0].timestamp : null,
+            newestVote: this.uncommitedVotes.length > 0 ? this.uncommitedVotes[this.uncommitedVotes.length - 1].timestamp : null
+        };
+    }
+
+    async commitVote(objVote) {
+        this.uncommitedVotes.push(objVote);      
+        console.log(`📝 Vote added to pending queue (${this.uncommitedVotes.length} total)`);
+        
+        // Save to disk immediately
+        await this.saveToDisk();
+    }
 
   async async_commitToCardano(metadata) {
     try {
-        // Prepare transaction metadata
-        
-        // Build transaction using Cardano Serialization Library
-        const txBuilder = TransactionBuilder.new(
-            this.getTestnetTxBuilderConfig()
+
+        // Get UTXOs from service wallet
+        const utxosResponse = await axios.get(
+            gConfig.blockfrost.url_preview + `/addresses/${gConfig.serviceWallet.address}/utxos`,
+            { headers: { 'project_id': gConfig.blockfrost.key_preview } }
         );
 
-        // Add metadata to transaction
+        const utxos = utxosResponse.data;
+        if (utxos.length === 0) {
+             throw {
+                data: null,
+                status: 400,
+                statusText: "No UTXOs - service wallet empty"
+            };
+        }
+
+        // --- 1. CONFIGURE THE TRANSACTION BUILDER ---
+        // Get the latest network protocol parameters
+        const protocolParamsResponse = await axios.get(
+            gConfig.blockfrost.url_preview + '/epochs/latest/parameters',
+            { headers: { 'project_id': gConfig.blockfrost.key_preview } }
+        );
+        const protocolParams = protocolParamsResponse.data;
+
+        const txBuilderConfig = TransactionBuilderConfigBuilder.new()
+            .fee_algo(
+                LinearFee.new(
+                    BigNum.from_str(protocolParams.min_fee_a.toString()),
+                    BigNum.from_str(protocolParams.min_fee_b.toString())
+                )
+            )
+            .pool_deposit(BigNum.from_str(protocolParams.pool_deposit))
+            .key_deposit(BigNum.from_str(protocolParams.key_deposit))
+            .max_value_size(parseInt(protocolParams.max_val_size))
+            .max_tx_size(protocolParams.max_tx_size)
+            .coins_per_utxo_byte(BigNum.from_str(protocolParams.coins_per_utxo_size))
+            .build();
+
+        const txBuilder = TransactionBuilder.new(txBuilderConfig);
+        const senderAddress = Address.from_bech32(gConfig.serviceWallet.address);
+
+        // --- 2. ADD METADATA TO TRANSACTION ---
         const generalMetadata = GeneralTransactionMetadata.new();
         generalMetadata.insert(
             BigNum.from_str(metadata.code),
@@ -118,71 +294,68 @@ class AnonymousVoting {
         auxiliaryData.set_metadata(generalMetadata);
         txBuilder.set_auxiliary_data(auxiliaryData);
 
-        // Add minimal output (send back to ballot manager wallet)
+        // --- 3. ADD INPUTS ---
+        // Use the first UTXO from service wallet
+        const utxo = utxos[0];
+        const txInput = TransactionInput.new(
+            TransactionHash.from_hex(utxo.tx_hash),
+            utxo.output_index
+        );
+        const inputValue = BigNum.from_str(utxo.amount.find(a => a.unit === 'lovelace').quantity);
+        txBuilder.add_input(senderAddress, txInput, Value.new(inputValue));
+
+        // --- 4. ADD OUTPUTS ---
+        // Send minimal amount back to service wallet (rest becomes change)
         const outputAddress = Address.from_bech32(gConfig.serviceWallet.address);
-        const outputValue = Value.new(BigNum.from_str('1500000')); // 1.5 ADA
-        const output = TransactionOutput.new(outputAddress, outputValue);
+        const outputValue = BigNum.from_str('2000000'); // 2 ADA
+        const output = TransactionOutput.new(outputAddress, Value.new(outputValue));
         txBuilder.add_output(output);
-    
-        // Set transaction auxiliary data
-        txBuilder.set_auxiliary_data(auxiliaryData);
 
-        // Build transaction body
+        // --- 5. CALCULATE FEE AND ADD CHANGE ---
+        txBuilder.add_change_if_needed(senderAddress);
+
+        // --- 6. BUILD AND SIGN THE TRANSACTION ---
         const txBody = txBuilder.build();
+        const txHash = hash_transaction(txBody);
 
-        // SIGN the transaction with service wallet private key
-        const privateKey = PrivateKey.from_bech32(gConfig.serviceWallet.privateKey);
-        const vkeyWitness = make_vkey_witness(txBody.hash(), privateKey);
-        
-        const witnessSet = TransactionWitnessSet.new();
-        witnessSet.add_vkey(vkeyWitness);
-        
-        // Create signed transaction
-        const signedTx = Transaction.new(txBody, witnessSet, auxiliaryData);
-        const txHash = Buffer.from(txBody.hash().to_bytes()).toString('hex');
+        const witnesses = TransactionWitnessSet.new();
+        const vkeyWitnesses = Vkeywitnesses.new();
 
-        // Submit signed transaction to Cardano testnet
-        const submissionResult = await this.async_submitVoteOnchain(signedTx);      
- 
-        return {data: {
-            txHash:txHash
-        }}
+        // Use the correct UTXO private key (not root private key)
+        const paymentKey = PrivateKey.from_bech32(gConfig.serviceWallet.privateUTXO);
+        vkeyWitnesses.add(make_vkey_witness(txHash, paymentKey));
+
+        witnesses.set_vkeys(vkeyWitnesses);
+        const signedTx = Transaction.new(txBody, witnesses, auxiliaryData);
+
+        // --- 7. SUBMIT THE TRANSACTION ---
+        const txBytes = signedTx.to_bytes();
+
+        const response = await axios.post(
+            gConfig.blockfrost.url_preview + "/tx/submit",
+            Buffer.from(txBytes),
+            {
+                headers: {
+                    'project_id': gConfig.blockfrost.key_preview,
+                    'Content-Type': 'application/cbor'
+                }
+            }
+        );
+
+        console.log('✅ Voting transaction submitted successfully!');
+        console.log('Response:', response.data);
+
+        return {
+            data: {
+                txHash: Buffer.from(txHash.to_bytes()).toString('hex')
+            }
+        };
     } 
     catch (error) {
       throw {
             data: null,
             status: 400,
             statusText: "Could not submit to cardano"
-        };
-    }
-  }
-
-  /**
-   * Submit Vote transaction to Cardano (testnet) via Blockfrost API
-   */
-  async async_submitVoteOnchain(transaction) {
-    try {
-      const txBytes = Buffer.from(transaction.to_bytes()).toString('hex');      
-      const response = await axios.post(
-        `${gConfig.blockfrost.url_preview}/tx/submit`,
-        txBytes,
-        {
-          headers: {
-            'project_id': gConfig.blockfrost.key_preview,
-            'Content-Type': 'application/cbor'
-          }
-        }
-      );
-      
-      console.log('Transaction submitted to testnet:', response.data);
-      return response.data;
-      
-    } catch (error) {
-      console.error('Vote submission failed:', error.response?.data || error.message);
-      throw {
-            data: null,
-            status: 400,
-            statusText: "Could not submit vote onchain"
         };
     }
   }

@@ -26,10 +26,7 @@ class api_ballot extends apiBase {
         const classDBQuestion = require('../dbaccess/db_question');
         this.dbQuestion=new classDBQuestion({stdTTL: 864000});   // 10 day cache...
 
-        this.anonVotingInstance = new AnonymousVoting({
-            ballotManagerWallet: { address: 'TODO your_wallet_address' },
-            batchInterval: 60 * 60 * 1000 // 1 hour
-        });
+        this.anonVotingInstance = new AnonymousVoting();
 
 //        this.anonVotingInstance.async_testTransaction();
     }
@@ -893,6 +890,7 @@ class api_ballot extends apiBase {
                 encryptedVote: encryptedVote,
                 zkProof: zkProof,
                 pseudonym: anonymousPseudonym,
+                timestamp: new Date().toISOString()
             };
 
             // commit Vote;
