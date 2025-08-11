@@ -39,6 +39,12 @@ const util_cardano = require('../utils/util_cardano');
  */
 
 const batchInterval = 5 * 60 * 1000;  // 5min
+const VWD_LABELS = {
+    VOTE: 900000,           // For vote batches
+    RESULT: 900100,         // For results publication
+    AUDIT: 900200,          // For audit data
+    TEST: 900900            // For testing
+};
 
 class AnonymousVoting {
   constructor() {    
@@ -47,11 +53,13 @@ class AnonymousVoting {
     this.uncommitedVotes = [];
 
     // on disk storage 
+    /*
     this.votesFilePath = path.join(process.cwd(), 'data', 'pending_votes.json');
     this.ensureDataDirectory();
     this.loadFromDisk();
 
     this.startBatchTimer();
+    */
   }
 
 /**
@@ -79,16 +87,18 @@ class AnonymousVoting {
             const votesByBallot = this.groupVotesByBallot(this.uncommitedVotes);
             
             for (const [did_ballot, votes] of votesByBallot) {
+                votes.forEach(item=> {delete item.did_ballot})      // save space, do not add ballot did (it is already in the package)
                 const metadata = {
-                    code: 674,
-                    data: {
-                        674: { // Standard voting metadata label
-                            did_ballot: did_ballot,
-                            batch_votes: votes,
-                            batch_timestamp: new Date().toISOString()
-                        }
-                    }
+                    code: VWD_LABELS.VOTE,
+                    data: null
                 };
+                metadata.data[VWD_LABELS.VOTE] = { 
+                    app: gConfig.appName,
+                    did: did_ballot,
+                    av: votes,
+                    ts: new Date().toISOString()
+                }
+                
                 await this.async_commitToCardano(metadata);               
             }
             
@@ -285,10 +295,19 @@ class AnonymousVoting {
 
         // --- 2. ADD METADATA TO TRANSACTION ---
         const generalMetadata = GeneralTransactionMetadata.new();
-        generalMetadata.insert(
-            BigNum.from_str(metadata.code),
-            this.metadataToTransactionMetadatum(metadata.data[metadata.code])
-        );
+        try {
+            const chunks = this.createChunkedMetadata(metadata.data[metadata.code]);
+            chunks.forEach((chunk, index) => {
+                const _index = metadata.code+index;
+                generalMetadata.insert(
+                    BigNum.from_str(_index.toString()), // Using sequential labels: 
+                    TransactionMetadatum.new_text(chunk)
+                );
+            });
+        }
+        catch(err) {
+            throw err
+        }
 
         const auxiliaryData = AuxiliaryData.new();
         auxiliaryData.set_metadata(generalMetadata);
@@ -307,7 +326,7 @@ class AnonymousVoting {
         // --- 4. ADD OUTPUTS ---
         // Send minimal amount back to service wallet (rest becomes change)
         const outputAddress = Address.from_bech32(gConfig.serviceWallet.address);
-        const outputValue = BigNum.from_str('2000000'); // 2 ADA
+        const outputValue = BigNum.from_str('1800000'); // 2 ADA
         const output = TransactionOutput.new(outputAddress, Value.new(outputValue));
         txBuilder.add_output(output);
 
@@ -386,37 +405,85 @@ class AnonymousVoting {
   /**
    * Collect all voting transactions for a ballot from Cardano blockchain
    */
+
     async async_collectVotesFromBlockchain(did_ballot) {
         try {
-            // Query Blockfrost for transactions with voting metadata (label 674)
-            const response = await axios.get(
-                `${gConfig.blockfrost.url_preview}/metadata/txs/labels/674`,
-                { headers: { 'project_id': gConfig.blockfrost.key_preview } }
-            );
+            const allVotingTxs = new Map(); // tx_hash -> transaction
             
-            // Filter for this specific ballot and extract votes
-            const ballotVotes = [];
-            response.data.forEach(tx => {
-                if (tx.json_metadata?.did_ballot === did_ballot) {
-                    // Could be single vote or batch
-                    if (tx.json_metadata.batch_votes) {
-                        ballotVotes.push(...tx.json_metadata.batch_votes);
-                    } else {
-                        ballotVotes.push(tx.json_metadata);
-                    }
+            // Query multiple metadata labels 
+            const labelQueries = [];
+            for (let label = VWD_LABELS.VOTE; label <= (VWD_LABELS.VOTE+99); label++) {
+                labelQueries.push(
+                    axios.get(
+                        `${gConfig.blockfrost.url_preview}/metadata/txs/labels/${label}`,
+                        { headers: { 'project_id': gConfig.blockfrost.key_preview } }
+                    ).catch(error => {
+                        // Some labels might not exist, that's ok
+                        if (error.response?.status === 404) return { data: [] };
+                        throw error;
+                    })
+                );
+            }
+            
+            // Execute all queries in parallel
+            const responses = await Promise.all(labelQueries);
+            
+            // Collect all transactions with metadata
+            let bigString="";
+            responses.forEach(({data}) => {
+                if(data && data[0]) {
+                    bigString+=data[0].json_metadata;
                 }
             });
             
-            return {data: ballotVotes};            
-        } 
-        catch (error) {
+
+            const splitJsonObjects = (input) => {
+                const parts = [];
+                let depth = 0, inString = false, escape = false, start = -1;
+
+                for (let i = 0; i < input.length; i++) {
+                    const ch = input[i];
+
+                    if (escape) {            // previous was a backslash inside a string
+                    escape = false;
+                    continue;
+                    }
+                    if (inString) {
+                    if (ch === '\\') escape = true;
+                    else if (ch === '"') inString = false;
+                    continue;
+                    }
+                    if (ch === '"') { inString = true; continue; }
+
+                    if (ch === '{') {
+                    if (depth === 0) start = i;
+                    depth++;
+                    } else if (ch === '}') {
+                    depth--;
+                    if (depth === 0 && start !== -1) {
+                        parts.push(input.slice(start, i + 1));
+                        start = -1;
+                    }
+                    }
+                }
+                return parts;
+                }
+
+            const parseConcatenatedJson = (input) => {
+                return splitJsonObjects(input.trim()).map(JSON.parse);
+            }
+            const result = parseConcatenatedJson(bigString);
+            
+            return { data: result };
+            
+        } catch (error) {
             throw {
                 data: null,
                 status: 400,
                 statusText: "Could not collect votes from onchain activity"
             };
         }
-  }
+    }
 
   /**
    * Publish final results to Ballot DID document on Cardano testnet
@@ -426,16 +493,16 @@ class AnonymousVoting {
         try {
             // Publish hash on-chain (immutable proof)       
             const onChainProof = {
-                code: 675,
-                data: {
-                    675: {
-                        ballot_id: did_ballot,
-                        results_hash: results.hash,  // Just the hash, not full results
-                        total_votes: results.totalVotes,
-                        tallied_at: results.tallied_at,
-                        certified_by: did_admin
-                    }
-                }
+                code: VWD_LABELS.RESULT,
+                data: null
+            } 
+            onChainProof.data[VWD_LABELS.RESULT]= {
+                app: gConfig.appName,
+                ballot_id: did_ballot,
+                results_hash: results.hash,  // Just the hash, not full results
+                total_votes: results.totalVotes,
+                tallied_at: results.tallied_at,
+                certified_by: did_admin
             };
             
             const txHash = await this.async_commitToCardano(onChainProof);
@@ -454,6 +521,43 @@ class AnonymousVoting {
         }
     }
 
+    // Cardano only stores 64 bytes max per "insert"...so we have to cut our data in chuncks
+    createChunkedMetadata(data, chunkSize = 60) {
+        const jsonString = JSON.stringify(data);
+        const chunks = [];
+        
+        for (let i = 0; i < jsonString.length; i += chunkSize) {
+            chunks.push(jsonString.substring(i, i + chunkSize));
+        }    
+        return chunks;
+    }
+
+    async async_get_utxo_with_enough_ADA (utxos) {
+        try {
+            utxos.forEach((utxo, index) => {
+                const amount = parseInt(utxo.amount.find(a => a.unit === 'lovelace').quantity);
+                console.log(`UTXO ${index}: ${amount / 1000000} ADA`);
+            });
+
+            // Use a UTXO with at least 2.2 ADA
+            const largerUtxo = utxos.find(utxo => {
+                const amount = parseInt(utxo.amount.find(a => a.unit === 'lovelace').quantity);
+                return amount >= 2200000; // At least 2.2 ADA
+            });
+
+            if (!largerUtxo) {
+                throw  {
+                    data: null,
+                    status: 400,
+                    statusText: "No UTXO with sufficient ADA for this transaction"
+                };
+            }
+            return largerUtxo;
+        } 
+        catch (error) {
+            throw error;
+        }
+    }
 
     async async_testTransaction() {
         try {
@@ -491,9 +595,39 @@ class AnonymousVoting {
             const txBuilder = TransactionBuilder.new(txBuilderConfig);
             const senderAddress = Address.from_bech32(gConfig.serviceWallet.address);
 
+            const generalMetadata = GeneralTransactionMetadata.new();
+            try {
+                const metadata = {
+                    app: "VoteWithDID",
+                    did: "did:prism:d145fa7ac48cd57f26b9cd09e2022e897ad701dbe1899eff9c087563948be4e2",
+                    aV: [
+                        {
+                        enc: "8cf3a2e7aee1f75a4ae7cb86b16e4044:05a18b7ee650fd390701690aa9668a3a07844adf612037d0401763e229e80016",
+                        zkp: "009c75b56d43b31210ad623b9f8571f433c15f7f2a97a309b7f096f1df60c639",
+                        },
+                    ],                                                                
+                }
+                const chunks = this.createChunkedMetadata(metadata);
+                chunks.forEach((chunk, index) => {
+                    const _index = VWD_LABELS.VOTE+index;
+                    generalMetadata.insert(
+                        BigNum.from_str(_index.toString()), // Using sequential labels:
+                        TransactionMetadatum.new_text(chunk)
+                    );
+                });
+
+            }
+            catch(err) {
+                throw err
+            }
+
+            const auxiliaryData = AuxiliaryData.new();
+            auxiliaryData.set_metadata(generalMetadata);
+            txBuilder.set_auxiliary_data(auxiliaryData);
+
             // --- 2. ADD INPUTS ---
-            // For simplicity, we'll use the first UTXO.
-            const utxo = utxos[0];
+            // get best match utxo
+            const utxo = await this.async_get_utxo_with_enough_ADA(utxos);
             const txInput = TransactionInput.new(
                 TransactionHash.from_hex(utxo.tx_hash),
                 utxo.output_index
@@ -504,7 +638,7 @@ class AnonymousVoting {
             // --- 3. ADD OUTPUTS ---
             // Send 2 ADA back to the sender's address
             const outputAddress = Address.from_bech32(gConfig.serviceWallet.address);
-            const outputValue = BigNum.from_str('2000000'); // 2 ADA in lovelace
+            const outputValue = BigNum.from_str('1800000'); // 1.8 ADA in lovelace
             const output = TransactionOutput.new(outputAddress, Value.new(outputValue));
             txBuilder.add_output(output);
 
@@ -526,7 +660,7 @@ class AnonymousVoting {
 
             witnesses.set_vkeys(vkeyWitnesses);
 
-            const signedTx = Transaction.new(txBody, witnesses);
+            const signedTx = Transaction.new(txBody, witnesses, auxiliaryData);
 
             // --- 6. SUBMIT THE TRANSACTION ---
              // We submit the raw transaction bytes, not a hex string.

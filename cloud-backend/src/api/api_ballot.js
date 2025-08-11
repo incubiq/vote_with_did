@@ -240,7 +240,7 @@ class api_ballot extends apiBase {
             objBallot.aQuestionInFull = _aQ;
 
             // check open/close 
-            const now = new Date();
+            const now = new Date(new Date().toUTCString());
             objBallot.is_closedToRegistration= new Date(objBallot.closingRegistration_at) < now;
             objBallot.is_openedToRegistration= !objBallot.is_closedToRegistration && new Date(objBallot.openingRegistration_at) < now;
             objBallot.is_closedToVote= new Date(objBallot.closingVote_at) < now;
@@ -528,7 +528,6 @@ class api_ballot extends apiBase {
     }
 
     async async_getPubliclyAvailableBallotsForRegistration() {
-        const now = new Date();
         return this.async_getMatchingBallots({
             filterPaging: {
                 limit: 100
@@ -541,8 +540,8 @@ class api_ballot extends apiBase {
             $match: {
                 $expr: {
                     $and : [
-                        { $lt: ["$openingRegistration_at", now] }, // opened (past)
-                        { $gt: ["$closingRegistration_at", now] }  // not closed yet (future)
+                        { $lt: ["$openingRegistration_at", "$$NOW"] }, // opened (past)
+                        { $gt: ["$closingRegistration_at", "$$NOW"] }  // not closed yet (future)
                     ]
                 }
             }
@@ -550,7 +549,7 @@ class api_ballot extends apiBase {
     }
 
     async async_getPubliclyAvailableBallotsForVoting() {
-        const now = new Date();
+        const now = new Date(new Date().toUTCString());
         return this.async_getMatchingBallots({
             filterPaging: {
                 limit: 100
@@ -572,7 +571,7 @@ class api_ballot extends apiBase {
     }
 
     async async_getPubliclyAvailableBallotsForStats() {
-        const now = new Date();
+        const now = new Date(new Date().toUTCString());
         return this.async_getMatchingBallots({
             filterPaging: {
                 limit: 100
@@ -799,7 +798,8 @@ class api_ballot extends apiBase {
             const iv = crypto.randomBytes(16);
             
             // Create cipher using AES-256-CBC
-            const cipher = crypto.createCipher('aes-256-cbc', _key);
+            const key = crypto.createHash('sha256').update(_key).digest();
+            const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
             
             // Encrypt the vote
             let encrypted = cipher.update(JSON.stringify(plainVote), 'utf8', 'hex');
@@ -828,7 +828,8 @@ class api_ballot extends apiBase {
             const iv = Buffer.from(ivHex, 'hex');
             
             // Create decipher
-            const decipher = crypto.createDecipher('aes-256-cbc', _key);
+            const key = crypto.createHash('sha256').update(_key).digest();
+            const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
             
             // Decrypt the vote
             let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -879,7 +880,7 @@ class api_ballot extends apiBase {
             const zkProof = this.generateZKProof(aProof);
 
             // encrypt vote
-            const encryptedVote = await async_encryptVote(JSON.stringify(aVote), objParam.uid);
+            const encryptedVote = await this.async_encryptVote(JSON.stringify(aVote), objParam.uid);
 
             // Generate anonymous pseudonym
             const anonymousPseudonym = this.generateAnonymousPseudonym(zkProof);
@@ -887,10 +888,10 @@ class api_ballot extends apiBase {
             // commit vote
             const voteRecord = {
                 did_ballot: dataBallot.data.published_id,
-                encryptedVote: encryptedVote,
-                zkProof: zkProof,
-                pseudonym: anonymousPseudonym,
-                timestamp: new Date().toISOString()
+                enc: encryptedVote,
+                zkp: zkProof,
+                pse: anonymousPseudonym,
+                ts: new Date().toISOString()
             };
 
             // commit Vote;
@@ -913,23 +914,40 @@ class api_ballot extends apiBase {
 /*
  *  Public APIs   / AUDITING / TALLYING VOTES
  */
+
+    async async_collectVotesFromBlockchain(objParam) {
+        try {
+            const dataBallot = await this.async_findBallotForVoter({
+                uid: objParam.uid,
+            });
+
+            const a=await  this.anonVotingInstance.async_collectVotesFromBlockchain(dataBallot.data.published_id);
+            return {data: a}
+        }
+        catch(err) {
+            throw err;
+        }
+        
+    }
+
     // for tallying votes, we need to understand the structure we are counting votes for...
     initializeTallyStructure(aQuestion) {
         const tally = [];        
         aQuestion.forEach((question, questionIndex) => {
             const questionTally = {
                 questionIndex: questionIndex,
-                questionType: question.type,
-                choices: {}
+                title: question.title,
+                type: question.type,
+                choices: []
             };
             
             // Initialize all possible choices with count 0
             question.aChoice.forEach(choice => {
-                questionTally.choices[choice.value] = {
+                questionTally.choices.push({
                     text: choice.text,
                     value: choice.value,
                     count: 0
-                };
+                });
             });            
             tally.push(questionTally);
         });
@@ -937,46 +955,50 @@ class api_ballot extends apiBase {
         return tally;
     }
 
-    countVoteInTally(vote, aQuestion, tallyResults) {
+    countVoteInTally(strVote, aQuestion, tallyResults) {
             try {
-            vote.forEach((answer, questionIndex) => {
-                if (questionIndex >= tallyResults.length) {
-                    throw {
-                        data: null,
-                        status: 400,
-                        statusText: "Vote has more answers than questions"
-                    };
-                }
-                
-                const questionTally = tallyResults[questionIndex];
-                const questionChoices = aQuestion[questionIndex].aChoice;
-                
-                if (Array.isArray(answer)) {
-                    // Multi-select answer: ["multi1", "multi3"] or [123, 567]
-                    answer.forEach(selectedValue => {
-                        if (questionTally.choices[selectedValue]) {
-                            questionTally.choices[selectedValue].count++;
-                        } else {
+                const aVote = JSON.parse(strVote);
+                for (var i=0; i<aVote.length; i++) {
+                    const answer = aVote[i];
+                    const questionIndex = i;
+
+                    if (questionIndex >= tallyResults.length) {
+                        throw {
+                            data: null,
+                            status: 400,
+                            statusText: "Vote has more answers than questions"
+                        };
+                    }
+                    
+                    const questionTally = tallyResults[questionIndex];
+                    const questionChoices = aQuestion[questionIndex].aChoice;
+                    
+                    if (Array.isArray(answer)) {
+                        // Multi-select answer: ["multi1", "multi3"] or [123, 567]
+                        answer.forEach(selectedValue => {
+                            const iChoice = questionTally.choices.findIndex(function (x) {return x.value===aVote[i]});
+                            if(iChoice===-1) {
+                                throw {
+                                    data: null,
+                                    status: 400,
+                                    statusText: "Unknown choice value"
+                                };
+                            }
+                            questionTally.choices[iChoice].count++;
+                        });
+                    } else {
+                        // Single answer: true, "abc", 123
+                        const iChoice = questionTally.choices.findIndex(function (x) {return x.value===aVote[i]});
+                        if(iChoice===-1) {
                             throw {
                                 data: null,
                                 status: 400,
                                 statusText: "Unknown choice value"
                             };
                         }
-                    });
-                } else {
-                    // Single answer: true, "abc", 123
-                    if (questionTally.choices[answer] !== undefined) {
-                        questionTally.choices[answer].count++;
-                    } else {
-                        throw {
-                            data: null,
-                            status: 400,
-                            statusText: "Unknown choice value"
-                        };
+                        questionTally.choices[iChoice].count++;
                     }
-                }
-            });
+                };
         }
          catch(err) {
             throw err;
@@ -997,12 +1019,14 @@ class api_ballot extends apiBase {
             let invalidVotes = 0;            
             for (var i = 0; i < dataVotes.data.length; i++) {
                 try {
-                    const _encVote = dataVotes.data[i];
-                    const _vote = await this.async_decryptVote(_encVote, objParam.uid);
+                    for (var j = 0; j < dataVotes.data[i].aV.length; j++) {
+                        const _encVote = dataVotes.data[i].aV[j].enc;
+                        const _vote = await this.async_decryptVote(_encVote, objParam.uid);
                     
-                    // Count this vote
-                    this.countVoteInTally(_vote, dataVotes.data.aQuestionInFull, tallyResults);
-                    validVotes++;
+                        // Count this vote
+                        this.countVoteInTally(_vote, dataBallot.data.aQuestionInFull, tallyResults);
+                        validVotes++;
+                    }
                     
                 } catch (error) {
                     console.error(`Failed to decrypt/count vote ${i}:`, error);

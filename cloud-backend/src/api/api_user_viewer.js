@@ -26,6 +26,14 @@ class api_user_viewer extends apiBase {
         }]}
     }
 
+    async async_getVotes (objParam) {
+        try {
+            return gConfig.app.apiBallot.async_collectVotesFromBlockchain(objParam);
+        }
+        catch (error) {
+            throw error;
+        }
+    }
 }
 
 module.exports = api_user_viewer;

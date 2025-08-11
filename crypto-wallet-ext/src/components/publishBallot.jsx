@@ -96,7 +96,7 @@ const DialogPublishBallot = (props) => {
 					</label>
 
 					<select className={styles.select}
-						defaultValue = {aAllRequirements[0].value}
+						defaultValue = {aAllRequirements.length>0? aAllRequirements[0].value: "none"}
 						onChange={(_e)=> onChangeRequirement(_e.target.value) }
 					>
 						{aAllRequirements.map((objReq, iReq) => (

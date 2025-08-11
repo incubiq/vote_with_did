@@ -176,9 +176,13 @@ const async_createCustodialCredential = async function (objParam) {
                 dataExist= await async_getFirstHolderVCMatchingType({
                     key: objParam.keyPeer2,
                     claim_type: objParam.claims.claim_type,
+                    delegatedAuthority: objParam.claims.delegatedAuthority,
                     status: STATUS_HOLDER_CREDSRECEIVED
                 });
-                return dataExist;
+
+                if(objParam.claims.delegatedAuthority!=null && objParam.claims.delegatedAuthority==dataExist.data?.vc?.claims?.delegatedAuthority)  {
+                    return dataExist;
+                }
             }
             catch(err) {}
         }
@@ -192,6 +196,7 @@ const async_createCustodialCredential = async function (objParam) {
             dataExist= await async_getFirstHolderVCMatchingType({
                 key: objParam.keyPeer2,
                 claim_type: objParam.claims.claim_type,
+                delegatedAuthority: objParam.claims.delegatedAuthority,
                 status: "*"
             });
 

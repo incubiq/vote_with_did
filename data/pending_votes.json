@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-08-11T14:17:16.724Z",
+  "version": "1.0",
+  "votes": [
+    {
+      "did_ballot": "did:prism:d145fa7ac48cd57f26b9cd09e2022e897ad701dbe1899eff9c087563948be4e2",
+      "encryptedVote": "8cf3a2e7aee1f75a4ae7cb86b16e4044:05a18b7ee650fd390701690aa9668a3a07844adf612037d0401763e229e80016",
+      "zkProof": "009c75b56d43b31210ad623b9f8571f433c15f7f2a97a309b7f096f1df60c639",
+      "pseudonym": "ac79ecfd0ecf6a62",
+      "timestamp": "2025-08-11T14:17:16.724Z"
+    }
+  ],
+  "totalCount": 1
+}

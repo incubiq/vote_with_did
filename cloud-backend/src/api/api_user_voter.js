@@ -100,7 +100,7 @@ class api_user_voter extends apiViewer {
             }
 
             // if we already have a Proof in cache, we return it
-            if(objUser.aProof && objUser.aProof.length>0) {
+            if(!objParam.forceRefresh && objUser.aProof && objUser.aProof.length>0) {
                 return {
                     data: objUser.aProof
                 }
@@ -311,7 +311,7 @@ class api_user_voter extends apiViewer {
                         keyPeer2: objUser.key,
                         didPeer1:  objParam.did_issuer,          // published short DID of issuer
                         didPeer2:  objUser.did,              // published short DID of holder
-                        validity:  gConfig.identus.validity,           // 30d by default
+                        validity:  objParam.validity? objParam.validity: gConfig.identus.validity,           // 30d by default  3600 * 24 *30
                         claims: objClaim,             
                         noDuplicate: true
                     });
@@ -351,6 +351,9 @@ class api_user_voter extends apiViewer {
         if(!objParam.did_issuer) {objParam.did_issuer=gConfig.vwd.did;}
         if(!objParam.name_issuer) {objParam.name_issuer="VoteWithDID (admin)";}
 
+        // make this kind of proof valid for 1 year
+        objParam.validity = 3600 * 24 *365;
+
         const objUser = cUsers.getUserFromKey(objParam.key);
         if(objUser && objUser.aProof) {
             // if we have the proof, we show it now...
@@ -381,6 +384,9 @@ class api_user_voter extends apiViewer {
             if(!objParam.key_issuer) {objParam.key_issuer=gConfig.vwd.key;}
             if(!objParam.did_issuer) {objParam.did_issuer=gConfig.vwd.did;}
             if(!objParam.name_issuer) {objParam.name_issuer="VoteWithDID (admin)";}
+
+            // make this kind of proof valid for 1 week
+            objParam.validity = 3600 * 24 *7;
 
             const objAssets = await utilsBlockfrost.async_getWalletAssetsFromAddress(objParam.address)
             let objClaim = {
@@ -441,6 +447,11 @@ class api_user_voter extends apiViewer {
                     mustBeOpenToVote: false
                 })
                 objClaim.delegatedAuthority= dataBallot.data.published_id;
+
+                // make this kind of proof valid until ballot voting ends (1min + closing time)
+                const now = new Date(new Date().toUTCString());
+                const closing_at = new Date(dataBallot.data.closingVote_at);
+                objParam.validity = Math.min(3600, 60 * (1+ Math.floor((closing_at - now) / (1000 * 60)))); 
             }
 
             return this.async_ensureProof(objParam, objClaim);
@@ -468,6 +479,9 @@ class api_user_voter extends apiViewer {
             if(!objParam.key_issuer) {objParam.key_issuer=gConfig.vwd.key;}
             if(!objParam.did_issuer) {objParam.did_issuer=gConfig.vwd.did;}
             if(!objParam.name_issuer) {objParam.name_issuer="VoteWithDID (admin)";}
+
+            // make this kind of proof valid for 10 years
+            objParam.validity = 3600 * 24 *365 * 10;
 
             const dataBallot =  await gConfig.app.apiBallot.async_findBallotForVoter({
                 uid: objParam.uid_ballot,
@@ -509,6 +523,8 @@ class api_user_voter extends apiViewer {
                 }
             }
 
+            // HAS the user already voted??
+
             // look if the proof of VOTE was created before (but not registered or unfinished)
             const dataProofs= await utilsProof.async_getAllVCPresentationRequests({
                 key: objUser.key,
@@ -519,48 +535,52 @@ class api_user_voter extends apiViewer {
             if(dataProofs?.data?.length>0) {
                 for (var i=0; i<dataProofs.data.length; i++) {
                     
-                    // was partially issued??
-                    if(dataProofs.data.status!==utilsProof.STATUS_PROVER_PROOF_SENT) {
-                        // check we have a issued Certif 
-                        const dataCert = await utilsCreds.async_getFirstHolderVCMatchingType({
-                            key: objUser.key,
-                            claim_type: cClaims.CLAIM_PROOF_OF_VOTE.value,
-                            delegatedAuthority: dataBallot.data.published_id
-                        });   
-
-                        if(dataCert.data) {
-                            // we have the proof we were issued VC, continue issuance of Proof
-                            // continue issuance... (do not await, consider voted true)
-                            this.async_issueProofOfVote({
+                    // does this proof concerns this ballot?
+                    if(dataProofs.data[i]?.claims?.delegatedAuthority == dataBallot.data.publishedId) {
+                        // was partially issued??
+                        if(dataProofs.data.status!==utilsProof.STATUS_PROVER_PROOF_SENT) {
+                            // check we have a issued Certif 
+                            const dataCert = await utilsCreds.async_getFirstHolderVCMatchingType({
                                 key: objUser.key,
-                                uid_ballot: objParam.uid,
-                                a_thid_eligibility: objParam.aUserProof
-                            });
+                                claim_type: cClaims.CLAIM_PROOF_OF_VOTE.value,
+                                delegatedAuthority: dataBallot.data.published_id
+                            });   
 
-                            return {
-                                data: {
-                                    ballot: dataBallot.data,
-                                    user: objParam.did,
-                                    canVote: false,
-                                    hasVoted: true,
+                            if(dataCert.data) {
+                                // we have the proof we were issued VC, continue issuance of Proof
+                                // continue issuance... (do not await, consider voted true)
+                                this.async_issueProofOfVote({
+                                    key: objUser.key,
+                                    uid_ballot: objParam.uid,
+                                    a_thid_eligibility: objParam.aUserProof
+                                });
+
+                                return {
+                                    data: {
+                                        ballot: dataBallot.data,
+                                        user: objParam.did,
+                                        canVote: false,
+                                        hasVoted: true,
+                                    }
                                 }
                             }
                         }
-                    }
-                    else {
-                        if(dataProofs.data[i].claims?.delegatedAuthority==dataBallot.data.published_id) {
-                            cUsers.addBallotVoteToUser(objUser.username, objParam.uid);
-                            return {
-                                data: {
-                                    ballot: dataBallot.data,
-                                    user: objParam.did,
-                                    canVote: false,
-                                    hasVoted: true,
+                        else {
+                            if(dataProofs.data[i].claims?.delegatedAuthority==dataBallot.data.published_id) {
+                                cUsers.addBallotVoteToUser(objUser.username, objParam.uid);
+                                return {
+                                    data: {
+                                        ballot: dataBallot.data,
+                                        user: objParam.did,
+                                        canVote: false,
+                                        hasVoted: true,
+                                    }
                                 }
                             }
-                        }
 
+                        }
                     }
+                    
                 }
 
                 // we received some proofs, but they were not for us... So we probably have not voted yet...
@@ -606,7 +626,7 @@ class api_user_voter extends apiViewer {
             const dataCanVote=await this.async_canVote({
                 uid: objParam.uid,
                 did: objParam.did,
-                aUserProof: objParam.aProof
+                aProof: objParam.aProof
             });
 
             if(!dataCanVote.data.canVote) {
@@ -629,8 +649,8 @@ class api_user_voter extends apiViewer {
 
             // now vote 
             await gConfig.app.apiBallot.async_vote({
-                uid: objFind.uid,
-                did: objFind.did
+                uid: objParam.uid,
+                did: objParam.did
             }, objParam.aProof, objParam.aVote);
 
 

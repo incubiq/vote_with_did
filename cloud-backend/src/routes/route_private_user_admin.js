@@ -80,8 +80,8 @@ router.patch("/ballot/:uid/publish", function(req, res, next) {
 });
  
 // calculate ballot results
-router.post("/ballot/:uid/tally", function(req, res, next) {
-  routeUtils.apiPatch(req, res, gConfig.app.apiUserAdmin.async_tallyBallot.bind(gConfig.app.apiUserAdmin), {
+router.get("/ballot/:uid/tally", function(req, res, next) {
+  routeUtils.apiGet(req, res, gConfig.app.apiUserAdmin.async_tallyBallot.bind(gConfig.app.apiUserAdmin), {
     canPublishBallot: req.user.canPublishBallot? req.user.canPublishBallot: false,
     uid: req.params.uid? parseInt(req.params.uid) : null,
     did: req.user.did? req.user.did: null,

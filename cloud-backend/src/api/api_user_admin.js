@@ -143,7 +143,9 @@ class api_user_admin extends apiDesigner {
                 did: objFind.did
             });
 
-            return dataPublished;
+            const dataTally = await gConfig.app.apiBallot.async_tallyVote(objFind);
+
+            return dataTally;
 
         }
         catch(err) {

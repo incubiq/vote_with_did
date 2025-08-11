@@ -66,7 +66,8 @@ router.get("/did", function(req, res, next) {
 router.get("/proofs", function(req, res, next) {
   routeUtils.apiGet(req, res, gConfig.app.apiUserVoter.async_getUserWithProofs.bind(gConfig.app.apiUserVoter), {
     claim_type: req.query.claim_type? req.query.claim_type: "*",
-    key: req.user && req.user.key? req.user.key: null
+    key: req.user && req.user.key? req.user.key: null,
+    forceRefresh : req.query.force==true, 
   });
 });
 

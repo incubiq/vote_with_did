@@ -22,6 +22,13 @@ router.get('/ballots ', function (req, res, next) {
     // todo
 });
 
+// get votes onchain
+router.get("/ballot/:uid/votes", function(req, res, next) {
+  routeUtils.apiGet(req, res, gConfig.app.apiUserViewer.async_getVotes.bind(gConfig.app.apiUserViewer), {
+    uid: req.params.uid? parseInt(req.params.uid): null,
+  });
+});
+
 // view a ballot's votes / status
 router.get('/ballot/:uid ', function (req, res, next) {
         // todo

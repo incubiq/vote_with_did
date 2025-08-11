@@ -9,7 +9,8 @@ import { useWalletConnection } from '../hooks/useWalletConnection';
 import BottomNav from '../components/BottomNav';
 import Dialog from '../components/dialog.jsx';
 import DialogPublishBallot from '../components/publishBallot.jsx';
-import { srv_postCreateBallot, srv_getBallots, srv_getBallot, srv_patchBallot, srv_publishBallot } from '../utils/rpc_ballot';
+import ResultsPanel from '../components/resultsPanel.jsx';
+import { srv_postCreateBallot, srv_getBallots, srv_getBallot, srv_patchBallot, srv_publishBallot, srv_getBallotResults } from '../utils/rpc_ballot';
 import { getHowLongUntil } from '../utils/misc';
 
 import styles from '../styles/Base.module.css';
@@ -23,6 +24,7 @@ const BallotsPage = () => {
 	const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 	const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 	const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
+	const [isResultsDialogOpen, setIsResultsDialogOpen] = useState(false);
 	const [connectedWallets, setConnectedWallets] = useState([]); // Store connected wallets
 	const [aBallotInCreation, setABallotInCreation] = useState([]);
 	const [aBallotInRegistration, setABallotInRegistration] = useState([]);
@@ -30,6 +32,7 @@ const BallotsPage = () => {
 	const [aBallotVoted, setABallotVoted] = useState([]);
 	const [panel, setPanel] = useState(PANEL_CREATION);
 	const [currentBallot, setCurrentBallot] = useState(null);
+	const [currentResults, setCurrentResults] = useState(null);
 	const [questionValidityCheck, setQuestionValidityCheck] = useState({
 			isValid: true,
 			firstInvalidQuestion: 0,
@@ -169,6 +172,20 @@ const BallotsPage = () => {
 		})
 	}
 
+	const async_getResults = async(_ballot) => {
+		srv_getBallotResults(_ballot.uid)
+			.then(_data => {
+				if(!_data.data ) {
+					throw _data
+				}
+				setCurrentResults(_data.data);
+				toast.success("The results are in!");
+			})
+			.catch(err => {
+				toast.error("The results are not accessible  ("+err.message+")");
+			})
+	}
+
 	const renderEditBallot = ( )=> {
 		return (
 			<>
@@ -275,7 +292,7 @@ const BallotsPage = () => {
 							{aBallotInRegistration.map((ballot) => (
 							<tr key={ballot.uid}>
 								<td>
-								<a href={`/ballots/${ballot.id}/questions`}>{ballot.name}</a>
+								<div>{ballot.name}</div>
 								</td>
 								<td>{ballot.aQuestion?.length || 0}</td>
 
@@ -315,9 +332,42 @@ const BallotsPage = () => {
 				{panel==PANEL_VOTING ?
 					<>
 					{aBallotInVoting.length>0? 
-						<div>
-							TODO
-						</div>
+						<table className={styles.tableBallot}>
+							<thead>
+								<tr>
+								<th>Name</th>
+								<th>#Q</th>
+								<th>When</th>
+								<th>Stats</th>
+								</tr>
+							</thead>
+							<tbody>
+								{aBallotInVoting.map((ballot) => (
+								<tr key={ballot.uid}>
+									<td>
+									<div>{ballot.name}</div>
+									</td>
+									<td>{ballot.aQuestion?.length || 0}</td>
+
+									<td>
+										<span>{getHowLongUntil(ballot.openingVote_at)!=null ? 
+											"opening in "+getHowLongUntil(ballot.openingVote_at)
+											: "closing in "+getHowLongUntil(ballot.closingVote_at)
+										}</span>
+									</td>
+
+									<td>
+										<img src="icons/icons8-stats-50.png" width = "32" height = "32"  
+											onClick={() => {
+											}}
+										/>
+									</td>
+
+
+								</tr>
+								))}
+							</tbody>
+						</table>
 						:
 						<div className={styles.section}>
 							<p>No ballot in voting phase yet</p>
@@ -334,9 +384,41 @@ const BallotsPage = () => {
 				{panel==PANEL_VOTED ?
 					<>
 					{aBallotVoted.length>0? 
-						<div>
-							TODO
-						</div>
+						<table className={styles.tableBallot}>
+							<thead>
+								<tr>
+								<th>Name</th>
+								<th>#Q</th>
+								<th>When</th>
+								<th>Stats</th>
+								</tr>
+							</thead>
+							<tbody>
+								{aBallotVoted.map((ballot) => (
+								<tr key={ballot.uid}>
+									<td>
+									<div>{ballot.name}</div>
+									</td>
+									<td>{ballot.aQuestion?.length || 0}</td>
+
+									<td>
+										<span>
+											{ballot.closingVote_at}
+										</span>
+									</td>
+
+									<td>
+										<img src="icons/icons8-stats-50.png" width = "32" height = "32"  
+											onClick={() => {
+												async_getResults(ballot);
+												setIsResultsDialogOpen(true);
+											}}
+										/>
+									</td>
+								</tr>
+								))}
+							</tbody>
+						</table>
 						:
 						<div className={styles.section}>
 							<p>No ballot fully closed yet</p>
@@ -390,6 +472,13 @@ const BallotsPage = () => {
 					textOK = "Update"
 					onClose = {( ) => setIsEditDialogOpen(false)}
 					onUpdate = {(_data) => async_updateBallot(_data)}
+				/>
+
+				<ResultsPanel 
+					isVisible = {isResultsDialogOpen}	
+					results = {currentResults}
+					onClose = {( ) => setIsResultsDialogOpen(false)}
+
 				/>
 
 				<DialogPublishBallot 

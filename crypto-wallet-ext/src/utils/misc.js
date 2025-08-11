@@ -53,7 +53,7 @@ export const getCurrencySign = (_cur) => {
 
 export const getHowLongUntil = (_date)=>  {
 		const _dateTo=new Date(_date);
-		const _dateFrom=new Date();
+		const _dateFrom=new Date(new Date().toUTCString());
 		const diffInMs = _dateTo - _dateFrom; // Difference in milliseconds
 		const diffInDays = parseInt(diffInMs / (1000 * 60 * 60 * 24)); // Convert to days
 		const diffInHours = parseInt(diffInMs / (1000 * 60 * 60 ));

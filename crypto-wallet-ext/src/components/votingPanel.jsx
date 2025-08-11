@@ -36,7 +36,7 @@ const VotingPanel = (props) => {
       })
       .catch((err) => {})
     }
-  }, [props.ballot]);
+  }, [props.ballot, aEligibleThid]);
   
   useEffect(() => {
     if(props?.aVC_eligibility?.length>0) {
@@ -239,7 +239,7 @@ const VotingPanel = (props) => {
 
             <button
               onClick={( )=> {
-                if(iQuestion<props?.ballot?.aQuestionInFull.length-1) {
+                if(iQuestion<=props?.ballot?.aQuestionInFull.length-1) {
                   if(showRequirement) {
                     setShowRequirement(false);
                   }
@@ -248,7 +248,7 @@ const VotingPanel = (props) => {
                   }
                 }
               }}
-              className={`${stylesDialog.blue_btn} ${stylesDialog.right} ${iQuestion==props?.ballot?.aQuestionInFull.length-1 || !canVote? styles.hidden: ""}`}
+              className={`${stylesDialog.blue_btn} ${stylesDialog.right} ${showRequirement==false && iQuestion==props?.ballot?.aQuestionInFull.length-1 || !canVote? styles.hidden: ""}`}
             >
               Next &gt; &gt; 
             </button>
@@ -264,7 +264,7 @@ const VotingPanel = (props) => {
 
             <button
               onClick={(_data) => async_vote(_data)}
-              className={`${stylesDialog.green_btn} ${stylesDialog.right} ${iQuestion==props?.ballot?.aQuestionInFull.length-1? "": styles.hidden} `}
+              className={`${stylesDialog.green_btn} ${stylesDialog.right} ${showRequirement==false && iQuestion==props?.ballot?.aQuestionInFull.length-1? "": styles.hidden} `}
             >
               Cast Vote
             </button>

@@ -160,3 +160,8 @@ export const srv_postVote= async(_uid, aProof, aVote, _token) => {
     aVote: aVote
   }, _token);
 }
+
+// results stats once closed
+export const srv_getBallotResults= async(_uid, _token) => {
+  return srv_getRoute(API_PRIVATEROUTE+'admin/ballot/'+_uid+"/tally", {}, _token);
+}

@@ -34,6 +34,7 @@ const VotesPage = () => {
 	const [iBallotOpenForVote, setIBallotOpenForVote] = useState(0);
 	const [aBallotOpenForStats, setABallotOpenForStats] = useState([]);
 	const [aProofOfVote, setAProofOfVote] = useState([]);
+	const [aEligibility, setAEligibility] = useState([]);
 	const { state, actions } = useWallet();
 
 	const {
@@ -64,6 +65,17 @@ const VotesPage = () => {
 			setAProofOfVote(_aPoV);
 		}
 	}, [state.vcs, aBallotOpenForVote]);
+
+	useEffect(() => {
+		const _a = state.vcs.filter(item => {
+			const isAcceptedType=item.claims?.claim_type === "proof_of_min";
+			const claimedDelegatedAuth = item.claims?.delegatedAuthority;
+			const requiredDelegatedAuth= aBallotOpenForVote.length>0? aBallotOpenForVote[iBallotOpenForVote].published_id: null;
+			return isAcceptedType && claimedDelegatedAuth == requiredDelegatedAuth;
+			}
+		);
+		setAEligibility(_a);
+	}, [iBallotOpenForVote]);
 
 	const async_loadPublicBallots = async() => {
 		srv_getPublicBallots({
@@ -312,6 +324,7 @@ const VotesPage = () => {
 			<>
 			{panel==PANEL_STATS_AVAILABLE ?
 			<>
+			
 			{aBallotOpenForStats.length>0? 
 				
 				<table className={styles.tableBallot}>
@@ -323,7 +336,7 @@ const VotesPage = () => {
 						</tr>
 					</thead>
 					<tbody>
-						{aBallotOpenForStats.map((ballot) => (
+						{aBallotOpenForStats.map((ballot, _index) => (
 						<tr key={ballot.uid}>
 							<td>
 							{ballot.name}
@@ -335,7 +348,7 @@ const VotesPage = () => {
 									onClick={() => {
 									}}
 								>
-									Stats...
+									Stat...
 								</div>
 							</td>
 
@@ -395,8 +408,8 @@ const VotesPage = () => {
 				isVisible = {isVotingPanelOpen}
 				onClose = {() => setIsVotingPanelOpen(false)}
 				onHasVoted = {(_aAnswers) => onHasVoted(_aAnswers)}
-				ballot = {aBallotOpenForVote[0]}
-				aVC_eligibility = {state.vcs.filter(item => {item.claims?.claim_type === "proof_of_min" && aBallotOpenForVote.length>0 && item.claims?.delegatedAuthority === aBallotOpenForVote[iBallotOpenForVote].published_id})}
+				ballot = {aBallotOpenForVote[iBallotOpenForVote]}
+				aVC_eligibility = {aEligibility}
 			/>
 
 			<BottomNav />
